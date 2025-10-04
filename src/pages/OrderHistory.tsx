@@ -5,11 +5,17 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Receipt, Calendar, FileText } from "lucide-react";
+import { Receipt, Calendar, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 interface Order {
   id: string;
@@ -23,14 +29,14 @@ interface Order {
 interface DailyReport {
   total_orders: number;
   total_revenue: number;
-  payment_methods: Record<string, number>;
+  payment_methods: Record<string, { count: number; total: number }>;
 }
 
 const OrderHistory = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 
@@ -58,11 +64,12 @@ const OrderHistory = () => {
     setGeneratingReport(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error("Not authenticated");
 
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get today's orders
+      // Get today's date
+      const today = format(new Date(), "yyyy-MM-dd");
+
+      // Fetch today's orders
       const { data: todayOrders, error: ordersError } = await supabase
         .from("orders")
         .select("*")
@@ -79,35 +86,41 @@ const OrderHistory = () => {
       }
 
       // Calculate totals
-      const totalOrders = todayOrders.length;
       const totalRevenue = todayOrders.reduce((sum, order) => sum + Number(order.total), 0);
-      
-      // Group by payment method
-      const paymentMethods: Record<string, number> = {};
+      const paymentMethods: Record<string, { count: number; total: number }> = {};
+
       todayOrders.forEach((order) => {
-        paymentMethods[order.payment_method] = (paymentMethods[order.payment_method] || 0) + Number(order.total);
+        if (!paymentMethods[order.payment_method]) {
+          paymentMethods[order.payment_method] = { count: 0, total: 0 };
+        }
+        paymentMethods[order.payment_method].count++;
+        paymentMethods[order.payment_method].total += Number(order.total);
       });
 
-      // Save report
+      // Save daily report
       const { error: reportError } = await supabase
         .from("daily_reports")
         .upsert({
           staff_id: user.id,
           report_date: today,
-          total_orders: totalOrders,
+          total_orders: todayOrders.length,
           total_revenue: totalRevenue,
           payment_methods: paymentMethods,
-        }, {
-          onConflict: 'staff_id,report_date'
         });
 
       if (reportError) throw reportError;
 
-      setDailyReport({ total_orders: totalOrders, total_revenue: totalRevenue, payment_methods: paymentMethods });
-      setReportDialogOpen(true);
+      // Set report data and show dialog
+      setDailyReport({
+        total_orders: todayOrders.length,
+        total_revenue: totalRevenue,
+        payment_methods: paymentMethods,
+      });
+      setShowReport(true);
+
       toast.success("Daily report generated successfully");
     } catch (error: any) {
-      toast.error("Failed to generate daily report");
+      toast.error(error.message || "Failed to generate report");
     } finally {
       setGeneratingReport(false);
     }
@@ -121,8 +134,13 @@ const OrderHistory = () => {
             <h2 className="text-3xl font-bold">Order History</h2>
             <p className="text-muted-foreground">View and reprint past orders</p>
           </div>
-          <Button onClick={handleEndDay} disabled={generatingReport}>
-            <FileText className="h-4 w-4 mr-2" />
+          <Button
+            onClick={handleEndDay}
+            disabled={generatingReport}
+            size="lg"
+            className="gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
             {generatingReport ? "Generating..." : "End Day"}
           </Button>
         </div>
@@ -187,53 +205,83 @@ const OrderHistory = () => {
             ))}
           </div>
         )}
+      </div>
 
-        <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Daily Report</DialogTitle>
-              <DialogDescription>
-                Summary for {format(new Date(), "MMMM d, yyyy")}
-              </DialogDescription>
-            </DialogHeader>
-            
-            {dailyReport && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Total Orders</span>
-                    <span className="font-bold text-lg">{dailyReport.total_orders}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Total Revenue</span>
-                    <span className="font-bold text-2xl text-primary">
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Daily Report</DialogTitle>
+            <DialogDescription>
+              Summary for {format(new Date(), "PPP")}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dailyReport && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Total Orders</CardDescription>
+                    <CardTitle className="text-3xl text-primary">
+                      {dailyReport.total_orders}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Total Revenue</CardDescription>
+                    <CardTitle className="text-3xl text-primary">
                       ${dailyReport.total_revenue.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              </div>
 
-                <Separator />
+              <Separator />
 
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm">Payment Methods</p>
-                  {Object.entries(dailyReport.payment_methods).map(([method, amount]) => (
-                    <div key={method} className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground capitalize">{method}</span>
-                      <span className="font-medium">${Number(amount).toFixed(2)}</span>
+              <div>
+                <h3 className="font-semibold mb-4">Payment Methods Breakdown</h3>
+                <div className="space-y-3">
+                  {Object.entries(dailyReport.payment_methods).map(([method, data]) => (
+                    <div
+                      key={method}
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{method}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {data.count} {data.count === 1 ? "order" : "orders"}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-primary">
+                        ${data.total.toFixed(2)}
+                      </p>
                     </div>
                   ))}
                 </div>
+              </div>
 
-                <Button onClick={() => window.print()} className="w-full">
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => window.print()}
+                >
                   <Receipt className="h-4 w-4 mr-2" />
                   Print Report
                 </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowReport(false)}
+                >
+                  Close
+                </Button>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
