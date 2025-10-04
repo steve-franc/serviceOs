@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_reports: {
+        Row: {
+          created_at: string | null
+          id: string
+          payment_methods: Json | null
+          report_date: string
+          staff_id: string
+          total_orders: number
+          total_revenue: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          payment_methods?: Json | null
+          report_date: string
+          staff_id: string
+          total_orders: number
+          total_revenue: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payment_methods?: Json | null
+          report_date?: string
+          staff_id?: string
+          total_orders?: number
+          total_revenue?: number
+        }
+        Relationships: []
+      }
       menu_items: {
         Row: {
           category: string | null
@@ -23,6 +53,7 @@ export type Database = {
           is_available: boolean
           name: string
           price: number
+          staff_id: string
           updated_at: string
         }
         Insert: {
@@ -33,6 +64,7 @@ export type Database = {
           is_available?: boolean
           name: string
           price: number
+          staff_id: string
           updated_at?: string
         }
         Update: {
@@ -43,6 +75,7 @@ export type Database = {
           is_available?: boolean
           name?: string
           price?: number
+          staff_id?: string
           updated_at?: string
         }
         Relationships: []

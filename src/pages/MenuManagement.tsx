@@ -65,6 +65,9 @@ const MenuManagement = () => {
     setLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       const itemData = {
         name: formData.name,
         category: formData.category || null,
@@ -80,7 +83,10 @@ const MenuManagement = () => {
         if (error) throw error;
         toast.success("Menu item updated!");
       } else {
-        const { error } = await supabase.from("menu_items").insert([itemData]);
+        const { error } = await supabase.from("menu_items").insert([{
+          ...itemData,
+          staff_id: user.id,
+        }]);
         if (error) throw error;
         toast.success("Menu item added!");
       }

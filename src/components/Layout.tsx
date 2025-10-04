@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, UtensilsCrossed } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, UtensilsCrossed, ShoppingCart, Menu, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -11,6 +12,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -21,6 +23,23 @@ const Layout = ({ children }: LayoutProps) => {
       navigate("/auth");
     }
   };
+
+  const getCurrentTab = () => {
+    if (location.pathname === "/order/create") return "create-order";
+    if (location.pathname === "/menu") return "menu";
+    if (location.pathname === "/orders") return "orders";
+    return "dashboard";
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === "create-order") navigate("/order/create");
+    else if (value === "menu") navigate("/menu");
+    else if (value === "orders") navigate("/orders");
+    else navigate("/");
+  };
+
+  const showNavigation = !["/auth", "/"].includes(location.pathname) && 
+                         !location.pathname.startsWith("/receipt/");
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,6 +56,26 @@ const Layout = ({ children }: LayoutProps) => {
             Sign Out
           </Button>
         </div>
+        {showNavigation && (
+          <div className="container mx-auto px-4 pb-4">
+            <Tabs value={getCurrentTab()} onValueChange={handleTabChange}>
+              <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+                <TabsTrigger value="create-order" className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Create Order</span>
+                </TabsTrigger>
+                <TabsTrigger value="menu" className="flex items-center gap-2">
+                  <Menu className="h-4 w-4" />
+                  <span className="hidden sm:inline">Menu</span>
+                </TabsTrigger>
+                <TabsTrigger value="orders" className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  <span className="hidden sm:inline">Orders</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
       </header>
       <main className="container mx-auto px-4 py-8">{children}</main>
     </div>

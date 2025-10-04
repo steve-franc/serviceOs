@@ -5,8 +5,10 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Receipt, Calendar } from "lucide-react";
+import { Receipt, Calendar, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 interface Order {
@@ -18,10 +20,19 @@ interface Order {
   created_at: string;
 }
 
+interface DailyReport {
+  total_orders: number;
+  total_revenue: number;
+  payment_methods: Record<string, number>;
+}
+
 const OrderHistory = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -43,12 +54,77 @@ const OrderHistory = () => {
     }
   };
 
+  const handleEndDay = async () => {
+    setGeneratingReport(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get today's orders
+      const { data: todayOrders, error: ordersError } = await supabase
+        .from("orders")
+        .select("*")
+        .gte("created_at", `${today}T00:00:00`)
+        .lte("created_at", `${today}T23:59:59`)
+        .eq("staff_id", user.id);
+
+      if (ordersError) throw ordersError;
+
+      if (!todayOrders || todayOrders.length === 0) {
+        toast.error("No orders found for today");
+        setGeneratingReport(false);
+        return;
+      }
+
+      // Calculate totals
+      const totalOrders = todayOrders.length;
+      const totalRevenue = todayOrders.reduce((sum, order) => sum + Number(order.total), 0);
+      
+      // Group by payment method
+      const paymentMethods: Record<string, number> = {};
+      todayOrders.forEach((order) => {
+        paymentMethods[order.payment_method] = (paymentMethods[order.payment_method] || 0) + Number(order.total);
+      });
+
+      // Save report
+      const { error: reportError } = await supabase
+        .from("daily_reports")
+        .upsert({
+          staff_id: user.id,
+          report_date: today,
+          total_orders: totalOrders,
+          total_revenue: totalRevenue,
+          payment_methods: paymentMethods,
+        }, {
+          onConflict: 'staff_id,report_date'
+        });
+
+      if (reportError) throw reportError;
+
+      setDailyReport({ total_orders: totalOrders, total_revenue: totalRevenue, payment_methods: paymentMethods });
+      setReportDialogOpen(true);
+      toast.success("Daily report generated successfully");
+    } catch (error: any) {
+      toast.error("Failed to generate daily report");
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold">Order History</h2>
-          <p className="text-muted-foreground">View and reprint past orders</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">Order History</h2>
+            <p className="text-muted-foreground">View and reprint past orders</p>
+          </div>
+          <Button onClick={handleEndDay} disabled={generatingReport}>
+            <FileText className="h-4 w-4 mr-2" />
+            {generatingReport ? "Generating..." : "End Day"}
+          </Button>
         </div>
 
         {loading && <p className="text-center text-muted-foreground">Loading orders...</p>}
@@ -111,6 +187,52 @@ const OrderHistory = () => {
             ))}
           </div>
         )}
+
+        <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Daily Report</DialogTitle>
+              <DialogDescription>
+                Summary for {format(new Date(), "MMMM d, yyyy")}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {dailyReport && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total Orders</span>
+                    <span className="font-bold text-lg">{dailyReport.total_orders}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total Revenue</span>
+                    <span className="font-bold text-2xl text-primary">
+                      ${dailyReport.total_revenue.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm">Payment Methods</p>
+                  {Object.entries(dailyReport.payment_methods).map(([method, amount]) => (
+                    <div key={method} className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground capitalize">{method}</span>
+                      <span className="font-medium">${Number(amount).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button onClick={() => window.print()} className="w-full">
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Print Report
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
