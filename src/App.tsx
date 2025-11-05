@@ -11,7 +11,9 @@ import CreateOrder from "./pages/CreateOrder";
 import OrderHistory from "./pages/OrderHistory";
 import Receipt from "./pages/Receipt";
 import Admin from "./pages/Admin";
+import PublicOrder from "./pages/PublicOrder";
 import NotFound from "./pages/NotFound";
+import { NotificationSound } from "./components/NotificationSound";
 
 const queryClient = new QueryClient();
 
@@ -39,8 +41,10 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NotificationSound />
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/order" element={<PublicOrder />} />
           <Route
             path="/"
             element={

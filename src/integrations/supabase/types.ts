@@ -46,37 +46,43 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          base_price: number
           category: string | null
           created_at: string
+          currency: string
           description: string | null
           id: string
           is_available: boolean
           name: string
-          price: number
+          per_unit_price: number | null
           pricing_unit: string | null
           staff_id: string
           updated_at: string
         }
         Insert: {
+          base_price?: number
           category?: string | null
           created_at?: string
+          currency?: string
           description?: string | null
           id?: string
           is_available?: boolean
           name: string
-          price: number
+          per_unit_price?: number | null
           pricing_unit?: string | null
           staff_id: string
           updated_at?: string
         }
         Update: {
+          base_price?: number
           category?: string | null
           created_at?: string
+          currency?: string
           description?: string | null
           id?: string
           is_available?: boolean
           name?: string
-          price?: number
+          per_unit_price?: number | null
           pricing_unit?: string | null
           staff_id?: string
           updated_at?: string
@@ -85,28 +91,37 @@ export type Database = {
       }
       order_items: {
         Row: {
+          base_price_at_time: number
+          extra_units: number
           id: string
           menu_item_id: string
           menu_item_name: string
           order_id: string
+          per_unit_price_at_time: number | null
           price_at_time: number
           quantity: number
           subtotal: number
         }
         Insert: {
+          base_price_at_time?: number
+          extra_units?: number
           id?: string
           menu_item_id: string
           menu_item_name: string
           order_id: string
+          per_unit_price_at_time?: number | null
           price_at_time: number
           quantity: number
           subtotal: number
         }
         Update: {
+          base_price_at_time?: number
+          extra_units?: number
           id?: string
           menu_item_id?: string
           menu_item_name?: string
           order_id?: string
+          per_unit_price_at_time?: number | null
           price_at_time?: number
           quantity?: number
           subtotal?: number
@@ -131,7 +146,11 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          currency: string
+          customer_email: string | null
+          customer_name: string | null
           id: string
+          is_public_order: boolean
           notes: string | null
           order_number: number
           payment_method: string
@@ -140,7 +159,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
           id?: string
+          is_public_order?: boolean
           notes?: string | null
           order_number?: number
           payment_method: string
@@ -149,7 +172,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
           id?: string
+          is_public_order?: boolean
           notes?: string | null
           order_number?: number
           payment_method?: string
@@ -173,6 +200,33 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+        }
+        Relationships: []
+      }
+      restaurant_settings: {
+        Row: {
+          allow_public_orders: boolean
+          created_at: string
+          currency: string
+          id: string
+          restaurant_name: string
+          updated_at: string
+        }
+        Insert: {
+          allow_public_orders?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          restaurant_name?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_public_orders?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          restaurant_name?: string
+          updated_at?: string
         }
         Relationships: []
       }

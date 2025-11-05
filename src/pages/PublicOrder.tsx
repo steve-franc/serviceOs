@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,10 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { formatPrice } from "@/lib/currency";
+import { formatPrice, getCurrencySymbol } from "@/lib/currency";
 
 interface MenuItem {
   id: string;
@@ -31,13 +30,16 @@ interface OrderItem {
   extraUnits: number;
 }
 
-const CreateOrder = () => {
+const PublicOrder = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
   const [notes, setNotes] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [restaurantName, setRestaurantName] = useState("Restaurant");
   const [currency, setCurrency] = useState("USD");
 
   useEffect(() => {
@@ -48,10 +50,11 @@ const CreateOrder = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("currency")
+      .select("restaurant_name, currency")
       .single();
     
     if (data) {
+      setRestaurantName(data.restaurant_name);
       setCurrency(data.currency);
     }
   };
@@ -122,23 +125,27 @@ const CreateOrder = () => {
       return;
     }
 
+    if (!customerName || !customerEmail) {
+      toast.error("Please provide your name and email");
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const total = calculateTotal();
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert([
           {
-            staff_id: user.id,
+            staff_id: '00000000-0000-0000-0000-000000000000',
             total,
             payment_method: paymentMethod,
             notes: notes || null,
+            customer_name: customerName,
+            customer_email: customerEmail,
+            is_public_order: true,
             currency: currency,
-            is_public_order: false,
           },
         ])
         .select()
@@ -162,10 +169,10 @@ const CreateOrder = () => {
 
       if (itemsError) throw itemsError;
 
-      toast.success(`Order #${order.order_number} created successfully!`);
+      toast.success(`Order #${order.order_number} placed successfully!`);
       navigate(`/receipt/${order.id}`);
     } catch (error: any) {
-      toast.error(error.message || "Failed to create order");
+      toast.error(error.message || "Failed to place order");
     } finally {
       setLoading(false);
     }
@@ -179,13 +186,21 @@ const CreateOrder = () => {
   }, {} as Record<string, MenuItem[]>);
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold">Create Order</h2>
-          <p className="text-muted-foreground">Select items to add to the order</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <UtensilsCrossed className="h-6 w-6" />
+            </div>
+            <h1 className="text-3xl font-bold">{restaurantName}</h1>
+          </div>
+          <p className="text-primary-foreground/90">Browse our menu and place your order</p>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Menu Items */}
           <div className="lg:col-span-2 space-y-6">
@@ -238,7 +253,7 @@ const CreateOrder = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5" />
-                  Current Order
+                  Your Order
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -323,6 +338,31 @@ const CreateOrder = () => {
 
                 <div className="space-y-3">
                   <div>
+                    <Label htmlFor="customerName">Your Name *</Label>
+                    <Input
+                      id="customerName"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="John Doe"
+                      className="mt-2"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="customerEmail">Your Email *</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="john@example.com"
+                      className="mt-2"
+                      required
+                    />
+                  </div>
+
+                  <div>
                     <Label>Payment Method</Label>
                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
                       <div className="flex items-center space-x-2">
@@ -341,12 +381,12 @@ const CreateOrder = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Label htmlFor="notes">Special Requests (Optional)</Label>
                     <Textarea
                       id="notes"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Special instructions..."
+                      placeholder="Any special instructions..."
                       className="mt-2"
                       rows={2}
                     />
@@ -366,7 +406,7 @@ const CreateOrder = () => {
                     onClick={handleSubmitOrder}
                     disabled={loading || orderItems.length === 0}
                   >
-                    {loading ? "Processing..." : "Complete Order"}
+                    {loading ? "Processing..." : "Place Order"}
                   </Button>
                 </div>
               </CardContent>
@@ -374,8 +414,8 @@ const CreateOrder = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 
-export default CreateOrder;
+export default PublicOrder;

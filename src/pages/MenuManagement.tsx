@@ -24,15 +24,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CURRENCIES, formatPrice } from "@/lib/currency";
 
 interface MenuItem {
   id: string;
   name: string;
   category: string | null;
-  price: number;
+  base_price: number;
+  per_unit_price: number | null;
   description: string | null;
   is_available: boolean;
   pricing_unit: string;
+  currency: string;
 }
 
 const MenuManagement = () => {
@@ -43,14 +46,28 @@ const MenuManagement = () => {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
-    price: "",
+    base_price: "",
+    per_unit_price: "",
     description: "",
     pricing_unit: "per piece",
+    currency: "USD",
   });
 
   useEffect(() => {
     fetchMenuItems();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    const { data } = await supabase
+      .from("restaurant_settings")
+      .select("currency")
+      .single();
+    
+    if (data) {
+      setFormData(prev => ({ ...prev, currency: data.currency }));
+    }
+  };
 
   const fetchMenuItems = async () => {
     try {
@@ -80,9 +97,11 @@ const MenuManagement = () => {
       const itemData = {
         name: formData.name,
         category: formData.category || null,
-        price: parseFloat(formData.price),
+        base_price: parseFloat(formData.base_price),
+        per_unit_price: formData.per_unit_price ? parseFloat(formData.per_unit_price) : null,
         description: formData.description || null,
         pricing_unit: formData.pricing_unit,
+        currency: formData.currency,
       };
 
       if (editingItem) {
@@ -129,15 +148,25 @@ const MenuManagement = () => {
     setFormData({
       name: item.name,
       category: item.category || "",
-      price: item.price.toString(),
+      base_price: item.base_price.toString(),
+      per_unit_price: item.per_unit_price?.toString() || "",
       description: item.description || "",
       pricing_unit: item.pricing_unit || "per piece",
+      currency: item.currency || "USD",
     });
     setDialogOpen(true);
   };
 
   const resetForm = () => {
-    setFormData({ name: "", category: "", price: "", description: "", pricing_unit: "per piece" });
+    setFormData({ 
+      name: "", 
+      category: "", 
+      base_price: "", 
+      per_unit_price: "",
+      description: "", 
+      pricing_unit: "per piece",
+      currency: "USD"
+    });
     setEditingItem(null);
   };
 
@@ -169,7 +198,7 @@ const MenuManagement = () => {
                 Add Item
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingItem ? "Edit" : "Add"} Menu Item</DialogTitle>
                 <DialogDescription>
@@ -195,34 +224,68 @@ const MenuManagement = () => {
                     placeholder="e.g., Mains, Drinks, Desserts"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price ($) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="base_price">Base Price *</Label>
+                    <Input
+                      id="base_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.base_price}
+                      onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="per_unit_price">Per Unit Price (Optional)</Label>
+                    <Input
+                      id="per_unit_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.per_unit_price}
+                      onChange={(e) => setFormData({ ...formData, per_unit_price: e.target.value })}
+                      placeholder="Add-on price"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pricing_unit">Pricing Unit *</Label>
-                  <Select
-                    value={formData.pricing_unit}
-                    onValueChange={(value) => setFormData({ ...formData, pricing_unit: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="per piece">Per Piece</SelectItem>
-                      <SelectItem value="per scoop">Per Scoop</SelectItem>
-                      <SelectItem value="per serving">Per Serving</SelectItem>
-                      <SelectItem value="per bowl">Per Bowl</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pricing_unit">Pricing Unit *</Label>
+                    <Select
+                      value={formData.pricing_unit}
+                      onValueChange={(value) => setFormData({ ...formData, pricing_unit: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="per piece">Per Piece</SelectItem>
+                        <SelectItem value="per scoop">Per Scoop</SelectItem>
+                        <SelectItem value="per serving">Per Serving</SelectItem>
+                        <SelectItem value="per bowl">Per Bowl</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency *</Label>
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CURRENCIES.map(curr => (
+                          <SelectItem key={curr.code} value={curr.code}>
+                            {curr.symbol} {curr.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
@@ -279,12 +342,17 @@ const MenuManagement = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <CardTitle className="text-lg">{item.name}</CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="font-bold">
-                                ${item.price.toFixed(2)} {item.pricing_unit}
+                            <div className="flex flex-col gap-2 mt-1">
+                              <Badge variant="secondary" className="font-bold w-fit">
+                                {formatPrice(item.base_price, item.currency)}
                               </Badge>
+                              {item.per_unit_price && (
+                                <Badge variant="outline" className="text-xs w-fit">
+                                  +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
+                                </Badge>
+                              )}
                               {item.is_available && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs w-fit">
                                   Available
                                 </Badge>
                               )}
