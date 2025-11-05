@@ -5,27 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CURRENCIES, formatPrice } from "@/lib/currency";
-
 interface MenuItem {
   id: string;
   name: string;
@@ -37,7 +23,6 @@ interface MenuItem {
   pricing_unit: string;
   currency: string;
 }
-
 const MenuManagement = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,33 +35,33 @@ const MenuManagement = () => {
     per_unit_price: "",
     description: "",
     pricing_unit: "per piece",
-    currency: "USD",
+    currency: "USD"
   });
-
   useEffect(() => {
     fetchMenuItems();
     fetchSettings();
   }, []);
-
   const fetchSettings = async () => {
-    const { data } = await supabase
-      .from("restaurant_settings")
-      .select("currency")
-      .single();
-    
+    const {
+      data
+    } = await supabase.from("restaurant_settings").select("currency").single();
     if (data) {
-      setFormData(prev => ({ ...prev, currency: data.currency }));
+      setFormData(prev => ({
+        ...prev,
+        currency: data.currency
+      }));
     }
   };
-
   const fetchMenuItems = async () => {
     try {
-      const { data, error } = await supabase
-        .from("menu_items")
-        .select("*")
-        .order("category", { ascending: true })
-        .order("name", { ascending: true });
-
+      const {
+        data,
+        error
+      } = await supabase.from("menu_items").select("*").order("category", {
+        ascending: true
+      }).order("name", {
+        ascending: true
+      });
       if (error) throw error;
       setMenuItems(data || []);
     } catch (error: any) {
@@ -85,15 +70,16 @@ const MenuManagement = () => {
       setLoading(false);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
-
       const itemData = {
         name: formData.name,
         category: formData.category || null,
@@ -101,25 +87,24 @@ const MenuManagement = () => {
         per_unit_price: formData.per_unit_price ? parseFloat(formData.per_unit_price) : null,
         description: formData.description || null,
         pricing_unit: formData.pricing_unit,
-        currency: formData.currency,
+        currency: formData.currency
       };
-
       if (editingItem) {
-        const { error } = await supabase
-          .from("menu_items")
-          .update(itemData)
-          .eq("id", editingItem.id);
+        const {
+          error
+        } = await supabase.from("menu_items").update(itemData).eq("id", editingItem.id);
         if (error) throw error;
         toast.success("Menu item updated!");
       } else {
-        const { error } = await supabase.from("menu_items").insert([{
+        const {
+          error
+        } = await supabase.from("menu_items").insert([{
           ...itemData,
-          staff_id: user.id,
+          staff_id: user.id
         }]);
         if (error) throw error;
         toast.success("Menu item added!");
       }
-
       setDialogOpen(false);
       resetForm();
       fetchMenuItems();
@@ -129,12 +114,12 @@ const MenuManagement = () => {
       setLoading(false);
     }
   };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-
     try {
-      const { error } = await supabase.from("menu_items").delete().eq("id", id);
+      const {
+        error
+      } = await supabase.from("menu_items").delete().eq("id", id);
       if (error) throw error;
       toast.success("Item deleted");
       fetchMenuItems();
@@ -142,7 +127,6 @@ const MenuManagement = () => {
       toast.error("Failed to delete item");
     }
   };
-
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
     setFormData({
@@ -152,48 +136,41 @@ const MenuManagement = () => {
       per_unit_price: item.per_unit_price?.toString() || "",
       description: item.description || "",
       pricing_unit: item.pricing_unit || "per piece",
-      currency: item.currency || "USD",
+      currency: item.currency || "USD"
     });
     setDialogOpen(true);
   };
-
   const resetForm = () => {
-    setFormData({ 
-      name: "", 
-      category: "", 
-      base_price: "", 
+    setFormData({
+      name: "",
+      category: "",
+      base_price: "",
       per_unit_price: "",
-      description: "", 
+      description: "",
       pricing_unit: "per piece",
       currency: "USD"
     });
     setEditingItem(null);
   };
-
   const groupedItems = menuItems.reduce((acc, item) => {
     const category = item.category || "Uncategorized";
     if (!acc[category]) acc[category] = [];
     acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
-
-  return (
-    <Layout>
+  return <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold">Menu Management</h2>
             <p className="text-muted-foreground">Add and manage your menu items</p>
           </div>
-          <Dialog
-            open={dialogOpen}
-            onOpenChange={(open) => {
-              setDialogOpen(open);
-              if (!open) resetForm();
-            }}
-          >
+          <Dialog open={dialogOpen} onOpenChange={open => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-[#435663]">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>
@@ -208,55 +185,41 @@ const MenuManagement = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Item Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+                  <Input id="name" value={formData.name} onChange={e => setFormData({
+                  ...formData,
+                  name: e.target.value
+                })} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="e.g., Mains, Drinks, Desserts"
-                  />
+                  <Input id="category" value={formData.category} onChange={e => setFormData({
+                  ...formData,
+                  category: e.target.value
+                })} placeholder="e.g., Mains, Drinks, Desserts" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="base_price">Base Price *</Label>
-                    <Input
-                      id="base_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.base_price}
-                      onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
-                      required
-                    />
+                    <Input id="base_price" type="number" step="0.01" min="0" value={formData.base_price} onChange={e => setFormData({
+                    ...formData,
+                    base_price: e.target.value
+                  })} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="per_unit_price">Per Unit Price (Optional)</Label>
-                    <Input
-                      id="per_unit_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.per_unit_price}
-                      onChange={(e) => setFormData({ ...formData, per_unit_price: e.target.value })}
-                      placeholder="Add-on price"
-                    />
+                    <Input id="per_unit_price" type="number" step="0.01" min="0" value={formData.per_unit_price} onChange={e => setFormData({
+                    ...formData,
+                    per_unit_price: e.target.value
+                  })} placeholder="Add-on price" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="pricing_unit">Pricing Unit *</Label>
-                    <Select
-                      value={formData.pricing_unit}
-                      onValueChange={(value) => setFormData({ ...formData, pricing_unit: value })}
-                    >
+                    <Select value={formData.pricing_unit} onValueChange={value => setFormData({
+                    ...formData,
+                    pricing_unit: value
+                  })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
                       </SelectTrigger>
@@ -270,44 +233,36 @@ const MenuManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="currency">Currency *</Label>
-                    <Select
-                      value={formData.currency}
-                      onValueChange={(value) => setFormData({ ...formData, currency: value })}
-                    >
+                    <Select value={formData.currency} onValueChange={value => setFormData({
+                    ...formData,
+                    currency: value
+                  })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select currency" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CURRENCIES.map(curr => (
-                          <SelectItem key={curr.code} value={curr.code}>
+                        {CURRENCIES.map(curr => <SelectItem key={curr.code} value={curr.code}>
                             {curr.symbol} {curr.name}
-                          </SelectItem>
-                        ))}
+                          </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description of the item"
-                  />
+                  <Textarea id="description" value={formData.description} onChange={e => setFormData({
+                  ...formData,
+                  description: e.target.value
+                })} placeholder="Brief description of the item" />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading} className="flex-1">
                     {loading ? "Saving..." : editingItem ? "Update" : "Add"} Item
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setDialogOpen(false);
-                      resetForm();
-                    }}
-                  >
+                  <Button type="button" variant="outline" onClick={() => {
+                  setDialogOpen(false);
+                  resetForm();
+                }}>
                     Cancel
                   </Button>
                 </div>
@@ -318,26 +273,21 @@ const MenuManagement = () => {
 
         {loading && <p className="text-center text-muted-foreground">Loading menu...</p>}
 
-        {!loading && menuItems.length === 0 && (
-          <Card>
+        {!loading && menuItems.length === 0 && <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground mb-4">No menu items yet</p>
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button onClick={() => setDialogOpen(true)} className="bg-[435663] bg-[#435663]">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Item
               </Button>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
-        {!loading && menuItems.length > 0 && (
-          <div className="space-y-6">
-            {Object.entries(groupedItems).map(([category, items]) => (
-              <div key={category}>
+        {!loading && menuItems.length > 0 && <div className="space-y-6">
+            {Object.entries(groupedItems).map(([category, items]) => <div key={category}>
                 <h3 className="text-xl font-semibold mb-3">{category}</h3>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {items.map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow">
+                  {items.map(item => <Card key={item.id} className="hover:shadow-md transition-shadow">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -346,54 +296,33 @@ const MenuManagement = () => {
                               <Badge variant="secondary" className="font-bold w-fit">
                                 {formatPrice(item.base_price, item.currency)}
                               </Badge>
-                              {item.per_unit_price && (
-                                <Badge variant="outline" className="text-xs w-fit">
+                              {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
                                   +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
-                                </Badge>
-                              )}
-                              {item.is_available && (
-                                <Badge variant="outline" className="text-xs w-fit">
+                                </Badge>}
+                              {item.is_available && <Badge variant="outline" className="text-xs w-fit">
                                   Available
-                                </Badge>
-                              )}
+                                </Badge>}
                             </div>
                           </div>
                         </div>
-                        {item.description && (
-                          <CardDescription className="mt-2">{item.description}</CardDescription>
-                        )}
+                        {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
                       </CardHeader>
                       <CardContent>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(item)}
-                            className="flex-1"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1">
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </CardContent>
-                    </Card>
-                  ))}
+                    </Card>)}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </div>)}
+          </div>}
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default MenuManagement;
