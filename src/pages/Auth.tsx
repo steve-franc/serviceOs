@@ -14,6 +14,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [userType, setUserType] = useState<"user" | "restaurant">("user");
   const [resetEmail, setResetEmail] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
   const navigate = useNavigate();
@@ -56,7 +57,8 @@ const Auth = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName
+            full_name: fullName,
+            role: userType
           }
         }
       });
@@ -150,6 +152,29 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <Input id="signup-name" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="user-type">I want to</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        type="button"
+                        variant={userType === "user" ? "default" : "outline"}
+                        onClick={() => setUserType("user")}
+                        className="h-auto py-4 flex flex-col items-center gap-2"
+                      >
+                        <span className="text-2xl">🛒</span>
+                        <span>Buy</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={userType === "restaurant" ? "default" : "outline"}
+                        onClick={() => setUserType("restaurant")}
+                        className="h-auto py-4 flex flex-col items-center gap-2"
+                      >
+                        <span className="text-2xl">🍽️</span>
+                        <span>Sell</span>
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>

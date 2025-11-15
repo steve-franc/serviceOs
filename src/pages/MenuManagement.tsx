@@ -54,14 +54,19 @@ const MenuManagement = () => {
   };
   const fetchMenuItems = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       const {
         data,
         error
-      } = await supabase.from("menu_items").select("*").order("category", {
-        ascending: true
-      }).order("name", {
-        ascending: true
-      });
+      } = await supabase
+        .from("menu_items")
+        .select("*")
+        .eq("staff_id", user.id)
+        .order("category", { ascending: true })
+        .order("name", { ascending: true });
+      
       if (error) throw error;
       setMenuItems(data || []);
     } catch (error: any) {
