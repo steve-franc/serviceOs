@@ -15,7 +15,8 @@ const Layout = ({
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    isAdmin
+    isAdmin,
+    isRestaurant
   } = useUserRole();
   const handleSignOut = async () => {
     const {
@@ -55,15 +56,15 @@ const Layout = ({
         </div>
         {showNavigation && <div className="container mx-auto px-4 pb-4">
             <Tabs value={getCurrentTab()} onValueChange={handleTabChange}>
-              <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+              <TabsList className={`grid w-full max-w-2xl mx-auto ${isAdmin ? 'grid-cols-4' : (isRestaurant ? 'grid-cols-3' : 'grid-cols-2')}`}>
                 <TabsTrigger value="create-order" className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
                   <span className="hidden sm:inline">Create Order</span>
                 </TabsTrigger>
-                <TabsTrigger value="menu" className="flex items-center gap-2">
+                {(isRestaurant || isAdmin) && <TabsTrigger value="menu" className="flex items-center gap-2">
                   <Menu className="h-4 w-4" />
                   <span className="hidden sm:inline">Menu</span>
-                </TabsTrigger>
+                </TabsTrigger>}
                 <TabsTrigger value="orders" className="flex items-center gap-2">
                   <History className="h-4 w-4" />
                   <span className="hidden sm:inline">Orders</span>
