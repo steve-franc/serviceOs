@@ -150,10 +150,6 @@ const Auth = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input id="signup-name" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="user-type">I want to</Label>
                     <div className="grid grid-cols-2 gap-3">
                       <Button
@@ -175,6 +171,19 @@ const Auth = () => {
                         <span>Sell</span>
                       </Button>
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">
+                      {userType === "restaurant" ? "Restaurant/Business Name" : "Full Name"}
+                    </Label>
+                    <Input 
+                      id="signup-name" 
+                      type="text" 
+                      placeholder={userType === "restaurant" ? "e.g. Joe's Pizza" : "John Doe"} 
+                      value={fullName} 
+                      onChange={e => setFullName(e.target.value)} 
+                      required 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
