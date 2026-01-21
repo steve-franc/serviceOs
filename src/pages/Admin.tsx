@@ -46,7 +46,7 @@ interface DailyReport {
 }
 const Admin = () => {
   const {
-    isAdmin,
+    isManager,
     loading: roleLoading
   } = useUserRole();
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -55,10 +55,10 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("7");
   useEffect(() => {
-    if (isAdmin) {
+    if (isManager) {
       fetchData();
     }
-  }, [isAdmin, dateFilter]);
+  }, [isManager, dateFilter]);
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -136,7 +136,7 @@ const Admin = () => {
         error
       } = await supabase.from("user_roles").insert([{
         user_id: userId,
-        role: newRole as "admin" | "staff"
+        role: newRole as "server" | "ops" | "counter" | "manager"
       }]);
       if (error) throw error;
       toast.success("Role updated successfully");
@@ -152,7 +152,7 @@ const Admin = () => {
         </div>
       </Layout>;
   }
-  if (!isAdmin) {
+  if (!isManager) {
     return <Navigate to="/" replace />;
   }
   const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
@@ -227,8 +227,10 @@ const Admin = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="staff">Staff</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="server">Server</SelectItem>
+                            <SelectItem value="ops">Ops</SelectItem>
+                            <SelectItem value="counter">Counter</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>)}

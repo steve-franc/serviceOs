@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type UserRole = "admin" | "restaurant" | "user" | null;
+export type UserRole = "server" | "ops" | "counter" | "manager" | null;
 
 export function useUserRole() {
   const [role, setRole] = useState<UserRole>(null);
@@ -40,11 +40,11 @@ export function useUserRole() {
       if (data?.role) {
         setRole(data.role as UserRole);
       } else {
-        setRole("user"); // Default to user role
+        setRole("server"); // Default to server role
       }
     } catch (error) {
       console.error("Error fetching user role:", error);
-      setRole("user"); // Default to user on error
+      setRole("server"); // Default to server on error
     } finally {
       setLoading(false);
     }
@@ -53,8 +53,9 @@ export function useUserRole() {
   return { 
     role, 
     loading, 
-    isAdmin: role === "admin",
-    isRestaurant: role === "restaurant",
-    isUser: role === "user"
+    isManager: role === "manager",
+    isOps: role === "ops",
+    isCounter: role === "counter",
+    isServer: role === "server"
   };
 }

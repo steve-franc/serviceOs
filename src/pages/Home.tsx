@@ -24,17 +24,18 @@ const Home = () => {
 
   const fetchRestaurants = async () => {
     try {
-      // Get all users with restaurant role
-      const { data: restaurantRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "restaurant");
+      // Get all profiles (restaurants are now just anyone with menu items)
+      const { data: menuItems, error: menuError } = await supabase
+        .from("menu_items")
+        .select("staff_id")
+        .eq("is_available", true);
 
-      if (rolesError) throw rolesError;
+      if (menuError) throw menuError;
 
-      const restaurantIds = restaurantRoles?.map(r => r.user_id) || [];
+      // Get unique staff_ids who have menu items
+      const staffIds = [...new Set(menuItems?.map(item => item.staff_id) || [])];
 
-      if (restaurantIds.length === 0) {
+      if (staffIds.length === 0) {
         setRestaurants([]);
         setLoading(false);
         return;
@@ -44,21 +45,12 @@ const Home = () => {
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, full_name")
-        .in("id", restaurantIds);
+        .in("id", staffIds);
 
       if (profilesError) throw profilesError;
 
-      // Get menu item counts for each restaurant
-      const { data: menuCounts, error: menuError } = await supabase
-        .from("menu_items")
-        .select("staff_id")
-        .in("staff_id", restaurantIds)
-        .eq("is_available", true);
-
-      if (menuError) throw menuError;
-
       // Count items per restaurant
-      const countMap = menuCounts?.reduce((acc, item) => {
+      const countMap = menuItems?.reduce((acc, item) => {
         acc[item.staff_id] = (acc[item.staff_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};

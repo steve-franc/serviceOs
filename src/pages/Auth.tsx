@@ -14,7 +14,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [userType, setUserType] = useState<"user" | "restaurant">("user");
+  
   const [resetEmail, setResetEmail] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
   const navigate = useNavigate();
@@ -57,8 +57,7 @@ const Auth = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName,
-            role: userType
+            full_name: fullName
           }
         }
       });
@@ -150,36 +149,11 @@ const Auth = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="user-type">I want to</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        type="button"
-                        variant={userType === "user" ? "default" : "outline"}
-                        onClick={() => setUserType("user")}
-                        className="h-auto py-4 flex flex-col items-center gap-2"
-                      >
-                        <span className="text-2xl">🛒</span>
-                        <span>Buy</span>
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={userType === "restaurant" ? "default" : "outline"}
-                        onClick={() => setUserType("restaurant")}
-                        className="h-auto py-4 flex flex-col items-center gap-2"
-                      >
-                        <span className="text-2xl">🍽️</span>
-                        <span>Sell</span>
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">
-                      {userType === "restaurant" ? "Restaurant/Business Name" : "Full Name"}
-                    </Label>
+                    <Label htmlFor="signup-name">Full Name</Label>
                     <Input 
                       id="signup-name" 
                       type="text" 
-                      placeholder={userType === "restaurant" ? "e.g. Joe's Pizza" : "John Doe"} 
+                      placeholder="John Doe" 
                       value={fullName} 
                       onChange={e => setFullName(e.target.value)} 
                       required 
@@ -193,11 +167,11 @@ const Auth = () => {
                     <Label htmlFor="signup-password">Password</Label>
                     <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full bg-[435663] bg-[#435663]">
+                  <Button type="submit" disabled={loading} className="w-full bg-[#435663]">
                     {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
-                    You'll receive a verification email after signing up
+                    You'll receive a verification email after signing up. Manager will assign your role.
                   </p>
                 </form>
               </TabsContent>

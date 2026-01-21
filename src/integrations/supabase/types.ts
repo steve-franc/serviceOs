@@ -248,7 +248,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
@@ -271,9 +271,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_manager: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "staff" | "restaurant"
+      app_role: "server" | "ops" | "counter" | "manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -401,7 +402,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff", "restaurant"],
+      app_role: ["server", "ops", "counter", "manager"],
     },
   },
 } as const

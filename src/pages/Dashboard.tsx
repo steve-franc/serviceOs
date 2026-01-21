@@ -4,21 +4,19 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { role, loading } = useUserRole();
+  const { role, loading, isManager } = useUserRole();
 
   useEffect(() => {
     if (loading) return;
 
     // Redirect based on user role
-    if (role === "restaurant") {
-      navigate("/menu", { replace: true });
-    } else if (role === "admin") {
+    if (isManager) {
       navigate("/admin", { replace: true });
     } else {
-      // Regular users go to home feed
-      navigate("/home", { replace: true });
+      // All other roles (server, ops, counter) go to create order
+      navigate("/order/create", { replace: true });
     }
-  }, [role, loading, navigate]);
+  }, [role, loading, isManager, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
