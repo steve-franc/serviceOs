@@ -3,17 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store } from "lucide-react";
+import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface MenuItem {
   id: string;
   name: string;
@@ -33,6 +34,7 @@ interface OrderItem {
 }
 const CreateOrder = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
@@ -40,6 +42,7 @@ const CreateOrder = () => {
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState("USD");
   const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
+  const [drawerOpen, setDrawerOpen] = useState(false);
   useEffect(() => {
     fetchSettings();
     fetchMenuItems();
@@ -188,6 +191,110 @@ const CreateOrder = () => {
     }
     setExpandedStaff(newExpanded);
   };
+
+  // Order summary content - reused for both desktop card and mobile drawer
+  const OrderSummaryContent = () => (
+    <div className="space-y-4">
+      {orderItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          No items added yet
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {orderItems.map(item => (
+            <div key={item.menuItem.id} className="space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{item.menuItem.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.quantity > 0 
+                      ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base`
+                      : "Only extra units"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="w-8 text-center text-sm font-medium">
+                    {item.quantity}
+                  </span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              
+              {item.menuItem.per_unit_price && (
+                <div className="flex items-center gap-2 pl-2">
+                  <Label className="text-xs text-muted-foreground flex-1">
+                    Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateExtraUnits(item.menuItem.id, -1)}>
+                      <Minus className="h-2 w-2" />
+                    </Button>
+                    <span className="w-6 text-center text-xs">
+                      {item.extraUnits}
+                    </span>
+                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateExtraUnits(item.menuItem.id, 1)}>
+                      <Plus className="h-2 w-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end">
+                <p className="font-medium text-sm">
+                  {formatPrice(calculateItemTotal(item), item.menuItem.currency)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Separator />
+
+      <div className="space-y-3">
+        <div>
+          <Label>Payment Method</Label>
+          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Cash" id="cash" />
+              <Label htmlFor="cash" className="font-normal">
+                Cash
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Card" id="card" />
+              <Label htmlFor="card" className="font-normal">
+                Card
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <div>
+          <Label htmlFor="notes">Notes (Optional)</Label>
+          <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Special instructions..." className="mt-2" rows={2} />
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-lg font-bold">
+          <span>Total</span>
+          <span className="text-primary">{formatPrice(calculateTotal(), currency)}</span>
+        </div>
+        <Button size="lg" onClick={handleSubmitOrder} disabled={loading || orderItems.length === 0} className="w-full">
+          {loading ? "Processing..." : "Complete Order"}
+        </Button>
+      </div>
+    </div>
+  );
+
   return <Layout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
@@ -197,7 +304,7 @@ const CreateOrder = () => {
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Menu Items - Grouped by Staff/Restaurant */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4 pb-20 md:pb-0">
             {Object.entries(groupedByStaff).map(([staffId, { staffName, items }]) => {
               const isExpanded = expandedStaff.has(staffId);
               
@@ -276,109 +383,56 @@ const CreateOrder = () => {
             )}
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+          {/* Order Summary - Desktop */}
+          {!isMobile && (
+            <div className="lg:col-span-1">
+              <Card className="sticky top-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Current Order
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <OrderSummaryContent />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Drawer */}
+        {isMobile && (
+          <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DrawerTrigger asChild>
+              <Button 
+                className="fixed bottom-4 left-4 right-4 z-50 h-14 shadow-lg"
+                size="lg"
+              >
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                <span className="flex-1 text-left">Current Order</span>
+                {orderItems.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {orderItems.length}
+                  </Badge>
+                )}
+                <span className="ml-2 font-bold">{formatPrice(calculateTotal(), currency)}</span>
+                <ChevronUp className="h-5 w-5 ml-2" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="max-h-[85vh]">
+              <DrawerHeader>
+                <DrawerTitle className="flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5" />
                   Current Order
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {orderItems.length === 0 ? <p className="text-sm text-muted-foreground text-center py-6">
-                    No items added yet
-                  </p> : <div className="space-y-3">
-                    {orderItems.map(item => <div key={item.menuItem.id} className="space-y-2">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{item.menuItem.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.quantity > 0 
-                                ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base`
-                                : "Only extra units"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center text-sm font-medium">
-                              {item.quantity}
-                            </span>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {item.menuItem.per_unit_price && <div className="flex items-center gap-2 pl-2">
-                            <Label className="text-xs text-muted-foreground flex-1">
-                              Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
-                            </Label>
-                            <div className="flex items-center gap-2">
-                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateExtraUnits(item.menuItem.id, -1)}>
-                                <Minus className="h-2 w-2" />
-                              </Button>
-                              <span className="w-6 text-center text-xs">
-                                {item.extraUnits}
-                              </span>
-                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateExtraUnits(item.menuItem.id, 1)}>
-                                <Plus className="h-2 w-2" />
-                              </Button>
-                            </div>
-                          </div>}
-                        
-                        <div className="flex justify-end">
-                          <p className="font-medium text-sm">
-                            {formatPrice(calculateItemTotal(item), item.menuItem.currency)}
-                          </p>
-                        </div>
-                      </div>)}
-                  </div>}
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div>
-                    <Label>Payment Method</Label>
-                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Cash" id="cash" />
-                        <Label htmlFor="cash" className="font-normal">
-                          Cash
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Card" id="card" />
-                        <Label htmlFor="card" className="font-normal">
-                          Card
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="notes">Notes (Optional)</Label>
-                    <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Special instructions..." className="mt-2" rows={2} />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span className="text-[435663] text-[#f97415]">{formatPrice(calculateTotal(), currency)}</span>
-                  </div>
-                  <Button size="lg" onClick={handleSubmitOrder} disabled={loading || orderItems.length === 0} className="w-full bg-[435663] bg-[#435663]">
-                    {loading ? "Processing..." : "Complete Order"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                </DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-6 overflow-y-auto">
+                <OrderSummaryContent />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
       </div>
     </Layout>;
 };
