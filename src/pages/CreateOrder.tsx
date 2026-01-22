@@ -15,6 +15,7 @@ import { formatPrice } from "@/lib/currency";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHaptics } from "@/hooks/use-haptics";
 interface MenuItem {
   id: string;
   name: string;
@@ -35,6 +36,7 @@ interface OrderItem {
 const CreateOrder = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const haptics = useHaptics();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
@@ -85,6 +87,8 @@ const CreateOrder = () => {
       toast.error(`This item uses ${menuItem.currency} but the restaurant uses ${currency}`);
       return;
     }
+
+    if (isMobile) haptics.tap();
     
     const existing = orderItems.find(item => item.menuItem.id === menuItem.id);
     if (existing) {

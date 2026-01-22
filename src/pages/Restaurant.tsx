@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Minus, ShoppingCart, Store } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useHaptics } from "@/hooks/use-haptics";
 
 interface MenuItem {
   id: string;
@@ -30,6 +32,8 @@ interface OrderItem {
 const Restaurant = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const haptics = useHaptics();
   const [restaurantName, setRestaurantName] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -87,6 +91,8 @@ const Restaurant = () => {
       toast.error(`This item uses ${menuItem.currency} but the restaurant uses ${currency}`);
       return;
     }
+
+    if (isMobile) haptics.tap();
 
     const existing = orderItems.find(item => item.menuItem.id === menuItem.id);
     if (existing) {
