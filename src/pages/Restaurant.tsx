@@ -11,6 +11,7 @@ import { ArrowLeft, Plus, Minus, ShoppingCart, Store } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 
 interface MenuItem {
   id: string;
@@ -34,6 +35,7 @@ const Restaurant = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const haptics = useHaptics();
+  const { restaurantId } = useRestaurantContext();
   const [restaurantName, setRestaurantName] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -73,7 +75,8 @@ const Restaurant = () => {
       const { data: settings } = await supabase
         .from("restaurant_settings")
         .select("currency")
-        .single();
+        .eq("restaurant_id", restaurantId)
+        .maybeSingle();
 
       if (settings) {
         setCurrency(settings.currency);
@@ -163,7 +166,8 @@ const Restaurant = () => {
           total,
           payment_method: "Cash",
           currency: currency,
-          is_public_order: false
+          is_public_order: false,
+          restaurant_id: restaurantId
         }])
         .select()
         .single();

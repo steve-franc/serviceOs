@@ -9,11 +9,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { UtensilsCrossed } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type Restaurant = { id: string; name: string };
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [joinRestaurantId, setJoinRestaurantId] = useState<string>("");
+  const [newRestaurantName, setNewRestaurantName] = useState<string>("");
   
   const [resetEmail, setResetEmail] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -26,6 +32,21 @@ const Auth = () => {
       navigate("/");
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    // Public list for signup dropdown
+    supabase
+      .from("restaurants")
+      .select("id, name")
+      .order("name")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          return;
+        }
+        setRestaurants((data as Restaurant[]) || []);
+      });
+  }, []);
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -47,6 +68,12 @@ const Auth = () => {
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!joinRestaurantId) {
+      toast.error("Please select your restaurant");
+      return;
+    }
+
     setLoading(true);
     try {
       const {
@@ -57,7 +84,9 @@ const Auth = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName
+            full_name: fullName,
+            onboarding_mode: "join",
+            join_restaurant_id: joinRestaurantId
           }
         }
       });
@@ -65,6 +94,37 @@ const Auth = () => {
       toast.success("Account created! Please check your email to verify your account.");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterRestaurant = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newRestaurantName.trim()) {
+      toast.error("Please enter your restaurant name");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: fullName,
+            onboarding_mode: "create",
+            create_restaurant_name: newRestaurantName.trim(),
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success("Account created! Please check your email to verify your account.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to register restaurant");
     } finally {
       setLoading(false);
     }
@@ -122,9 +182,10 @@ const Auth = () => {
                 </div>
               </form>
             </div> : <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="restaurant">Register Restaurant</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin">
@@ -137,16 +198,16 @@ const Auth = () => {
                     <Label htmlFor="signin-password">Password</Label>
                     <Input id="signin-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full bg-[#435663]">
+                  <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  <Button type="button" variant="link" onClick={() => setShowResetPassword(true)} className="w-full bg-[435663] text-[435663] text-[#435663]">
+                  <Button type="button" variant="link" onClick={() => setShowResetPassword(true)} className="w-full">
                     Forgot password?
                   </Button>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup">
+               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
@@ -163,18 +224,88 @@ const Auth = () => {
                     <Label htmlFor="signup-email">Email</Label>
                     <Input id="signup-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
+                   <div className="space-y-2">
+                     <Label>Restaurant</Label>
+                     <Select value={joinRestaurantId} onValueChange={setJoinRestaurantId}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select your restaurant" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {restaurants.map(r => (
+                           <SelectItem key={r.id} value={r.id}>
+                             {r.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full bg-[#435663]">
+                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
-                    You'll receive a verification email after signing up. Manager will assign your role.
+                     You'll receive a verification email after signing up. Your restaurant manager will assign your role.
                   </p>
                 </form>
               </TabsContent>
+
+               <TabsContent value="restaurant">
+                 <form onSubmit={handleRegisterRestaurant} className="space-y-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="restaurant-owner-name">Your Name</Label>
+                     <Input
+                       id="restaurant-owner-name"
+                       type="text"
+                       placeholder="Jane Doe"
+                       value={fullName}
+                       onChange={e => setFullName(e.target.value)}
+                       required
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="restaurant-name">Restaurant Name</Label>
+                     <Input
+                       id="restaurant-name"
+                       type="text"
+                       placeholder="My Restaurant"
+                       value={newRestaurantName}
+                       onChange={e => setNewRestaurantName(e.target.value)}
+                       required
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="restaurant-email">Email</Label>
+                     <Input
+                       id="restaurant-email"
+                       type="email"
+                       placeholder="owner@restaurant.com"
+                       value={email}
+                       onChange={e => setEmail(e.target.value)}
+                       required
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="restaurant-password">Password</Label>
+                     <Input
+                       id="restaurant-password"
+                       type="password"
+                       value={password}
+                       onChange={e => setPassword(e.target.value)}
+                       required
+                       minLength={6}
+                     />
+                   </div>
+                   <Button type="submit" disabled={loading} className="w-full">
+                     {loading ? "Creating..." : "Create Restaurant"}
+                   </Button>
+                   <p className="text-xs text-center text-muted-foreground">
+                     After email verification, you'll be set up as the Manager for this restaurant.
+                   </p>
+                 </form>
+               </TabsContent>
             </Tabs>}
         </CardContent>
       </Card>

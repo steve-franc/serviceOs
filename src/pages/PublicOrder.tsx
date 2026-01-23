@@ -45,29 +45,38 @@ const PublicOrder = () => {
   const [loading, setLoading] = useState(false);
   const [restaurantName, setRestaurantName] = useState("Restaurant");
   const [currency, setCurrency] = useState("USD");
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
-    fetchMenuItems();
   }, []);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    fetchMenuItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
 
   const fetchSettings = async () => {
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("restaurant_name, currency")
-      .single();
+      .select("restaurant_id, restaurant_name, currency")
+      .maybeSingle();
     
     if (data) {
       setRestaurantName(data.restaurant_name);
       setCurrency(data.currency);
+      setRestaurantId(data.restaurant_id ?? null);
     }
   };
 
   const fetchMenuItems = async () => {
+    if (!restaurantId) return;
     const { data, error } = await supabase
       .from("menu_items")
       .select("*")
       .eq("is_available", true)
+      .eq("restaurant_id", restaurantId)
       .order("category")
       .order("name");
 
@@ -148,6 +157,8 @@ const PublicOrder = () => {
     try {
       const total = calculateTotal();
 
+      if (!restaurantId) throw new Error("Restaurant not configured");
+
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert([
@@ -160,6 +171,7 @@ const PublicOrder = () => {
             customer_email: customerEmail,
             is_public_order: true,
             currency: currency,
+            restaurant_id: restaurantId,
           },
         ])
         .select()

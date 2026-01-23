@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
+import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 interface StaffMember {
   id: string;
   email: string;
@@ -49,16 +50,17 @@ const Admin = () => {
     isManager,
     loading: roleLoading
   } = useUserRole();
+  const { restaurantId, loading: restaurantLoading } = useRestaurantContext();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("7");
   useEffect(() => {
-    if (isManager) {
+    if (isManager && restaurantId) {
       fetchData();
     }
-  }, [isManager, dateFilter]);
+  }, [isManager, restaurantId, dateFilter]);
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -70,25 +72,45 @@ const Admin = () => {
     }
   };
   const fetchStaff = async () => {
-    const {
-      data: profiles
-    } = await supabase.from("profiles").select(`
-        id,
-        full_name
-      `);
-    const {
-      data: roles
-    } = await supabase.from("user_roles").select("user_id, role");
-    const staffMembers = profiles?.map(profile => {
+    if (!restaurantId) {
+      setStaff([]);
+      return;
+    }
+
+    const { data: memberships, error: membershipsError } = await supabase
+      .from("restaurant_memberships")
+      .select("user_id")
+      .eq("restaurant_id", restaurantId);
+    if (membershipsError) throw membershipsError;
+
+    const userIds = (memberships || []).map(m => m.user_id);
+    if (userIds.length === 0) {
+      setStaff([]);
+      return;
+    }
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+    if (profilesError) throw profilesError;
+
+    const { data: roles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("restaurant_id", restaurantId);
+    if (rolesError) throw rolesError;
+
+    const staffMembers: StaffMember[] = (profiles || []).map(profile => {
       const userRole = roles?.find(r => r.user_id === profile.id);
       return {
         id: profile.id,
         email: "",
-        // Email not accessible from client side for security
         full_name: profile.full_name,
-        role: userRole?.role || "staff"
+        role: userRole?.role || "",
       };
-    }) || [];
+    });
+
     setStaff(staffMembers);
   };
   const fetchOrders = async () => {
@@ -128,16 +150,23 @@ const Admin = () => {
   };
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      // Remove existing roles
-      await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (!restaurantId) throw new Error("Restaurant not selected");
 
-      // Add new role
-      const {
-        error
-      } = await supabase.from("user_roles").insert([{
-        user_id: userId,
-        role: newRole as "server" | "ops" | "counter" | "manager"
-      }]);
+      // Remove existing role(s) for this restaurant
+      await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("restaurant_id", restaurantId);
+
+      // Add new role for this restaurant
+      const { error } = await supabase.from("user_roles").insert([
+        {
+          user_id: userId,
+          role: newRole as "server" | "ops" | "counter" | "manager",
+          restaurant_id: restaurantId,
+        },
+      ]);
       if (error) throw error;
       toast.success("Role updated successfully");
       fetchStaff();
@@ -145,7 +174,7 @@ const Admin = () => {
       toast.error("Failed to update role");
     }
   };
-  if (roleLoading) {
+  if (roleLoading || restaurantLoading) {
     return <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <p className="text-muted-foreground">Loading...</p>

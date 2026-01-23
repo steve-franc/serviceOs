@@ -15,7 +15,8 @@ const Layout = ({
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    isManager
+    isManager,
+    hasRole
   } = useUserRole();
   const handleSignOut = async () => {
     const {
@@ -38,7 +39,8 @@ const Layout = ({
   const handleTabChange = (value: string) => {
     if (value === "create-order") navigate("/order/create");else if (value === "menu") navigate("/menu");else if (value === "orders") navigate("/orders");else if (value === "admin") navigate("/admin");else navigate("/");
   };
-  const showNavigation = !["/auth", "/"].includes(location.pathname) && !location.pathname.startsWith("/receipt/");
+  const showNavigation =
+    hasRole && !["/auth", "/"].includes(location.pathname) && !location.pathname.startsWith("/receipt/");
   return <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-[var(--shadow-soft)]">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

@@ -16,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 interface MenuItem {
   id: string;
   name: string;
@@ -37,6 +38,7 @@ const CreateOrder = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const haptics = useHaptics();
+  const { restaurantId, loading: restaurantLoading } = useRestaurantContext();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
@@ -46,18 +48,22 @@ const CreateOrder = () => {
   const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
   useEffect(() => {
-    fetchSettings();
-    fetchMenuItems();
-  }, []);
-  const fetchSettings = async () => {
+    if (restaurantLoading) return;
+    if (!restaurantId) return;
+    fetchSettings(restaurantId);
+    fetchMenuItems(restaurantId);
+  }, [restaurantLoading, restaurantId]);
+
+  const fetchSettings = async (rid: string) => {
     const {
       data
-    } = await supabase.from("restaurant_settings").select("currency").single();
+    } = await supabase.from("restaurant_settings").select("currency").eq("restaurant_id", rid).maybeSingle();
     if (data) {
       setCurrency(data.currency);
     }
   };
-  const fetchMenuItems = async () => {
+
+  const fetchMenuItems = async (rid: string) => {
     const {
       data,
       error
@@ -67,6 +73,7 @@ const CreateOrder = () => {
         profiles!menu_items_staff_id_fkey(full_name)
       `)
       .eq("is_available", true)
+      .eq("restaurant_id", rid)
       .order("name");
     
     if (error) {
@@ -129,6 +136,11 @@ const CreateOrder = () => {
       toast.error("Please add items to the order");
       return;
     }
+
+    if (!restaurantId) {
+      toast.error("Restaurant not selected");
+      return;
+    }
     setLoading(true);
     try {
       const {
@@ -147,7 +159,8 @@ const CreateOrder = () => {
         payment_method: paymentMethod,
         notes: notes || null,
         currency: currency,
-        is_public_order: false
+        is_public_order: false,
+        restaurant_id: restaurantId
       }]).select().single();
       if (orderError) throw orderError;
       const orderItemsData = orderItems.map(item => ({

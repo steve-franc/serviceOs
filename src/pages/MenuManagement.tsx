@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CURRENCIES, formatPrice } from "@/lib/currency";
+import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 interface MenuItem {
   id: string;
   name: string;
@@ -24,6 +25,7 @@ interface MenuItem {
   currency: string;
 }
 const MenuManagement = () => {
+  const { restaurantId, loading: restaurantLoading } = useRestaurantContext();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,13 +40,16 @@ const MenuManagement = () => {
     currency: "USD"
   });
   useEffect(() => {
-    fetchMenuItems();
-    fetchSettings();
-  }, []);
-  const fetchSettings = async () => {
+    if (restaurantLoading) return;
+    if (!restaurantId) return;
+    fetchMenuItems(restaurantId);
+    fetchSettings(restaurantId);
+  }, [restaurantLoading, restaurantId]);
+
+  const fetchSettings = async (rid: string) => {
     const {
       data
-    } = await supabase.from("restaurant_settings").select("currency").single();
+    } = await supabase.from("restaurant_settings").select("currency").eq("restaurant_id", rid).maybeSingle();
     if (data) {
       setFormData(prev => ({
         ...prev,
@@ -52,7 +57,8 @@ const MenuManagement = () => {
       }));
     }
   };
-  const fetchMenuItems = async () => {
+
+  const fetchMenuItems = async (rid: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -64,6 +70,7 @@ const MenuManagement = () => {
         .from("menu_items")
         .select("*")
         .eq("staff_id", user.id)
+        .eq("restaurant_id", rid)
         .order("category", { ascending: true })
         .order("name", { ascending: true });
       
@@ -101,18 +108,20 @@ const MenuManagement = () => {
         if (error) throw error;
         toast.success("Menu item updated!");
       } else {
+        if (!restaurantId) throw new Error("Restaurant not selected");
         const {
           error
         } = await supabase.from("menu_items").insert([{
           ...itemData,
-          staff_id: user.id
+          staff_id: user.id,
+          restaurant_id: restaurantId
         }]);
         if (error) throw error;
         toast.success("Menu item added!");
       }
       setDialogOpen(false);
       resetForm();
-      fetchMenuItems();
+      if (restaurantId) fetchMenuItems(restaurantId);
     } catch (error: any) {
       toast.error(error.message || "Failed to save menu item");
     } finally {
@@ -127,7 +136,7 @@ const MenuManagement = () => {
       } = await supabase.from("menu_items").delete().eq("id", id);
       if (error) throw error;
       toast.success("Item deleted");
-      fetchMenuItems();
+      if (restaurantId) fetchMenuItems(restaurantId);
     } catch (error: any) {
       toast.error("Failed to delete item");
     }
