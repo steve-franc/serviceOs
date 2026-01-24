@@ -1,24 +1,10 @@
-export const CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
-  { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
-] as const;
+// Only Turkish Lira is supported
+export const TRY_CURRENCY = { code: 'TRY', symbol: '₺', name: 'Turkish Lira' } as const;
 
-export type CurrencyCode = typeof CURRENCIES[number]['code'];
+export type CurrencyCode = 'TRY';
 
-export const getCurrencySymbol = (code: string): string => {
-  const currency = CURRENCIES.find(c => c.code === code);
-  return currency?.symbol || '$';
-};
+export const getCurrencySymbol = (_code?: string): string => TRY_CURRENCY.symbol;
 
-export const formatPrice = (amount: number, currencyCode: string): string => {
-  const symbol = getCurrencySymbol(currencyCode);
-  return `${symbol}${amount.toFixed(2)}`;
+export const formatPrice = (amount: number, _currencyCode?: string): string => {
+  return `${TRY_CURRENCY.symbol}${amount.toFixed(2)}`;
 };

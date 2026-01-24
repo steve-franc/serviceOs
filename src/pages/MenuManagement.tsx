@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CURRENCIES, formatPrice } from "@/lib/currency";
+import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 interface MenuItem {
   id: string;
@@ -37,7 +37,7 @@ const MenuManagement = () => {
     per_unit_price: "",
     description: "",
     pricing_unit: "per piece",
-    currency: "USD"
+    currency: "TRY"
   });
   useEffect(() => {
     if (restaurantLoading) return;
@@ -150,7 +150,7 @@ const MenuManagement = () => {
       per_unit_price: item.per_unit_price?.toString() || "",
       description: item.description || "",
       pricing_unit: item.pricing_unit || "per piece",
-      currency: item.currency || "USD"
+      currency: "TRY"
     });
     setDialogOpen(true);
   };
@@ -162,7 +162,7 @@ const MenuManagement = () => {
       per_unit_price: "",
       description: "",
       pricing_unit: "per piece",
-      currency: "USD"
+      currency: "TRY"
     });
     setEditingItem(null);
   };
@@ -245,21 +245,10 @@ const MenuManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* Currency is always TRY, read-only */}
                   <div className="space-y-2">
-                    <Label htmlFor="currency">Currency *</Label>
-                    <Select value={formData.currency} onValueChange={value => setFormData({
-                    ...formData,
-                    currency: value
-                  })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CURRENCIES.map(curr => <SelectItem key={curr.code} value={curr.code}>
-                            {curr.symbol} {curr.name}
-                          </SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="currency">Currency</Label>
+                    <p className="text-sm text-muted-foreground border rounded-md p-2">₺ Turkish Lira (TRY)</p>
                   </div>
                 </div>
                 <div className="space-y-2">

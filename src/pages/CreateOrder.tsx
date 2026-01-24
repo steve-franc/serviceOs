@@ -44,24 +44,16 @@ const CreateOrder = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currency, setCurrency] = useState("USD");
+  const [currency] = useState("TRY");
   const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
   useEffect(() => {
     if (restaurantLoading) return;
     if (!restaurantId) return;
-    fetchSettings(restaurantId);
     fetchMenuItems(restaurantId);
   }, [restaurantLoading, restaurantId]);
 
-  const fetchSettings = async (rid: string) => {
-    const {
-      data
-    } = await supabase.from("restaurant_settings").select("currency").eq("restaurant_id", rid).maybeSingle();
-    if (data) {
-      setCurrency(data.currency);
-    }
-  };
+  // No need to fetch settings – currency is always TRY
 
   const fetchMenuItems = async (rid: string) => {
     const {
