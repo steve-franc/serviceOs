@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
+import { menuItemSchema, validateInput } from "@/lib/validations";
 interface MenuItem {
   id: string;
   name: string;
@@ -92,14 +93,47 @@ const MenuManagement = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
-      const itemData = {
+      
+      // Validate menu item data
+      const basePrice = parseFloat(formData.base_price);
+      const perUnitPrice = formData.per_unit_price ? parseFloat(formData.per_unit_price) : null;
+      
+      if (isNaN(basePrice) || basePrice <= 0) {
+        toast.error("Base price must be a positive number");
+        setLoading(false);
+        return;
+      }
+      
+      if (perUnitPrice !== null && (isNaN(perUnitPrice) || perUnitPrice <= 0)) {
+        toast.error("Per unit price must be a positive number");
+        setLoading(false);
+        return;
+      }
+      
+      const validation = validateInput(menuItemSchema, {
         name: formData.name,
         category: formData.category || null,
-        base_price: parseFloat(formData.base_price),
-        per_unit_price: formData.per_unit_price ? parseFloat(formData.per_unit_price) : null,
         description: formData.description || null,
+        base_price: basePrice,
+        per_unit_price: perUnitPrice,
         pricing_unit: formData.pricing_unit,
-        currency: formData.currency
+        currency: "TRY" as const,
+      });
+      
+      if (!validation.success) {
+        toast.error(validation.error);
+        setLoading(false);
+        return;
+      }
+      
+      const itemData = {
+        name: validation.data.name,
+        category: validation.data.category,
+        base_price: validation.data.base_price,
+        per_unit_price: validation.data.per_unit_price,
+        description: validation.data.description,
+        pricing_unit: validation.data.pricing_unit,
+        currency: validation.data.currency
       };
       if (editingItem) {
         const {
@@ -199,32 +233,62 @@ const MenuManagement = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Item Name *</Label>
-                  <Input id="name" value={formData.name} onChange={e => setFormData({
-                  ...formData,
-                  name: e.target.value
-                })} required />
+                  <Input 
+                    id="name" 
+                    value={formData.name} 
+                    onChange={e => setFormData({
+                      ...formData,
+                      name: e.target.value.slice(0, 200)
+                    })} 
+                    required 
+                    maxLength={200}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Input id="category" value={formData.category} onChange={e => setFormData({
-                  ...formData,
-                  category: e.target.value
-                })} placeholder="e.g., Mains, Drinks, Desserts" />
+                  <Input 
+                    id="category" 
+                    value={formData.category} 
+                    onChange={e => setFormData({
+                      ...formData,
+                      category: e.target.value.slice(0, 100)
+                    })} 
+                    placeholder="e.g., Mains, Drinks, Desserts" 
+                    maxLength={100}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="base_price">Base Price *</Label>
-                    <Input id="base_price" type="number" step="0.01" min="0" value={formData.base_price} onChange={e => setFormData({
-                    ...formData,
-                    base_price: e.target.value
-                  })} required />
+                    <Input 
+                      id="base_price" 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      max="999999.99"
+                      value={formData.base_price} 
+                      onChange={e => setFormData({
+                        ...formData,
+                        base_price: e.target.value
+                      })} 
+                      required 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="per_unit_price">Per Unit Price (Optional)</Label>
-                    <Input id="per_unit_price" type="number" step="0.01" min="0" value={formData.per_unit_price} onChange={e => setFormData({
-                    ...formData,
-                    per_unit_price: e.target.value
-                  })} placeholder="Add-on price" />
+                    <Input 
+                      id="per_unit_price" 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      max="999999.99"
+                      value={formData.per_unit_price} 
+                      onChange={e => setFormData({
+                        ...formData,
+                        per_unit_price: e.target.value
+                      })} 
+                      placeholder="Add-on price" 
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -253,10 +317,16 @@ const MenuManagement = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" value={formData.description} onChange={e => setFormData({
-                  ...formData,
-                  description: e.target.value
-                })} placeholder="Brief description of the item" />
+                  <Textarea 
+                    id="description" 
+                    value={formData.description} 
+                    onChange={e => setFormData({
+                      ...formData,
+                      description: e.target.value.slice(0, 1000)
+                    })} 
+                    placeholder="Brief description of the item" 
+                    maxLength={1000}
+                  />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading} className="flex-1">

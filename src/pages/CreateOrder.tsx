@@ -17,6 +17,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
+import { staffOrderSchema, validateInput } from "@/lib/validations";
 interface MenuItem {
   id: string;
   name: string;
@@ -131,6 +132,17 @@ const CreateOrder = () => {
 
     if (!restaurantId) {
       toast.error("Restaurant not selected");
+      return;
+    }
+    
+    // Validate order input
+    const validation = validateInput(staffOrderSchema, {
+      notes: notes || undefined,
+      paymentMethod,
+    });
+    
+    if (!validation.success) {
+      toast.error(validation.error);
       return;
     }
     setLoading(true);
@@ -286,7 +298,7 @@ const CreateOrder = () => {
 
         <div>
           <Label htmlFor="notes">Notes (Optional)</Label>
-          <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Special instructions..." className="mt-2" rows={2} />
+          <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value.slice(0, 1000))} placeholder="Special instructions..." className="mt-2" rows={2} maxLength={1000} />
         </div>
       </div>
 

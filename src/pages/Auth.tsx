@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { UtensilsCrossed } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { signInSchema, signUpSchema, registerRestaurantSchema, passwordResetSchema, validateInput } from "@/lib/validations";
 
 type Restaurant = { id: string; name: string };
 const Auth = () => {
@@ -49,13 +50,21 @@ const Auth = () => {
   }, []);
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input
+    const validation = validateInput(signInSchema, { email, password });
+    if (!validation.success) {
+      toast.error(validation.error);
+      return;
+    }
+    
     setLoading(true);
     try {
       const {
         error
       } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: validation.data.email,
+        password: validation.data.password
       });
       if (error) throw error;
       toast.success("Signed in successfully!");
@@ -69,6 +78,18 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate input
+    const validation = validateInput(signUpSchema, { 
+      fullName, 
+      email, 
+      password, 
+      joinRestaurantId: joinRestaurantId || undefined 
+    });
+    if (!validation.success) {
+      toast.error(validation.error);
+      return;
+    }
+
     if (!joinRestaurantId) {
       toast.error("Please select your restaurant");
       return;
@@ -79,12 +100,12 @@ const Auth = () => {
       const {
         error
       } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validation.data.email,
+        password: validation.data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName,
+            full_name: validation.data.fullName,
             onboarding_mode: "join",
             join_restaurant_id: joinRestaurantId
           }
@@ -102,22 +123,29 @@ const Auth = () => {
   const handleRegisterRestaurant = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newRestaurantName.trim()) {
-      toast.error("Please enter your restaurant name");
+    // Validate input
+    const validation = validateInput(registerRestaurantSchema, {
+      fullName,
+      email,
+      password,
+      restaurantName: newRestaurantName,
+    });
+    if (!validation.success) {
+      toast.error(validation.error);
       return;
     }
 
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validation.data.email,
+        password: validation.data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName,
+            full_name: validation.data.fullName,
             onboarding_mode: "create",
-            create_restaurant_name: newRestaurantName.trim(),
+            create_restaurant_name: validation.data.restaurantName,
           },
         },
       });
@@ -131,11 +159,19 @@ const Auth = () => {
   };
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input
+    const validation = validateInput(passwordResetSchema, { email: resetEmail });
+    if (!validation.success) {
+      toast.error(validation.error);
+      return;
+    }
+    
     setLoading(true);
     try {
       const {
         error
-      } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      } = await supabase.auth.resetPasswordForEmail(validation.data.email, {
         redirectTo: `${window.location.origin}/auth`
       });
       if (error) throw error;
@@ -170,7 +206,7 @@ const Auth = () => {
               <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">Email</Label>
-                  <Input id="reset-email" type="email" placeholder="your@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
+                  <Input id="reset-email" type="email" placeholder="your@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value.slice(0, 255))} required maxLength={255} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" className="flex-1" disabled={loading}>
@@ -192,11 +228,11 @@ const Auth = () => {
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
-                    <Input id="signin-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value)} required />
+                    <Input id="signin-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Password</Label>
-                    <Input id="signin-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                    <Input id="signin-password" type="password" value={password} onChange={e => setPassword(e.target.value.slice(0, 128))} required maxLength={128} />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Signing in..." : "Sign In"}
@@ -216,13 +252,14 @@ const Auth = () => {
                       type="text" 
                       placeholder="John Doe" 
                       value={fullName} 
-                      onChange={e => setFullName(e.target.value)} 
+                      onChange={e => setFullName(e.target.value.slice(0, 100))} 
                       required 
+                      maxLength={100}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
-                    <Input id="signup-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value)} required />
+                    <Input id="signup-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
                   </div>
                    <div className="space-y-2">
                      <Label>Restaurant</Label>
@@ -241,7 +278,7 @@ const Auth = () => {
                    </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+                    <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} />
                   </div>
                    <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Creating account..." : "Sign Up"}
@@ -261,8 +298,9 @@ const Auth = () => {
                        type="text"
                        placeholder="Jane Doe"
                        value={fullName}
-                       onChange={e => setFullName(e.target.value)}
+                       onChange={e => setFullName(e.target.value.slice(0, 100))}
                        required
+                       maxLength={100}
                      />
                    </div>
                    <div className="space-y-2">
@@ -272,8 +310,9 @@ const Auth = () => {
                        type="text"
                        placeholder="My Restaurant"
                        value={newRestaurantName}
-                       onChange={e => setNewRestaurantName(e.target.value)}
+                       onChange={e => setNewRestaurantName(e.target.value.slice(0, 200))}
                        required
+                       maxLength={200}
                      />
                    </div>
                    <div className="space-y-2">
@@ -283,8 +322,9 @@ const Auth = () => {
                        type="email"
                        placeholder="owner@restaurant.com"
                        value={email}
-                       onChange={e => setEmail(e.target.value)}
+                       onChange={e => setEmail(e.target.value.slice(0, 255))}
                        required
+                       maxLength={255}
                      />
                    </div>
                    <div className="space-y-2">
@@ -293,9 +333,10 @@ const Auth = () => {
                        id="restaurant-password"
                        type="password"
                        value={password}
-                       onChange={e => setPassword(e.target.value)}
+                       onChange={e => setPassword(e.target.value.slice(0, 128))}
                        required
                        minLength={6}
+                       maxLength={128}
                      />
                    </div>
                    <Button type="submit" disabled={loading} className="w-full">

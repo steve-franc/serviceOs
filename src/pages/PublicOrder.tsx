@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatPrice, getCurrencySymbol } from "@/lib/currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
-
+import { publicOrderSchema, validateInput } from "@/lib/validations";
 interface MenuItem {
   id: string;
   name: string;
@@ -148,10 +148,20 @@ const PublicOrder = () => {
       return;
     }
 
-    if (!customerName || !customerEmail) {
-      toast.error("Please provide your name and email");
+    // Validate all input fields
+    const validation = validateInput(publicOrderSchema, {
+      customerName,
+      customerEmail,
+      notes: notes || undefined,
+      paymentMethod,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error);
       return;
     }
+
+    const validatedData = validation.data;
 
     setLoading(true);
     try {
@@ -370,10 +380,11 @@ const PublicOrder = () => {
                     <Input
                       id="customerName"
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      onChange={(e) => setCustomerName(e.target.value.slice(0, 100))}
                       placeholder="John Doe"
                       className="mt-2"
                       required
+                      maxLength={100}
                     />
                   </div>
 
@@ -383,10 +394,11 @@ const PublicOrder = () => {
                       id="customerEmail"
                       type="email"
                       value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      onChange={(e) => setCustomerEmail(e.target.value.slice(0, 255))}
                       placeholder="john@example.com"
                       className="mt-2"
                       required
+                      maxLength={255}
                     />
                   </div>
 
@@ -413,10 +425,11 @@ const PublicOrder = () => {
                     <Textarea
                       id="notes"
                       value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
+                      onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
                       placeholder="Any special instructions..."
                       className="mt-2"
                       rows={2}
+                      maxLength={1000}
                     />
                   </div>
                 </div>
