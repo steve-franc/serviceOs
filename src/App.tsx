@@ -6,8 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import Home from "./pages/Home";
-import Restaurant from "./pages/Restaurant";
 import MenuManagement from "./pages/MenuManagement";
 import CreateOrder from "./pages/CreateOrder";
 import OrderHistory from "./pages/OrderHistory";
@@ -52,22 +50,6 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/restaurant/:id"
-            element={
-              <ProtectedRoute>
-                <Restaurant />
               </ProtectedRoute>
             }
           />

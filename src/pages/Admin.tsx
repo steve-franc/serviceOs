@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Shield, Users, ShoppingBag, TrendingUp, Calendar } from "lucide-react";
+import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -185,8 +185,23 @@ const Admin = () => {
     return <Navigate to="/" replace />;
   }
   const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
+  const pendingStaff = staff.filter(s => !s.role);
   return <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
+        {pendingStaff.length > 0 && (
+          <Card className="border-yellow-500/50 bg-yellow-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-yellow-700">
+                <AlertCircle className="h-5 w-5" />
+                {pendingStaff.length} staff {pendingStaff.length === 1 ? 'member needs' : 'members need'} a role assigned
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Go to the Staff Management tab to assign roles.
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
             <Shield className="h-6 w-6 text-primary" />
@@ -225,7 +240,7 @@ const Admin = () => {
                 Total Revenue
               </CardDescription>
               <CardTitle className="text-3xl">
-                {orders.length > 0 ? formatPrice(totalRevenue, orders[0]?.currency || 'USD') : '$0.00'}
+                {orders.length > 0 ? formatPrice(totalRevenue) : '₺0.00'}
               </CardTitle>
             </CardHeader>
           </Card>
