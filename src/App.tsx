@@ -12,6 +12,7 @@ import OrderHistory from "./pages/OrderHistory";
 import Receipt from "./pages/Receipt";
 import Admin from "./pages/Admin";
 import PublicOrder from "./pages/PublicOrder";
+import Inventory from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
 import { NotificationSound } from "./components/NotificationSound";
 
@@ -90,6 +91,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Admin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <ProtectedRoute>
+                <Inventory />
               </ProtectedRoute>
             }
           />

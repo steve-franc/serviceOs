@@ -55,6 +55,50 @@ export type Database = {
           },
         ]
       }
+      inventory: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          quantity: number | null
+          restaurant_id: string
+          status: Database["public"]["Enums"]["inventory_status"]
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          quantity?: number | null
+          restaurant_id: string
+          status?: Database["public"]["Enums"]["inventory_status"]
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          quantity?: number | null
+          restaurant_id?: string
+          status?: Database["public"]["Enums"]["inventory_status"]
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           base_price: number
@@ -391,6 +435,7 @@ export type Database = {
     }
     Enums: {
       app_role: "server" | "ops" | "counter" | "manager"
+      inventory_status: "available" | "almost_finished" | "finished"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -519,6 +564,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["server", "ops", "counter", "manager"],
+      inventory_status: ["available", "almost_finished", "finished"],
     },
   },
 } as const

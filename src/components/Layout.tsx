@@ -1,84 +1,41 @@
 import { ReactNode } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, UtensilsCrossed, ShoppingCart, Menu, History, Shield } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useLocation } from "react-router-dom";
+
 interface LayoutProps {
   children: ReactNode;
 }
-const Layout = ({
-  children
-}: LayoutProps) => {
-  const navigate = useNavigate();
+
+const Layout = ({ children }: LayoutProps) => {
+  const { hasRole } = useUserRole();
   const location = useLocation();
-  const {
-    isManager,
-    hasRole
-  } = useUserRole();
-  const handleSignOut = async () => {
-    const {
-      error
-    } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Failed to sign out");
-    } else {
-      toast.success("Signed out successfully");
-      navigate("/auth");
-    }
-  };
-  const getCurrentTab = () => {
-    if (location.pathname === "/order/create") return "create-order";
-    if (location.pathname === "/menu") return "menu";
-    if (location.pathname === "/orders") return "orders";
-    if (location.pathname === "/admin") return "admin";
-    return "dashboard";
-  };
-  const handleTabChange = (value: string) => {
-    if (value === "create-order") navigate("/order/create");else if (value === "menu") navigate("/menu");else if (value === "orders") navigate("/orders");else if (value === "admin") navigate("/admin");else navigate("/");
-  };
-  const showNavigation =
+
+  const showSidebar =
     hasRole && !["/auth", "/"].includes(location.pathname) && !location.pathname.startsWith("/receipt/");
-  return <div className="min-h-screen bg-background">
-      <header className="border-b bg-card shadow-[var(--shadow-soft)]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold">Tablix</h1>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+
+  if (!showSidebar) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container mx-auto px-4 py-8">{children}</main>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 border-b flex items-center px-4 bg-card">
+            <SidebarTrigger />
+          </header>
+          <main className="flex-1 p-6 overflow-auto">{children}</main>
         </div>
-        {showNavigation && <div className="container mx-auto px-4 pb-4">
-            <Tabs value={getCurrentTab()} onValueChange={handleTabChange}>
-              <TabsList className={`grid w-full max-w-2xl mx-auto ${isManager ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                <TabsTrigger value="create-order" className="flex items-center gap-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  <span className="hidden sm:inline">Create Order</span>
-                </TabsTrigger>
-                {isManager && <TabsTrigger value="menu" className="flex items-center gap-2">
-                    <Menu className="h-4 w-4" />
-                    <span className="hidden sm:inline">Menu</span>
-                  </TabsTrigger>}
-                <TabsTrigger value="orders" className="flex items-center gap-2">
-                  <History className="h-4 w-4" />
-                  <span className="hidden sm:inline">Orders</span>
-                </TabsTrigger>
-                {isManager && <TabsTrigger value="admin" className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    <span className="hidden sm:inline">Admin</span>
-                  </TabsTrigger>}
-              </TabsList>
-            </Tabs>
-          </div>}
-      </header>
-      <main className="container mx-auto px-4 py-8">{children}</main>
-    </div>;
+      </div>
+    </SidebarProvider>
+  );
 };
+
 export default Layout;

@@ -17,7 +17,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
-import { staffOrderSchema, validateInput } from "@/lib/validations";
+import { staffOrderSchema, validateInput, PAYMENT_METHODS } from "@/lib/validations";
+
 interface MenuItem {
   id: string;
   name: string;
@@ -280,19 +281,15 @@ const CreateOrder = () => {
       <div className="space-y-3">
         <div>
           <Label>Payment Method</Label>
-          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Cash" id="cash" />
-              <Label htmlFor="cash" className="font-normal">
-                Cash
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Card" id="card" />
-              <Label htmlFor="card" className="font-normal">
-                Card
-              </Label>
-            </div>
+          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2 grid grid-cols-2 gap-2">
+            {PAYMENT_METHODS.map((method) => (
+              <div key={method} className="flex items-center space-x-2">
+                <RadioGroupItem value={method} id={method.toLowerCase()} />
+                <Label htmlFor={method.toLowerCase()} className="font-normal">
+                  {method}
+                </Label>
+              </div>
+            ))}
           </RadioGroup>
         </div>
 

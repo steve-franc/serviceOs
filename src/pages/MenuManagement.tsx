@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { menuItemSchema, validateInput } from "@/lib/validations";
@@ -173,6 +174,20 @@ const MenuManagement = () => {
       if (restaurantId) fetchMenuItems(restaurantId);
     } catch (error: any) {
       toast.error("Failed to delete item");
+    }
+  };
+
+  const handleToggleAvailability = async (item: MenuItem) => {
+    try {
+      const { error } = await supabase
+        .from("menu_items")
+        .update({ is_available: !item.is_available })
+        .eq("id", item.id);
+      if (error) throw error;
+      toast.success(`${item.name} is now ${!item.is_available ? 'available' : 'unavailable'}`);
+      if (restaurantId) fetchMenuItems(restaurantId);
+    } catch (error: any) {
+      toast.error("Failed to update availability");
     }
   };
   const handleEdit = (item: MenuItem) => {
@@ -372,13 +387,20 @@ const MenuManagement = () => {
                               {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
                                   +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                 </Badge>}
-                              {item.is_available && <Badge variant="outline" className="text-xs w-fit">
-                                  Available
-                                </Badge>}
                             </div>
                           </div>
                         </div>
                         {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
+                        <div className="flex items-center gap-2 mt-3">
+                          <Switch
+                            checked={item.is_available}
+                            onCheckedChange={() => handleToggleAvailability(item)}
+                            id={`available-${item.id}`}
+                          />
+                          <Label htmlFor={`available-${item.id}`} className="text-sm font-normal">
+                            {item.is_available ? 'Available' : 'Unavailable'}
+                          </Label>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex gap-2">

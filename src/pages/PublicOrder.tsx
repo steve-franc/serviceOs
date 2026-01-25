@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatPrice, getCurrencySymbol } from "@/lib/currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
-import { publicOrderSchema, validateInput } from "@/lib/validations";
+import { publicOrderSchema, validateInput, PAYMENT_METHODS } from "@/lib/validations";
 interface MenuItem {
   id: string;
   name: string;
@@ -404,19 +404,15 @@ const PublicOrder = () => {
 
                   <div>
                     <Label>Payment Method</Label>
-                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Cash" id="cash" />
-                        <Label htmlFor="cash" className="font-normal">
-                          Cash
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Card" id="card" />
-                        <Label htmlFor="card" className="font-normal">
-                          Card
-                        </Label>
-                      </div>
+                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2 grid grid-cols-2 gap-2">
+                      {PAYMENT_METHODS.map((method) => (
+                        <div key={method} className="flex items-center space-x-2">
+                          <RadioGroupItem value={method} id={`public-${method.toLowerCase()}`} />
+                          <Label htmlFor={`public-${method.toLowerCase()}`} className="font-normal">
+                            {method}
+                          </Label>
+                        </div>
+                      ))}
                     </RadioGroup>
                   </div>
 
