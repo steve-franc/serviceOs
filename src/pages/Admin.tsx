@@ -91,14 +91,33 @@ const Admin = () => {
     const start = startOfDay(today);
     const end = endOfDay(today);
     
-    const { data } = await supabase
+    const { data: ordersData } = await supabase
       .from("orders")
-      .select(`*, profiles!orders_staff_id_fkey(full_name)`)
+      .select("*")
       .eq("restaurant_id", restaurantId)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString());
     
-    setTodayOrders(data as any || []);
+    if (!ordersData || ordersData.length === 0) {
+      setTodayOrders([]);
+      return;
+    }
+
+    // Fetch profiles separately
+    const staffIds = [...new Set(ordersData.map(o => o.staff_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", staffIds);
+
+    const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+    
+    const ordersWithProfiles = ordersData.map(order => ({
+      ...order,
+      profiles: profilesMap.get(order.staff_id) || { full_name: "Unknown" }
+    }));
+    
+    setTodayOrders(ordersWithProfiles as any);
   };
   const fetchStaff = async () => {
     if (!restaurantId) {
@@ -146,34 +165,73 @@ const Admin = () => {
     if (!restaurantId) return;
     
     const startDate = subDays(new Date(), parseInt(dateFilter));
-    const { data } = await supabase
+    const { data: ordersData } = await supabase
       .from("orders")
-      .select(`*, profiles!orders_staff_id_fkey(full_name)`)
+      .select("*")
       .eq("restaurant_id", restaurantId)
       .gte("created_at", startDate.toISOString())
       .order("created_at", { ascending: false });
     
-    setOrders(data as any || []);
+    if (!ordersData || ordersData.length === 0) {
+      setOrders([]);
+      return;
+    }
+
+    // Fetch profiles separately
+    const staffIds = [...new Set(ordersData.map(o => o.staff_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", staffIds);
+
+    const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+    
+    const ordersWithProfiles = ordersData.map(order => ({
+      ...order,
+      profiles: profilesMap.get(order.staff_id) || { full_name: "Unknown" }
+    }));
+    
+    setOrders(ordersWithProfiles as any);
   };
   const fetchReports = async () => {
+    if (!restaurantId) return;
+    
     const startDate = subDays(new Date(), parseInt(dateFilter));
-    const {
-      data: reportsData
-    } = await supabase.from("daily_reports").select(`
-        *,
-        profiles!daily_reports_staff_id_fkey(full_name)
-      `).gte("report_date", format(startDate, "yyyy-MM-dd")).order("report_date", {
-      ascending: false
-    });
+    const { data: reportsData } = await supabase
+      .from("daily_reports")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .gte("report_date", format(startDate, "yyyy-MM-dd"))
+      .order("report_date", { ascending: false });
+
+    if (!reportsData || reportsData.length === 0) {
+      setReports([]);
+      return;
+    }
+
+    // Fetch profiles separately
+    const staffIds = [...new Set(reportsData.map(r => r.staff_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", staffIds);
+
+    const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
     // Fetch the first order from each report date to get currency
-    const reportsWithCurrency = await Promise.all((reportsData || []).map(async report => {
-      const {
-        data: firstOrder
-      } = await supabase.from("orders").select("currency").gte("created_at", report.report_date).lt("created_at", format(new Date(new Date(report.report_date).getTime() + 86400000), "yyyy-MM-dd")).limit(1).maybeSingle();
+    const reportsWithCurrency = await Promise.all(reportsData.map(async report => {
+      const { data: firstOrder } = await supabase
+        .from("orders")
+        .select("currency")
+        .eq("restaurant_id", restaurantId)
+        .gte("created_at", report.report_date)
+        .lt("created_at", format(new Date(new Date(report.report_date).getTime() + 86400000), "yyyy-MM-dd"))
+        .limit(1)
+        .maybeSingle();
       return {
         ...report,
-        currency: firstOrder?.currency || 'USD'
+        profiles: profilesMap.get(report.staff_id) || { full_name: "Unknown" },
+        currency: firstOrder?.currency || 'TRY'
       };
     }));
     setReports(reportsWithCurrency as any);
