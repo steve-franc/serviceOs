@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +38,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isManager } = useUserRole();
+  const { restaurantName } = useRestaurantContext();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -57,7 +59,7 @@ export function AppSidebar() {
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
             <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
           </div>
-          {!collapsed && <h1 className="text-xl font-bold">Tablix</h1>}
+          {!collapsed && <h1 className="text-xl font-bold truncate">{restaurantName || "Tablix"}</h1>}
         </div>
       </SidebarHeader>
 
