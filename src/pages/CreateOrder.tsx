@@ -312,7 +312,7 @@ const CreateOrder = () => {
                       <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Store className="h-5 w-5 text-primary" />
+                            <Store className="h-5 w-5 text-[#4d0000]" />
                             <div className="text-left">
                               <CardTitle className="text-lg">{staffName}</CardTitle>
                               <CardDescription className="text-sm">
