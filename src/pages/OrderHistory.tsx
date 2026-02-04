@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer } from "lucide-react";
 import { format } from "date-fns";
+import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -267,7 +268,7 @@ const OrderHistory = () => {
           </div>
           <div className="text-right space-y-2">
             <p className="text-2xl font-bold text-primary">
-              ${order.total.toFixed(2)}
+              {formatPrice(order.total)}
             </p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => navigate(`/receipt/${order.id}`)}>
@@ -291,7 +292,7 @@ const OrderHistory = () => {
             <h2 className="text-3xl font-bold">Order History</h2>
             <p className="text-muted-foreground">Manage and track all orders</p>
           </div>
-          <Button onClick={handleEndDay} disabled={generatingReport} size="lg" className="gap-2 bg-red-900 hover:bg-red-800">
+          <Button onClick={handleEndDay} disabled={generatingReport} size="lg" className="gap-2 bg-destructive hover:bg-destructive/90">
             <TrendingUp className="h-4 w-4" />
             {generatingReport ? "Generating..." : "End Day"}
           </Button>
@@ -392,7 +393,7 @@ const OrderHistory = () => {
                   <CardHeader className="pb-3">
                     <CardDescription>Total Revenue</CardDescription>
                     <CardTitle className="text-3xl text-primary">
-                      ${dailyReport.total_revenue.toFixed(2)}
+                      {formatPrice(dailyReport.total_revenue)}
                     </CardTitle>
                   </CardHeader>
                 </Card>
@@ -411,7 +412,7 @@ const OrderHistory = () => {
                         </p>
                       </div>
                       <p className="text-lg font-bold text-primary">
-                        ${data.total.toFixed(2)}
+                        {formatPrice(data.total)}
                       </p>
                     </div>)}
                 </div>
@@ -435,20 +436,20 @@ const OrderHistory = () => {
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div className="space-y-2">
-                            {order.items.map(item => <div key={item.id} className="flex justify-between text-sm">
+                          {order.items.map(item => <div key={item.id} className="flex justify-between text-sm">
                                 <div className="flex-1">
                                   <p className="font-medium">{item.menu_item_name}</p>
                                   <p className="text-muted-foreground">
-                                    {item.quantity} × ${item.price_at_time.toFixed(2)}
+                                    {item.quantity} × {formatPrice(item.price_at_time)}
                                   </p>
                                 </div>
-                                <p className="font-medium">${item.subtotal.toFixed(2)}</p>
+                                <p className="font-medium">{formatPrice(item.subtotal)}</p>
                               </div>)}
                           </div>
                           <Separator />
                           <div className="flex justify-between font-bold">
                             <span>Total</span>
-                            <span className="text-primary">${order.total.toFixed(2)}</span>
+                            <span className="text-primary">{formatPrice(order.total)}</span>
                           </div>
                           {order.notes && <div className="text-sm">
                               <p className="text-muted-foreground">Notes:</p>
