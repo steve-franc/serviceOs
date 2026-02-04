@@ -239,7 +239,7 @@ export type Database = {
           id?: string
           is_public_order?: boolean
           notes?: string | null
-          order_number?: number
+          order_number: number
           payment_method: string
           restaurant_id?: string | null
           staff_id: string
@@ -410,6 +410,10 @@ export type Database = {
     }
     Functions: {
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
+      get_next_order_number: {
+        Args: { _restaurant_id: string }
+        Returns: number
+      }
       has_role:
         | {
             Args: {
