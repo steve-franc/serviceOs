@@ -6,13 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer } from "lucide-react";
+import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+
+interface DailyReportInfo {
+  id: string;
+  report_date: string;
+  total_orders: number;
+  total_revenue: number;
+}
 interface Order {
   id: string;
   order_number: number;
@@ -44,6 +51,7 @@ const OrderHistory = () => {
   const navigate = useNavigate();
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
+  const [dailyReports, setDailyReports] = useState<DailyReportInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
@@ -51,9 +59,11 @@ const OrderHistory = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [lastEndDayDate, setLastEndDayDate] = useState<string | null>(null);
+  
   useEffect(() => {
     fetchOrders();
   }, []);
+  
   const fetchOrders = async () => {
     try {
       const {
@@ -63,12 +73,17 @@ const OrderHistory = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get the most recent daily report to find last end day
+      // Get all daily reports to find periods
       const {
-        data: lastReport
-      } = await supabase.from("daily_reports").select("report_date").eq("staff_id", user.id).order("report_date", {
+        data: reportsData
+      } = await supabase.from("daily_reports").select("id, report_date, total_orders, total_revenue").eq("staff_id", user.id).order("report_date", {
         ascending: false
-      }).limit(1).maybeSingle();
+      });
+      
+      setDailyReports(reportsData || []);
+      
+      const lastReport = reportsData?.[0];
+      
       let cutoffDate: Date;
       if (lastReport) {
         // Use the day after the last report as cutoff (start of next day)
@@ -340,8 +355,50 @@ const OrderHistory = () => {
                   <CardContent className="py-12 text-center">
                     <p className="text-muted-foreground">No archived orders</p>
                   </CardContent>
-                </Card> : <div className="space-y-4">
-                  {archivedOrders.map(renderOrderCard)}
+                </Card> : <div className="space-y-6">
+                  {dailyReports.map((report, index) => {
+                    // Find orders that belong to this period (between this report and the previous one)
+                    const reportDate = new Date(report.report_date);
+                    reportDate.setDate(reportDate.getDate() + 1);
+                    reportDate.setHours(0, 0, 0, 0);
+                    
+                    const prevReport = dailyReports[index + 1];
+                    const prevCutoff = prevReport 
+                      ? (() => {
+                          const d = new Date(prevReport.report_date);
+                          d.setDate(d.getDate() + 1);
+                          d.setHours(0, 0, 0, 0);
+                          return d;
+                        })()
+                      : new Date(0);
+                    
+                    const periodOrders = archivedOrders.filter(order => {
+                      const orderDate = new Date(order.created_at);
+                      return orderDate < reportDate && orderDate >= prevCutoff;
+                    });
+                    
+                    if (periodOrders.length === 0) return null;
+                    
+                    return (
+                      <div key={report.id} className="space-y-3">
+                        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg">
+                          <Clock className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1">
+                            <p className="font-semibold">
+                              Day ended: {format(new Date(report.report_date), "PPP")}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {report.total_orders} orders • {formatPrice(report.total_revenue)} total
+                            </p>
+                          </div>
+                          <Badge variant="secondary">{periodOrders.length} orders</Badge>
+                        </div>
+                        <div className="space-y-4 pl-4 border-l-2 border-muted">
+                          {periodOrders.map(renderOrderCard)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>}
             </TabsContent>
           </Tabs>}

@@ -15,6 +15,7 @@ import PublicOrder from "./pages/PublicOrder";
 import Inventory from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
 import { NotificationSound } from "./components/NotificationSound";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <NotificationSound />
         <Routes>
           <Route path="/auth" element={<Auth />} />
