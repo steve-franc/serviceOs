@@ -8,21 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { menuItemSchema, validateInput } from "@/lib/validations";
-import VariationsManager from "@/components/menu/VariationsManager";
 
-interface Variation {
-  id: string;
-  name: string;
-  price_adjustment: number;
-  is_available: boolean;
-}
 interface MenuItem {
   id: string;
   name: string;
@@ -33,7 +26,6 @@ interface MenuItem {
   is_available: boolean;
   pricing_unit: string;
   currency: string;
-  variations?: Variation[];
 }
 const MenuManagement = () => {
   const { restaurantId, loading: restaurantLoading } = useRestaurantContext();
@@ -41,7 +33,6 @@ const MenuManagement = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -83,22 +74,7 @@ const MenuManagement = () => {
         .order("name", { ascending: true });
       
       if (error) throw error;
-      
-      // Fetch variations for all items
-      const itemIds = data?.map(i => i.id) || [];
-      const { data: variationsData } = await supabase
-        .from("menu_item_variations")
-        .select("*")
-        .in("menu_item_id", itemIds)
-        .order("name");
-      
-      // Attach variations to items
-      const itemsWithVariations = (data || []).map(item => ({
-        ...item,
-        variations: variationsData?.filter(v => v.menu_item_id === item.id) || []
-      }));
-      
-      setMenuItems(itemsWithVariations);
+      setMenuItems(data || []);
     } catch (error: any) {
       toast.error("Failed to load menu items");
     } finally {
@@ -408,11 +384,6 @@ const MenuManagement = () => {
                               {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
                                   +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                 </Badge>}
-                              {item.variations && item.variations.length > 0 && (
-                                <Badge variant="outline" className="text-xs w-fit">
-                                  {item.variations.length} variation{item.variations.length > 1 ? 's' : ''}
-                                </Badge>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -428,37 +399,16 @@ const MenuManagement = () => {
                           </Label>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-3">
+                      <CardContent>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1">
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                            className="flex-1"
-                          >
-                            {expandedItem === item.id ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                            Variations
-                          </Button>
                           <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                        {expandedItem === item.id && (
-                          <div className="pt-3 border-t">
-                            <VariationsManager
-                              menuItemId={item.id}
-                              menuItemName={item.name}
-                              basePrice={item.base_price}
-                              currency={item.currency}
-                              variations={item.variations || []}
-                              onVariationsChange={() => restaurantId && fetchMenuItems(restaurantId)}
-                            />
-                          </div>
-                        )}
                       </CardContent>
                     </Card>)}
                 </div>

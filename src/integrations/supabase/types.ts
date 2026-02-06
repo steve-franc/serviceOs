@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          restaurant_id: string
+          staff_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          restaurant_id: string
+          staff_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          restaurant_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_expenses_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_reports: {
         Row: {
           created_at: string | null
@@ -95,41 +133,6 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      menu_item_variations: {
-        Row: {
-          created_at: string
-          id: string
-          is_available: boolean
-          menu_item_id: string
-          name: string
-          price_adjustment: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_available?: boolean
-          menu_item_id: string
-          name: string
-          price_adjustment?: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_available?: boolean
-          menu_item_id?: string
-          name?: string
-          price_adjustment?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "menu_item_variations_menu_item_id_fkey"
-            columns: ["menu_item_id"]
-            isOneToOne: false
-            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
         ]

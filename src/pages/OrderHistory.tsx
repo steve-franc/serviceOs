@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import ExpenseManager from "@/components/expenses/ExpenseManager";
 
 interface DailyReportInfo {
   id: string;
@@ -312,6 +313,8 @@ const OrderHistory = () => {
             {generatingReport ? "Generating..." : "End Day"}
           </Button>
         </div>
+
+        <ExpenseManager />
 
         {loading && <p className="text-center text-muted-foreground">Loading orders...</p>}
 
