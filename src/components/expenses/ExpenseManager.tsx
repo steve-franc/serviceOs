@@ -54,27 +54,17 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
     if (!restaurantId) return;
     
     try {
-      // Get today's start for filtering current day expenses
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      // Get last daily report to find cutoff
+      // Get last daily report to find cutoff using created_at timestamp
       const { data: lastReport } = await supabase
         .from("daily_reports")
-        .select("report_date")
+        .select("created_at")
         .eq("restaurant_id", restaurantId)
-        .order("report_date", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       
-      let cutoffDate: Date;
-      if (lastReport) {
-        cutoffDate = new Date(lastReport.report_date);
-        cutoffDate.setDate(cutoffDate.getDate() + 1);
-        cutoffDate.setHours(0, 0, 0, 0);
-      } else {
-        cutoffDate = new Date(0);
-      }
+      // Use the exact timestamp of the last report as cutoff
+      const cutoffDate = lastReport ? new Date(lastReport.created_at) : new Date(0);
 
       const { data, error } = await supabase
         .from("daily_expenses")

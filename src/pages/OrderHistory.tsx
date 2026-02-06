@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock } from "lucide-react";
+import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +20,7 @@ interface DailyReportInfo {
   report_date: string;
   total_orders: number;
   total_revenue: number;
+  created_at: string;
 }
 interface Order {
   id: string;
@@ -74,10 +75,10 @@ const OrderHistory = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get all daily reports to find periods
+      // Get all daily reports to find periods - use created_at for accurate timestamps
       const {
         data: reportsData
-      } = await supabase.from("daily_reports").select("id, report_date, total_orders, total_revenue").eq("staff_id", user.id).order("report_date", {
+      } = await supabase.from("daily_reports").select("id, report_date, total_orders, total_revenue, created_at").eq("staff_id", user.id).order("created_at", {
         ascending: false
       });
       
@@ -87,11 +88,9 @@ const OrderHistory = () => {
       
       let cutoffDate: Date;
       if (lastReport) {
-        // Use the day after the last report as cutoff (start of next day)
-        cutoffDate = new Date(lastReport.report_date);
-        cutoffDate.setDate(cutoffDate.getDate() + 1);
-        cutoffDate.setHours(0, 0, 0, 0);
-        setLastEndDayDate(lastReport.report_date);
+        // Use the exact timestamp of the last report as cutoff
+        cutoffDate = new Date(lastReport.created_at);
+        setLastEndDayDate(lastReport.created_at);
       } else {
         // If no reports exist, show all orders as recent
         cutoffDate = new Date(0); // Beginning of time
@@ -174,20 +173,15 @@ const OrderHistory = () => {
 
       const restaurantId = membership.restaurant_id;
 
-      // Get the most recent daily report to find last end day
+      // Get the most recent daily report to find last end day using created_at timestamp
       const {
         data: lastReport
-      } = await supabase.from("daily_reports").select("report_date").eq("staff_id", user.id).eq("restaurant_id", restaurantId).order("report_date", {
+      } = await supabase.from("daily_reports").select("created_at").eq("staff_id", user.id).eq("restaurant_id", restaurantId).order("created_at", {
         ascending: false
       }).limit(1).maybeSingle();
-      let cutoffDate: Date;
-      if (lastReport) {
-        cutoffDate = new Date(lastReport.report_date);
-        cutoffDate.setDate(cutoffDate.getDate() + 1);
-        cutoffDate.setHours(0, 0, 0, 0);
-      } else {
-        cutoffDate = new Date(0);
-      }
+      
+      // Use the exact timestamp of the last report as cutoff
+      const cutoffDate = lastReport ? new Date(lastReport.created_at) : new Date(0);
       const today = format(new Date(), "yyyy-MM-dd");
 
       // Fetch all orders since last end day for this restaurant
@@ -235,10 +229,10 @@ const OrderHistory = () => {
         paymentMethods[order.payment_method].total += Number(order.total);
       });
 
-      // Save daily report
+      // Save daily report - use insert (not upsert) to allow multiple reports per day
       const {
         error: reportError
-      } = await supabase.from("daily_reports").upsert({
+      } = await supabase.from("daily_reports").insert({
         staff_id: user.id,
         restaurant_id: restaurantId,
         report_date: today,
@@ -314,6 +308,26 @@ const OrderHistory = () => {
           </Button>
         </div>
 
+        {/* Today's Revenue Card */}
+        {!loading && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Current Period Revenue</CardTitle>
+                </div>
+                <p className="text-3xl font-bold text-primary">
+                  {formatPrice(recentOrders.reduce((sum, order) => sum + Number(order.total), 0))}
+                </p>
+              </div>
+              <CardDescription>
+                {recentOrders.length} order{recentOrders.length !== 1 ? 's' : ''} since {lastEndDayDate ? format(new Date(lastEndDayDate), "PP p") : "start"}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
         <ExpenseManager />
 
         {loading && <p className="text-center text-muted-foreground">Loading orders...</p>}
@@ -329,7 +343,7 @@ const OrderHistory = () => {
             <TabsList>
               <TabsTrigger value="recent" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                {lastEndDayDate ? `Since ${format(new Date(lastEndDayDate), "PP")}` : "All Orders"}
+                {lastEndDayDate ? `Since ${format(new Date(lastEndDayDate), "PP p")}` : "All Orders"}
                 <Badge variant="secondary" className="ml-1">
                   {recentOrders.length}
                 </Badge>
@@ -360,24 +374,17 @@ const OrderHistory = () => {
                   </CardContent>
                 </Card> : <div className="space-y-6">
                   {dailyReports.map((report, index) => {
-                    // Find orders that belong to this period (between this report and the previous one)
-                    const reportDate = new Date(report.report_date);
-                    reportDate.setDate(reportDate.getDate() + 1);
-                    reportDate.setHours(0, 0, 0, 0);
+                    // Find orders that belong to this period (between this report's created_at and the previous one)
+                    const reportTimestamp = new Date(report.created_at);
                     
                     const prevReport = dailyReports[index + 1];
                     const prevCutoff = prevReport 
-                      ? (() => {
-                          const d = new Date(prevReport.report_date);
-                          d.setDate(d.getDate() + 1);
-                          d.setHours(0, 0, 0, 0);
-                          return d;
-                        })()
+                      ? new Date(prevReport.created_at)
                       : new Date(0);
                     
                     const periodOrders = archivedOrders.filter(order => {
                       const orderDate = new Date(order.created_at);
-                      return orderDate < reportDate && orderDate >= prevCutoff;
+                      return orderDate < reportTimestamp && orderDate >= prevCutoff;
                     });
                     
                     if (periodOrders.length === 0) return null;
@@ -388,7 +395,7 @@ const OrderHistory = () => {
                           <Clock className="h-5 w-5 text-muted-foreground" />
                           <div className="flex-1">
                             <p className="font-semibold">
-                              Day ended: {format(new Date(report.report_date), "PPP")}
+                              Day ended: {format(new Date(report.created_at), "PPP 'at' p")}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {report.total_orders} orders • {formatPrice(report.total_revenue)} total
