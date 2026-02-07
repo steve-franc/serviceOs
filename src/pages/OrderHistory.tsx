@@ -75,12 +75,22 @@ const OrderHistory = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get all daily reports to find periods - use created_at for accurate timestamps
+      // Get the user's restaurant
+      const { data: membership } = await supabase
+        .from("restaurant_memberships")
+        .select("restaurant_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const userRestaurantId = membership?.restaurant_id;
+
+      // Get all daily reports to find periods - filter by restaurant, not staff
       const {
         data: reportsData
-      } = await supabase.from("daily_reports").select("id, report_date, total_orders, total_revenue, created_at").eq("staff_id", user.id).order("created_at", {
-        ascending: false
-      });
+      } = await supabase.from("daily_reports")
+        .select("id, report_date, total_orders, total_revenue, created_at")
+        .eq("restaurant_id", userRestaurantId)
+        .order("created_at", { ascending: false });
       
       setDailyReports(reportsData || []);
       
@@ -176,9 +186,12 @@ const OrderHistory = () => {
       // Get the most recent daily report to find last end day using created_at timestamp
       const {
         data: lastReport
-      } = await supabase.from("daily_reports").select("created_at").eq("staff_id", user.id).eq("restaurant_id", restaurantId).order("created_at", {
-        ascending: false
-      }).limit(1).maybeSingle();
+      } = await supabase.from("daily_reports")
+        .select("created_at")
+        .eq("restaurant_id", restaurantId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
       // Use the exact timestamp of the last report as cutoff
       const cutoffDate = lastReport ? new Date(lastReport.created_at) : new Date(0);

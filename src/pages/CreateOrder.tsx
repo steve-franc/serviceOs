@@ -199,12 +199,17 @@ const CreateOrder = () => {
     setExpandedCategories(newExpanded);
   };
 
-  // Order summary content - reused for both desktop card and mobile drawer
-  const OrderSummaryContent = () => <div className="space-y-4">
-      {orderItems.length === 0 ? <p className="text-sm text-muted-foreground text-center py-6">
+  // Order summary content - extracted as JSX to avoid re-creating component on each render
+  const orderSummaryContent = (
+    <div className="space-y-4">
+      {orderItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">
           No items added yet
-        </p> : <div className="space-y-3">
-          {orderItems.map(item => <div key={item.menuItem.id} className="space-y-2">
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {orderItems.map(item => (
+            <div key={item.menuItem.id} className="space-y-2">
               <div className="flex items-start gap-2">
                 <div className="flex-1">
                   <p className="font-medium text-sm">{item.menuItem.name}</p>
@@ -225,7 +230,8 @@ const CreateOrder = () => {
                 </div>
               </div>
               
-              {item.menuItem.per_unit_price && <div className="flex items-center gap-2 pl-2">
+              {item.menuItem.per_unit_price && (
+                <div className="flex items-center gap-2 pl-2">
                   <Label className="text-xs text-muted-foreground flex-1">
                     Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
                   </Label>
@@ -240,15 +246,18 @@ const CreateOrder = () => {
                       <Plus className="h-2 w-2" />
                     </Button>
                   </div>
-                </div>}
+                </div>
+              )}
               
               <div className="flex justify-end">
                 <p className="font-medium text-sm">
                   {formatPrice(calculateItemTotal(item), item.menuItem.currency)}
                 </p>
               </div>
-            </div>)}
-        </div>}
+            </div>
+          ))}
+        </div>
+      )}
 
       <Separator />
 
@@ -256,18 +265,28 @@ const CreateOrder = () => {
         <div>
           <Label>Payment Method</Label>
           <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2 grid grid-cols-2 gap-2">
-            {PAYMENT_METHODS.map(method => <div key={method} className="flex items-center space-x-2">
+            {PAYMENT_METHODS.map(method => (
+              <div key={method} className="flex items-center space-x-2">
                 <RadioGroupItem value={method} id={method.toLowerCase()} />
                 <Label htmlFor={method.toLowerCase()} className="font-normal">
                   {method}
                 </Label>
-              </div>)}
+              </div>
+            ))}
           </RadioGroup>
         </div>
 
         <div>
           <Label htmlFor="notes">Notes (Optional)</Label>
-          <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value.slice(0, 1000))} placeholder="Special instructions..." className="mt-2" rows={2} maxLength={1000} />
+          <Textarea 
+            id="notes" 
+            value={notes} 
+            onChange={e => setNotes(e.target.value.slice(0, 1000))} 
+            placeholder="Special instructions..." 
+            className="mt-2" 
+            rows={2} 
+            maxLength={1000}
+          />
         </div>
       </div>
 
@@ -276,13 +295,14 @@ const CreateOrder = () => {
       <div className="space-y-2">
         <div className="flex justify-between text-lg font-bold">
           <span>Total</span>
-          <span className="text-[#4d0000]">{formatPrice(calculateTotal(), currency)}</span>
+          <span className="text-primary">{formatPrice(calculateTotal(), currency)}</span>
         </div>
-        <Button size="lg" onClick={handleSubmitOrder} disabled={loading || orderItems.length === 0} className="w-full bg-[#4d0000]">
+        <Button size="lg" onClick={handleSubmitOrder} disabled={loading || orderItems.length === 0} className="w-full">
           {loading ? "Processing..." : "Complete Order"}
         </Button>
       </div>
-    </div>;
+    </div>
+  );
   return <Layout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
@@ -356,7 +376,8 @@ const CreateOrder = () => {
           </div>
 
           {/* Order Summary - Desktop */}
-          {!isMobile && <div className="lg:col-span-1">
+          {!isMobile && (
+            <div className="lg:col-span-1">
               <Card className="sticky top-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -365,10 +386,11 @@ const CreateOrder = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <OrderSummaryContent />
+                  {orderSummaryContent}
                 </CardContent>
               </Card>
-            </div>}
+            </div>
+          )}
         </div>
 
         {/* Mobile Drawer */}
@@ -392,7 +414,7 @@ const CreateOrder = () => {
                 </DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-6 overflow-y-auto">
-                <OrderSummaryContent />
+                {orderSummaryContent}
               </div>
             </DrawerContent>
           </Drawer>}
