@@ -87,16 +87,26 @@ const Admin = () => {
   const fetchTodayOrders = async () => {
     if (!restaurantId) return;
     
-    const today = new Date();
-    const start = startOfDay(today);
-    const end = endOfDay(today);
+    // Get the latest daily report to use as cutoff (same logic as OrderHistory)
+    const { data: latestReport } = await supabase
+      .from("daily_reports")
+      .select("created_at")
+      .eq("restaurant_id", restaurantId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     
-    const { data: ordersData } = await supabase
+    // Build query for orders since last "End Day"
+    let query = supabase
       .from("orders")
       .select("*")
-      .eq("restaurant_id", restaurantId)
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString());
+      .eq("restaurant_id", restaurantId);
+    
+    if (latestReport?.created_at) {
+      query = query.gt("created_at", latestReport.created_at);
+    }
+    
+    const { data: ordersData } = await query;
     
     if (!ordersData || ordersData.length === 0) {
       setTodayOrders([]);
