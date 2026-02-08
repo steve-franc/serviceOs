@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice, getCurrencySymbol } from "@/lib/currency";
@@ -144,6 +144,19 @@ const PublicOrder = () => {
     );
   };
 
+  const removeFromOrder = (menuItemId: string) => {
+    if (isMobile) haptics.tap();
+    setOrderItems(orderItems.filter(item => item.menuItem.id !== menuItemId));
+  };
+
+  const resetOrderState = () => {
+    setOrderItems([]);
+    setPaymentMethod("Cash");
+    setNotes("");
+    setCustomerName("");
+    setCustomerEmail("");
+  };
+
   const calculateItemTotal = (item: OrderItem) => {
     const baseTotal = item.menuItem.base_price * item.quantity;
     const extraTotal = (item.menuItem.per_unit_price || 0) * item.extraUnits;
@@ -219,6 +232,7 @@ const PublicOrder = () => {
       if (itemsError) throw itemsError;
 
       toast.success(`Order #${order.order_number} placed successfully!`);
+      resetOrderState();
       navigate(`/receipt/${order.id}`);
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
@@ -315,6 +329,14 @@ const PublicOrder = () => {
                     {orderItems.map((item) => (
                       <div key={item.menuItem.id} className="space-y-2">
                         <div className="flex items-start gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0" 
+                            onClick={() => removeFromOrder(item.menuItem.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                           <div className="flex-1">
                             <p className="font-medium text-sm">{item.menuItem.name}</p>
                             <p className="text-xs text-muted-foreground">
