@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "Create Order", url: "/order/create", icon: ShoppingCart },
+  { title: "Tabs", url: "/tabs", icon: Receipt },
   { title: "Orders", url: "/orders", icon: History },
 ];
 
