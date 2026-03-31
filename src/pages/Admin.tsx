@@ -71,9 +71,13 @@ const Admin = () => {
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("7");
+  const [fixedDailyBills, setFixedDailyBills] = useState<number>(0);
+  const [editingBills, setEditingBills] = useState(false);
+  const [billsInput, setBillsInput] = useState("");
   useEffect(() => {
     if (isManager && restaurantId) {
       fetchData();
+      fetchFixedDailyBills();
     }
   }, [isManager, restaurantId, dateFilter]);
   const fetchData = async () => {
