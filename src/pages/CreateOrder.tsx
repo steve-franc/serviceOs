@@ -51,6 +51,7 @@ const CreateOrder = () => {
   const [currency] = useState("TRY");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [amountGiven, setAmountGiven] = useState("");
   useEffect(() => {
     if (restaurantLoading) return;
     if (!restaurantId) return;
