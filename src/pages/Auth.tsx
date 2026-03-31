@@ -340,11 +340,19 @@ const Auth = () => {
               <UtensilsCrossed className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">{getTitle()}</CardTitle>
-          <CardDescription>{getDescription()}</CardDescription>
+          <CardTitle className="text-2xl font-bold">{showNewPassword ? "Set New Password" : getTitle()}</CardTitle>
+          <CardDescription>{showNewPassword ? "Enter your new password below" : getDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
-          {showResetPassword ? <div className="space-y-4">
+          {showNewPassword ? <form onSubmit={handleSetNewPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} placeholder="At least 6 characters" />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Updating..." : "Update Password"}
+              </Button>
+            </form> : showResetPassword ? <div className="space-y-4">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">Reset Password</h3>
                 <p className="text-sm text-muted-foreground mb-4">
