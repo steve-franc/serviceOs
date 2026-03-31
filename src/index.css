@@ -161,3 +161,27 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #eod-print,
+  #eod-print * {
+    visibility: visible;
+  }
+  #eod-print {
+    position: absolute;
+    inset: 0;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+  .print\\:hidden {
+    display: none !important;
+  }
+}
