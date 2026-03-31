@@ -443,7 +443,7 @@ const OrderHistory = () => {
       </AlertDialog>
 
       <Dialog open={showReport} onOpenChange={setShowReport}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-h-none print:overflow-visible print:max-w-none print:w-full print:h-auto print:border-none print:shadow-none print:p-0" id="eod-print">
           <DialogHeader className="print:hidden">
             <DialogTitle className="text-2xl">Daily Report</DialogTitle>
             <DialogDescription>
