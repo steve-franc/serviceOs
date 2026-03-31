@@ -91,6 +91,35 @@ const Admin = () => {
     }
   };
 
+  const fetchFixedDailyBills = async () => {
+    if (!restaurantId) return;
+    const { data } = await supabase
+      .from("restaurant_settings")
+      .select("fixed_daily_bills")
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
+    if (data) {
+      setFixedDailyBills(Number(data.fixed_daily_bills) || 0);
+      setBillsInput(String(data.fixed_daily_bills || 0));
+    }
+  };
+
+  const saveFixedDailyBills = async () => {
+    if (!restaurantId) return;
+    const value = parseFloat(billsInput) || 0;
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ fixed_daily_bills: value })
+      .eq("restaurant_id", restaurantId);
+    if (error) {
+      toast.error("Failed to save daily bills");
+      return;
+    }
+    setFixedDailyBills(value);
+    setEditingBills(false);
+    toast.success("Daily bills target updated");
+  };
+
   const fetchTodayOrders = async () => {
     if (!restaurantId) return;
     
