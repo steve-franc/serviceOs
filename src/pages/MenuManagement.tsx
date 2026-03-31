@@ -138,7 +138,9 @@ const MenuManagement = () => {
         per_unit_price: validation.data.per_unit_price,
         description: validation.data.description,
         pricing_unit: validation.data.pricing_unit,
-        currency: validation.data.currency
+        currency: validation.data.currency,
+        is_inventory_item: formData.is_inventory_item,
+        stock_qty: formData.is_inventory_item ? parseInt(formData.stock_qty) || 0 : 0
       };
       if (editingItem) {
         const {
