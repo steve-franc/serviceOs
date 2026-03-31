@@ -26,15 +26,27 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [resetEmail, setResetEmail] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const navigate = useNavigate();
   const {
     user
   } = useAuth();
+
+  // Handle password recovery token from URL
   useEffect(() => {
-    if (user) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get("type");
+    if (type === "recovery") {
+      setShowNewPassword(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user && !showNewPassword) {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, navigate, showNewPassword]);
   useEffect(() => {
     supabase.from("restaurants").select("id, name").order("name").then(({
       data,
