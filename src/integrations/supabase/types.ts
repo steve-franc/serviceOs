@@ -260,6 +260,7 @@ export type Database = {
           currency: string
           customer_email: string | null
           customer_name: string | null
+          edited_at: string | null
           id: string
           is_public_order: boolean
           notes: string | null
@@ -274,6 +275,7 @@ export type Database = {
           currency?: string
           customer_email?: string | null
           customer_name?: string | null
+          edited_at?: string | null
           id?: string
           is_public_order?: boolean
           notes?: string | null
@@ -288,6 +290,7 @@ export type Database = {
           currency?: string
           customer_email?: string | null
           customer_name?: string | null
+          edited_at?: string | null
           id?: string
           is_public_order?: boolean
           notes?: string | null

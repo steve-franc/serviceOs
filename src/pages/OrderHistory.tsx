@@ -500,6 +500,47 @@ const OrderHistory = () => {
 
               <Separator />
 
+              {/* Category Breakdown */}
+              <div className="print:mb-6">
+                <h3 className="font-semibold mb-4">Items by Category</h3>
+                <div className="space-y-3">
+                  {(() => {
+                    const categoryMap: Record<string, { name: string; totalQty: number; totalRevenue: number }[]> = {};
+                    dailyReport.orders.forEach(order => {
+                      order.items.forEach(item => {
+                        // We don't have category on order_items, so group by item name
+                        const key = item.menu_item_name;
+                        if (!categoryMap["Items"]) categoryMap["Items"] = [];
+                        const existing = categoryMap["Items"].find(c => c.name === key);
+                        if (existing) {
+                          existing.totalQty += item.quantity;
+                          existing.totalRevenue += item.subtotal;
+                        } else {
+                          categoryMap["Items"].push({ name: key, totalQty: item.quantity, totalRevenue: item.subtotal });
+                        }
+                      });
+                    });
+                    const allItems = categoryMap["Items"] || [];
+                    allItems.sort((a, b) => b.totalRevenue - a.totalRevenue);
+                    return allItems.map(item => (
+                      <div key={item.name} className="flex items-center justify-between p-3 bg-muted rounded-lg print:border print:border-border">
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.totalQty} sold
+                          </p>
+                        </div>
+                        <p className="text-lg font-bold text-primary">
+                          {formatPrice(item.totalRevenue)}
+                        </p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="print:break-before-page">
                 <h3 className="font-semibold mb-4 text-lg">All Receipts</h3>
                 <div className="space-y-6">
