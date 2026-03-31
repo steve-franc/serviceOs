@@ -381,6 +381,34 @@ const MenuManagement = () => {
                     <p className="text-sm text-muted-foreground border rounded-md p-2">₺ Turkish Lira (TRY)</p>
                   </div>
                 </div>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="is_inventory_item" 
+                      checked={formData.is_inventory_item}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_inventory_item: checked === true })}
+                    />
+                    <Label htmlFor="is_inventory_item" className="text-sm font-medium">
+                      Inventory Item
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Track stock for this item. It will become unavailable when stock reaches 0.
+                  </p>
+                  {formData.is_inventory_item && (
+                    <div className="space-y-2">
+                      <Label htmlFor="stock_qty">Stock Quantity</Label>
+                      <Input 
+                        id="stock_qty" 
+                        type="number" 
+                        min="0"
+                        value={formData.stock_qty} 
+                        onChange={e => setFormData({ ...formData, stock_qty: e.target.value })}
+                        placeholder="Enter available quantity"
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea 
