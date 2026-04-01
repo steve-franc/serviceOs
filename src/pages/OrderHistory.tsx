@@ -194,7 +194,7 @@ const OrderHistory = () => {
       });
       setShowReport(true);
       toast.success("Daily report generated successfully");
-      fetchOrders(); // Refresh orders to update the cutoff
+      invalidateOrders(); // Refresh orders to update the cutoff
     } catch (error: any) {
       toast.error(error.message || "Failed to generate report");
     } finally {
