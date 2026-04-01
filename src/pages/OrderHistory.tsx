@@ -53,102 +53,30 @@ interface DailyReport {
 }
 const OrderHistory = () => {
   const navigate = useNavigate();
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
-  const [dailyReports, setDailyReports] = useState<DailyReportInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { restaurantId } = useRestaurantContext();
+  const { data: ordersData, isLoading: loading } = useOrders();
+  const invalidateOrders = useInvalidateOrders();
+  
+  const recentOrders = (ordersData?.recentOrders || []) as Order[];
+  const archivedOrders = (ordersData?.archivedOrders || []) as Order[];
+  const dailyReports = (ordersData?.dailyReports || []) as DailyReportInfo[];
+  const lastEndDayDate = ordersData?.lastEndDayDate ?? null;
+
   const [showReport, setShowReport] = useState(false);
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
-  const [lastEndDayDate, setLastEndDayDate] = useState<string | null>(null);
-  
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-  
-  const fetchOrders = async () => {
-    try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
 
-      // Get the user's restaurant
-      const { data: membership } = await supabase
-        .from("restaurant_memberships")
-        .select("restaurant_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const userRestaurantId = membership?.restaurant_id;
-
-      // Get all daily reports to find periods - filter by restaurant, not staff
-      const {
-        data: reportsData
-      } = await supabase.from("daily_reports")
-        .select("id, report_date, total_orders, total_revenue, created_at")
-        .eq("restaurant_id", userRestaurantId)
-        .order("created_at", { ascending: false });
-      
-      setDailyReports(reportsData || []);
-      
-      const lastReport = reportsData?.[0];
-      
-      let cutoffDate: Date;
-      if (lastReport) {
-        // Use the exact timestamp of the last report as cutoff
-        cutoffDate = new Date(lastReport.created_at);
-        setLastEndDayDate(lastReport.created_at);
-      } else {
-        // If no reports exist, show all orders as recent
-        cutoffDate = new Date(0); // Beginning of time
-        setLastEndDayDate(null);
-      }
-      const {
-        data: allOrders,
-        error
-      } = await supabase.from("orders").select("*").order("created_at", {
-        ascending: false
-      });
-      if (error) throw error;
-      const recent: Order[] = [];
-      const archived: Order[] = [];
-      allOrders?.forEach(order => {
-        const orderDate = new Date(order.created_at);
-        if (orderDate >= cutoffDate) {
-          recent.push(order);
-        } else {
-          archived.push(order);
-        }
-      });
-      setRecentOrders(recent);
-      setArchivedOrders(archived);
-    } catch (error: any) {
-      toast.error("Failed to load orders");
-    } finally {
-      setLoading(false);
-    }
-  };
   const handleDeleteOrder = async () => {
     if (!orderToDelete) return;
     try {
-      // First delete order items
-      const {
-        error: itemsError
-      } = await supabase.from("order_items").delete().eq("order_id", orderToDelete);
+      const { error: itemsError } = await supabase.from("order_items").delete().eq("order_id", orderToDelete);
       if (itemsError) throw itemsError;
-
-      // Then delete the order
-      const {
-        error: orderError
-      } = await supabase.from("orders").delete().eq("id", orderToDelete);
+      const { error: orderError } = await supabase.from("orders").delete().eq("id", orderToDelete);
       if (orderError) throw orderError;
       toast.success("Order deleted successfully");
-      fetchOrders();
+      invalidateOrders();
     } catch (error: any) {
       toast.error("Failed to delete order");
     } finally {
