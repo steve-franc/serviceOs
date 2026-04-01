@@ -409,12 +409,7 @@ const OrderHistory = () => {
                     
                     return (
                       <div key={report.id} className="space-y-3">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/report/${report.id}`)}
-                          className="flex w-full items-center gap-3 rounded-lg bg-muted/50 p-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:bg-muted"
-                          aria-label={`Open daily report for ${format(new Date(report.created_at), "PPP 'at' p")}`}
-                        >
+                        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg">
                           <Clock className="h-5 w-5 text-muted-foreground" />
                           <div className="flex-1">
                             <p className="font-semibold">
@@ -423,10 +418,11 @@ const OrderHistory = () => {
                             <p className="text-sm text-muted-foreground">
                               {report.total_orders} orders • {formatPrice(report.total_revenue)} total
                             </p>
-                            <p className="text-xs text-primary mt-1">Tap to view breakdown →</p>
                           </div>
-                          <Badge variant="secondary">{periodOrders.length} orders</Badge>
-                        </button>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>
+                            View Breakdown
+                          </Button>
+                        </div>
                         {periodOrders.length > 0 && (
                           <div className="space-y-4 pl-4 border-l-2 border-muted">
                             {periodOrders.map(renderOrderCard)}
