@@ -202,7 +202,7 @@ const Auth = () => {
       toast.success("Password updated successfully!");
       setShowNewPassword(false);
       setNewPassword("");
-      navigate("/");
+      navigate("/order/create");
     } catch (error: any) {
       toast.error(error.message || "Failed to update password");
     } finally {
