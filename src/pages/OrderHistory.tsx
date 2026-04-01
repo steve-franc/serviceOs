@@ -405,7 +405,7 @@ const OrderHistory = () => {
                       return orderDate < reportTimestamp && orderDate >= prevCutoff;
                     });
                     
-                    if (periodOrders.length === 0) return null;
+                    
                     
                     return (
                       <div key={report.id} className="space-y-3">
