@@ -169,11 +169,14 @@ All colors MUST be HSL.
   #eod-print,
   #eod-print *,
   #report-print,
-  #report-print * {
+  #report-print *,
+  #receipt-print,
+  #receipt-print * {
     visibility: visible;
   }
   #eod-print,
-  #report-print {
+  #report-print,
+  #receipt-print {
     position: absolute;
     inset: 0;
     height: auto !important;

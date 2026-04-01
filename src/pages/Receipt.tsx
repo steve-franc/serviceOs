@@ -254,7 +254,7 @@ const Receipt = () => {
           </CardContent>
         </Card>
 
-        <Card className="print:shadow-none">
+        <Card className="print:shadow-none" id="receipt-print">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl">Restaurant POS</CardTitle>
             <p className="text-sm text-muted-foreground">Order Receipt</p>
