@@ -272,65 +272,6 @@ const OrderHistory = () => {
     }
   };
 
-  const handleViewReport = async (report: DailyReportInfo) => {
-    setViewingReport(report);
-    setLoadingReportData(true);
-    try {
-      const reportTimestamp = new Date(report.created_at);
-      const reportIndex = dailyReports.findIndex(r => r.id === report.id);
-      const prevReport = dailyReports[reportIndex + 1];
-      const prevCutoff = prevReport ? new Date(prevReport.created_at) : new Date(0);
-
-      const { data: membership } = await supabase
-        .from("restaurant_memberships")
-        .select("restaurant_id")
-        .eq("user_id", (await supabase.auth.getUser()).data.user!.id)
-        .maybeSingle();
-
-      const { data: ordersData } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("restaurant_id", membership?.restaurant_id)
-        .gte("created_at", prevCutoff.toISOString())
-        .lt("created_at", reportTimestamp.toISOString())
-        .order("created_at", { ascending: false });
-
-      if (!ordersData || ordersData.length === 0) {
-        setViewingReportData({ total_orders: report.total_orders, total_revenue: report.total_revenue, payment_methods: {}, orders: [] });
-        setLoadingReportData(false);
-        return;
-      }
-
-      const orderIds = ordersData.map(o => o.id);
-      const { data: itemsData } = await supabase
-        .from("order_items")
-        .select("*")
-        .in("order_id", orderIds);
-
-      const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
-        ...order,
-        items: itemsData?.filter(item => item.order_id === order.id) || []
-      }));
-
-      const paymentMethods: Record<string, { count: number; total: number }> = {};
-      ordersData.forEach(order => {
-        if (!paymentMethods[order.payment_method]) paymentMethods[order.payment_method] = { count: 0, total: 0 };
-        paymentMethods[order.payment_method].count++;
-        paymentMethods[order.payment_method].total += Number(order.total);
-      });
-
-      setViewingReportData({
-        total_orders: report.total_orders,
-        total_revenue: report.total_revenue,
-        payment_methods: paymentMethods,
-        orders: ordersWithItems,
-      });
-    } catch {
-      toast.error("Failed to load report details");
-    } finally {
-      setLoadingReportData(false);
-    }
-  };
 
   const renderReportBreakdown = (reportData: DailyReport, reportDate: string) => (
     <div className="space-y-6">
