@@ -422,9 +422,11 @@ const OrderHistory = () => {
                           </div>
                           <Badge variant="secondary">{periodOrders.length} orders</Badge>
                         </div>
-                        <div className="space-y-4 pl-4 border-l-2 border-muted">
-                          {periodOrders.map(renderOrderCard)}
-                        </div>
+                        {periodOrders.length > 0 && (
+                          <div className="space-y-4 pl-4 border-l-2 border-muted">
+                            {periodOrders.map(renderOrderCard)}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
