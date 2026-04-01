@@ -274,6 +274,170 @@ const OrderHistory = () => {
       setGeneratingReport(false);
     }
   };
+
+  const handleViewReport = async (report: DailyReportInfo) => {
+    setViewingReport(report);
+    setLoadingReportData(true);
+    try {
+      const reportTimestamp = new Date(report.created_at);
+      const reportIndex = dailyReports.findIndex(r => r.id === report.id);
+      const prevReport = dailyReports[reportIndex + 1];
+      const prevCutoff = prevReport ? new Date(prevReport.created_at) : new Date(0);
+
+      const { data: membership } = await supabase
+        .from("restaurant_memberships")
+        .select("restaurant_id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user!.id)
+        .maybeSingle();
+
+      const { data: ordersData } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("restaurant_id", membership?.restaurant_id)
+        .gte("created_at", prevCutoff.toISOString())
+        .lt("created_at", reportTimestamp.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (!ordersData || ordersData.length === 0) {
+        setViewingReportData({ total_orders: report.total_orders, total_revenue: report.total_revenue, payment_methods: {}, orders: [] });
+        setLoadingReportData(false);
+        return;
+      }
+
+      const orderIds = ordersData.map(o => o.id);
+      const { data: itemsData } = await supabase
+        .from("order_items")
+        .select("*")
+        .in("order_id", orderIds);
+
+      const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
+        ...order,
+        items: itemsData?.filter(item => item.order_id === order.id) || []
+      }));
+
+      const paymentMethods: Record<string, { count: number; total: number }> = {};
+      ordersData.forEach(order => {
+        if (!paymentMethods[order.payment_method]) paymentMethods[order.payment_method] = { count: 0, total: 0 };
+        paymentMethods[order.payment_method].count++;
+        paymentMethods[order.payment_method].total += Number(order.total);
+      });
+
+      setViewingReportData({
+        total_orders: report.total_orders,
+        total_revenue: report.total_revenue,
+        payment_methods: paymentMethods,
+        orders: ordersWithItems,
+      });
+    } catch {
+      toast.error("Failed to load report details");
+    } finally {
+      setLoadingReportData(false);
+    }
+  };
+
+  const renderReportBreakdown = (reportData: DailyReport, reportDate: string) => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Orders</CardDescription>
+            <CardTitle className="text-3xl text-primary">{reportData.total_orders}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Revenue</CardDescription>
+            <CardTitle className="text-3xl text-primary">{formatPrice(reportData.total_revenue)}</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      {Object.keys(reportData.payment_methods).length > 0 && <>
+        <Separator />
+        <div>
+          <h3 className="font-semibold mb-4">Payment Methods Breakdown</h3>
+          <div className="space-y-3">
+            {Object.entries(reportData.payment_methods).map(([method, data]) => (
+              <div key={method} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">{method}</p>
+                  <p className="text-sm text-muted-foreground">{data.count} {data.count === 1 ? "order" : "orders"}</p>
+                </div>
+                <p className="text-lg font-bold text-primary">{formatPrice(data.total)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>}
+
+      {reportData.orders.length > 0 && <>
+        <Separator />
+        <div>
+          <h3 className="font-semibold mb-4">Items by Category</h3>
+          <div className="space-y-3">
+            {(() => {
+              const itemMap: Record<string, { totalQty: number; totalRevenue: number }> = {};
+              reportData.orders.forEach(order => {
+                order.items.forEach(item => {
+                  if (!itemMap[item.menu_item_name]) itemMap[item.menu_item_name] = { totalQty: 0, totalRevenue: 0 };
+                  itemMap[item.menu_item_name].totalQty += item.quantity;
+                  itemMap[item.menu_item_name].totalRevenue += item.subtotal;
+                });
+              });
+              return Object.entries(itemMap)
+                .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                .map(([name, data]) => (
+                  <div key={name} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">{name}</p>
+                      <p className="text-sm text-muted-foreground">{data.totalQty} sold</p>
+                    </div>
+                    <p className="text-lg font-bold text-primary">{formatPrice(data.totalRevenue)}</p>
+                  </div>
+                ));
+            })()}
+          </div>
+        </div>
+
+        <Separator />
+        <div>
+          <h3 className="font-semibold mb-4 text-lg">All Receipts</h3>
+          <div className="space-y-4">
+            {reportData.orders.map(order => (
+              <Card key={order.id}>
+                <CardHeader className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
+                    <Badge variant="outline">{order.payment_method}</Badge>
+                  </div>
+                  <CardDescription>{format(new Date(order.created_at), "PPp")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    {order.items.map(item => (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.menu_item_name}</p>
+                          <p className="text-muted-foreground">{item.quantity} × {formatPrice(item.price_at_time)}</p>
+                        </div>
+                        <p className="font-medium">{formatPrice(item.subtotal)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-bold">
+                    <span>Total</span>
+                    <span className="text-primary">{formatPrice(order.total)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </>}
+    </div>
+  );
+
   const renderOrderCard = (order: Order) => <Card key={order.id} className="hover:shadow-md transition-shadow">
       <CardHeader className="bg-[F5F5F0] bg-[#f5f5f0]">
         <div className="flex items-start justify-between">
