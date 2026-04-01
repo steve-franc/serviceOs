@@ -159,7 +159,7 @@ const MenuManagement = () => {
         .eq("id", item.id);
       if (error) throw error;
       toast.success(`${item.name} is now ${!item.is_available ? 'available' : 'unavailable'}`);
-      if (restaurantId) fetchMenuItems(restaurantId);
+      invalidateMenu();
     } catch (error: any) {
       toast.error("Failed to update availability");
     }
