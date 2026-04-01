@@ -357,7 +357,7 @@ const OrderHistory = () => {
             </CardContent>
           </Card>}
 
-        {!loading && (recentOrders.length > 0 || archivedOrders.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
+        {!loading && (recentOrders.length > 0 || archivedOrders.length > 0 || dailyReports.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
             <TabsList>
               <TabsTrigger value="recent" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
@@ -386,7 +386,7 @@ const OrderHistory = () => {
             </TabsContent>
 
             <TabsContent value="archived" className="space-y-4">
-              {archivedOrders.length === 0 ? <Card>
+              {archivedOrders.length === 0 && dailyReports.length === 0 ? <Card>
                   <CardContent className="py-12 text-center">
                     <p className="text-muted-foreground">No archived orders</p>
                   </CardContent>
@@ -405,7 +405,7 @@ const OrderHistory = () => {
                       return orderDate < reportTimestamp && orderDate >= prevCutoff;
                     });
                     
-                    if (periodOrders.length === 0) return null;
+                    
                     
                     return (
                       <div key={report.id} className="space-y-3">
@@ -422,9 +422,11 @@ const OrderHistory = () => {
                           </div>
                           <Badge variant="secondary">{periodOrders.length} orders</Badge>
                         </div>
-                        <div className="space-y-4 pl-4 border-l-2 border-muted">
-                          {periodOrders.map(renderOrderCard)}
-                        </div>
+                        {periodOrders.length > 0 && (
+                          <div className="space-y-4 pl-4 border-l-2 border-muted">
+                            {periodOrders.map(renderOrderCard)}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
