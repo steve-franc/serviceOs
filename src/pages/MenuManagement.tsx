@@ -54,38 +54,8 @@ const MenuManagement = () => {
     stock_qty: ""
   });
 
-  const fetchSettings = async (rid: string) => {
-    const {
-      data
-    } = await supabase.from("restaurant_settings").select("currency").eq("restaurant_id", rid).maybeSingle();
-    if (data) {
-      setFormData(prev => ({
-        ...prev,
-        currency: data.currency
-      }));
-    }
-  };
 
-  const fetchMenuItems = async (rid: string) => {
-    try {
-      const {
-        data,
-        error
-      } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", rid)
-        .order("category", { ascending: true })
-        .order("name", { ascending: true });
-      
-      if (error) throw error;
-      setMenuItems(data || []);
-    } catch (error: any) {
-      toast.error("Failed to load menu items");
-    } finally {
-      setLoading(false);
-    }
-  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
