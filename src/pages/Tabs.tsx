@@ -668,7 +668,7 @@ const TabsPage = () => {
       setNewTabName("");
       setNewTabNotes("");
       setSelectedTab(data);
-      fetchTabs();
+      invalidateTabs();
     } catch (err: any) {
       toast.error(err.message || "Failed to open tab");
     } finally {
