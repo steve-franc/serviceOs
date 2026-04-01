@@ -130,7 +130,7 @@ const MenuManagement = () => {
       }
       setDialogOpen(false);
       resetForm();
-      if (restaurantId) fetchMenuItems(restaurantId);
+      invalidateMenu();
     } catch (error: any) {
       toast.error(error.message || "Failed to save menu item");
     } finally {
