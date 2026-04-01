@@ -46,14 +46,45 @@ const CreateOrder = () => {
   } = useRestaurantContext();
   const { data: menuItemsData = [] } = useMenuItems(true);
   const menuItems = menuItemsData as MenuItem[];
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
-  const [notes, setNotes] = useState("");
+  // Restore persisted order from sessionStorage
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('pendingOrder');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.orderItems || [];
+      }
+    } catch {}
+    return [];
+  });
+  const [paymentMethod, setPaymentMethod] = useState<string>(() => {
+    try {
+      const saved = sessionStorage.getItem('pendingOrder');
+      if (saved) return JSON.parse(saved).paymentMethod || "Cash";
+    } catch {}
+    return "Cash";
+  });
+  const [notes, setNotes] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('pendingOrder');
+      if (saved) return JSON.parse(saved).notes || "";
+    } catch {}
+    return "";
+  });
   const [loading, setLoading] = useState(false);
   const [currency] = useState("TRY");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [amountGiven, setAmountGiven] = useState("");
+
+  // Persist order state to sessionStorage
+  useEffect(() => {
+    if (orderItems.length > 0) {
+      sessionStorage.setItem('pendingOrder', JSON.stringify({ orderItems, paymentMethod, notes }));
+    } else {
+      sessionStorage.removeItem('pendingOrder');
+    }
+  }, [orderItems, paymentMethod, notes]);
   const addToOrder = (menuItem: MenuItem) => {
     // Validate currency matches restaurant currency
     if (menuItem.currency !== currency) {
