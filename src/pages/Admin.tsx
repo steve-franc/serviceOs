@@ -60,6 +60,7 @@ interface DailyReport {
   currency?: string;
 }
 const Admin = () => {
+  const navigate = useNavigate();
   const {
     isManager,
     loading: roleLoading
