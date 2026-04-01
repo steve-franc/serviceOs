@@ -634,34 +634,15 @@ const TabDetail = ({
 // ── Main Page ────────────────────────────────────────────────
 const TabsPage = () => {
   const { restaurantId, loading: restaurantLoading } = useRestaurantContext();
-  const [tabs, setTabs] = useState<Tab[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tabsData = [], isLoading: tabsLoading } = useTabs();
+  const tabs = tabsData as Tab[];
+  const invalidateTabs = useInvalidateTabs();
+  const loading = restaurantLoading || tabsLoading;
   const [selectedTab, setSelectedTab] = useState<Tab | null>(null);
   const [newTabDialogOpen, setNewTabDialogOpen] = useState(false);
   const [newTabName, setNewTabName] = useState("");
   const [newTabNotes, setNewTabNotes] = useState("");
   const [creating, setCreating] = useState(false);
-
-  useEffect(() => {
-    if (restaurantLoading || !restaurantId) return;
-    fetchTabs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantLoading, restaurantId]);
-
-  const fetchTabs = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("tabs")
-      .select("*")
-      .eq("restaurant_id", restaurantId!)
-      .eq("status", "open")
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast.error("Failed to load tabs");
-    }
-    setTabs(data || []);
-    setLoading(false);
-  };
 
   const handleCreateTab = async () => {
     if (!restaurantId) return;
