@@ -145,7 +145,7 @@ const MenuManagement = () => {
       } = await supabase.from("menu_items").delete().eq("id", id);
       if (error) throw error;
       toast.success("Item deleted");
-      if (restaurantId) fetchMenuItems(restaurantId);
+      invalidateMenu();
     } catch (error: any) {
       toast.error("Failed to delete item");
     }
