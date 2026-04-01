@@ -409,7 +409,7 @@ const OrderHistory = () => {
                     
                     return (
                       <div key={report.id} className="space-y-3">
-                        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors" onClick={() => handleViewReport(report)}>
+                        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors" onClick={() => navigate(`/report/${report.id}`)}>
                           <Clock className="h-5 w-5 text-muted-foreground" />
                           <div className="flex-1">
                             <p className="font-semibold">
