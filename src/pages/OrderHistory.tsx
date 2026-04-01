@@ -340,46 +340,89 @@ const OrderHistory = () => {
                     <p className="text-muted-foreground">No archived orders</p>
                   </CardContent>
                 </Card> : <div className="space-y-6">
-                  {dailyReports.map((report, index) => {
-                    // Find orders that belong to this period (between this report's created_at and the previous one)
-                    const reportTimestamp = new Date(report.created_at);
-                    
-                    const prevReport = dailyReports[index + 1];
-                    const prevCutoff = prevReport 
-                      ? new Date(prevReport.created_at)
-                      : new Date(0);
-                    
-                    const periodOrders = archivedOrders.filter(order => {
-                      const orderDate = new Date(order.created_at);
-                      return orderDate < reportTimestamp && orderDate >= prevCutoff;
-                    });
-                    
-                    
-                    
-                    return (
-                      <div key={report.id} className="space-y-3">
-                        <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg">
-                          <Clock className="h-5 w-5 text-muted-foreground" />
-                          <div className="flex-1">
-                            <p className="font-semibold">
-                              Day ended: {format(new Date(report.created_at), "PPP 'at' p")}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {report.total_orders} orders • {formatPrice(report.total_revenue)} total
-                            </p>
+                  {/* Group by selector */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">Group by:</span>
+                    <Select value={groupBy} onValueChange={(v) => setGroupBy(v as "none" | "month" | "year")}>
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="month">Month</SelectItem>
+                        <SelectItem value="year">Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {groupBy !== "none" && groupedReports ? (
+                    /* Grouped view */
+                    groupedReports.map(([key, group]) => (
+                      <Card key={key}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{group.label}</CardTitle>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-primary">{formatPrice(group.totalRevenue)}</p>
+                              <p className="text-xs text-muted-foreground">{group.totalOrders} orders • {group.reports.length} reports</p>
+                            </div>
                           </div>
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>
-                            View Breakdown
-                          </Button>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {group.reports.map(report => (
+                            <div key={report.id} className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">
+                                  {format(new Date(report.created_at), "PPP 'at' p")}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {report.total_orders} orders • {formatPrice(report.total_revenue)}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>
+                                View
+                              </Button>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    /* Ungrouped view (original) */
+                    dailyReports.map((report, index) => {
+                      const reportTimestamp = new Date(report.created_at);
+                      const prevReport = dailyReports[index + 1];
+                      const prevCutoff = prevReport ? new Date(prevReport.created_at) : new Date(0);
+                      const periodOrders = archivedOrders.filter(order => {
+                        const orderDate = new Date(order.created_at);
+                        return orderDate < reportTimestamp && orderDate >= prevCutoff;
+                      });
+                      return (
+                        <div key={report.id} className="space-y-3">
+                          <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg">
+                            <Clock className="h-5 w-5 text-muted-foreground" />
+                            <div className="flex-1">
+                              <p className="font-semibold">
+                                Day ended: {format(new Date(report.created_at), "PPP 'at' p")}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {report.total_orders} orders • {formatPrice(report.total_revenue)} total
+                              </p>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>
+                              View Breakdown
+                            </Button>
+                          </div>
+                          {periodOrders.length > 0 && (
+                            <div className="space-y-4 pl-4 border-l-2 border-muted">
+                              {periodOrders.map(renderOrderCard)}
+                            </div>
+                          )}
                         </div>
-                        {periodOrders.length > 0 && (
-                          <div className="space-y-4 pl-4 border-l-2 border-muted">
-                            {periodOrders.map(renderOrderCard)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>}
             </TabsContent>
           </Tabs>}
