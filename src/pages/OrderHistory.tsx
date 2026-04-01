@@ -68,6 +68,33 @@ const OrderHistory = () => {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [groupBy, setGroupBy] = useState<"none" | "month" | "year">("none");
+
+  // Group daily reports by month or year
+  const groupedReports = useMemo(() => {
+    if (groupBy === "none") return null;
+    
+    const groups: Record<string, { label: string; reports: DailyReportInfo[]; totalRevenue: number; totalOrders: number }> = {};
+    
+    dailyReports.forEach(report => {
+      const date = parseISO(report.report_date);
+      const key = groupBy === "month" 
+        ? format(date, "yyyy-MM")
+        : format(date, "yyyy");
+      const label = groupBy === "month"
+        ? format(date, "MMMM yyyy")
+        : format(date, "yyyy");
+      
+      if (!groups[key]) {
+        groups[key] = { label, reports: [], totalRevenue: 0, totalOrders: 0 };
+      }
+      groups[key].reports.push(report);
+      groups[key].totalRevenue += report.total_revenue;
+      groups[key].totalOrders += report.total_orders;
+    });
+    
+    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+  }, [dailyReports, groupBy]);
 
   const handleDeleteOrder = async () => {
     if (!orderToDelete) return;
