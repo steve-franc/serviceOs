@@ -14,6 +14,7 @@ import Admin from "./pages/Admin";
 import PublicOrder from "./pages/PublicOrder";
 import Inventory from "./pages/Inventory";
 import TabsPage from "./pages/Tabs";
+import ReportBreakdown from "./pages/ReportBreakdown";
 import NotFound from "./pages/NotFound";
 import { NotificationSound } from "./components/NotificationSound";
 import ScrollToTop from "./components/ScrollToTop";
