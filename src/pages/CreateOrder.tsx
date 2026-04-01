@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp, X, Calculator } from "lucide-react";
+import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp, X, Calculator, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
@@ -74,6 +74,7 @@ const CreateOrder = () => {
   const [loading, setLoading] = useState(false);
   const [currency] = useState("TRY");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [amountGiven, setAmountGiven] = useState("");
 
@@ -218,8 +219,18 @@ const CreateOrder = () => {
       setLoading(false);
     }
   };
-  // Group by category
-  const groupedByCategory = menuItems.reduce((acc, item) => {
+  // Filter by search then group by category
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return menuItems;
+    const q = searchQuery.toLowerCase();
+    return menuItems.filter(item =>
+      item.name.toLowerCase().includes(q) ||
+      (item.category && item.category.toLowerCase().includes(q)) ||
+      (item.description && item.description.toLowerCase().includes(q))
+    );
+  }, [menuItems, searchQuery]);
+
+  const groupedByCategory = filteredItems.reduce((acc, item) => {
     const category = item.category || "Uncategorized";
     if (!acc[category]) {
       acc[category] = [];
@@ -227,6 +238,9 @@ const CreateOrder = () => {
     acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
+
+  // Auto-expand all categories when searching
+  const isSearching = searchQuery.trim().length > 0;
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -389,8 +403,19 @@ const CreateOrder = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Menu Items - Grouped by Category */}
           <div className="lg:col-span-2 space-y-4 pb-20 md:pb-0">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search menu items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
             {Object.entries(groupedByCategory).map(([category, items]) => {
-              const isExpanded = expandedCategories.has(category);
+              const isExpanded = isSearching || expandedCategories.has(category);
               return (
                 <Card key={category}>
                   <Collapsible open={isExpanded} onOpenChange={() => toggleCategory(category)}>
@@ -410,7 +435,7 @@ const CreateOrder = () => {
                     
                     <CollapsibleContent>
                       <CardContent className="pt-0">
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
                           {items.map(item => (
                             <Card key={item.id} className="cursor-pointer hover:shadow-md transition-shadow border-2" onClick={() => addToOrder(item)}>
                               <CardHeader className="pb-3">
@@ -439,10 +464,12 @@ const CreateOrder = () => {
               );
             })}
 
-            {menuItems.length === 0 && (
+            {filteredItems.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">No menu items available</p>
+                  <p className="text-muted-foreground">
+                    {searchQuery ? "No items match your search" : "No menu items available"}
+                  </p>
                 </CardContent>
               </Card>
             )}
