@@ -687,7 +687,7 @@ const TabsPage = () => {
         }}
         onClosed={() => {
           setSelectedTab(null);
-          fetchTabs();
+          invalidateTabs();
         }}
       />
     );
