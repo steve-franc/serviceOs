@@ -79,7 +79,7 @@ const MenuManagement = () => {
       
       if (perUnitPrice !== null && (isNaN(perUnitPrice) || perUnitPrice <= 0)) {
         toast.error("Per unit price must be a positive number");
-        setLoading(false);
+        setSaving(false);
         return;
       }
       
