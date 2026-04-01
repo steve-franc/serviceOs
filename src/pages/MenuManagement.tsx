@@ -134,7 +134,7 @@ const MenuManagement = () => {
     } catch (error: any) {
       toast.error(error.message || "Failed to save menu item");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
   const handleDelete = async (id: string) => {
