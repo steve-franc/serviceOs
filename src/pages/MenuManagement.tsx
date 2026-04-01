@@ -391,8 +391,8 @@ const MenuManagement = () => {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    {loading ? "Saving..." : editingItem ? "Update" : "Add"} Item
+                  <Button type="submit" disabled={saving} className="flex-1">
+                    {saving ? "Saving..." : editingItem ? "Update" : "Add"} Item
                   </Button>
                   <Button type="button" variant="outline" onClick={() => {
                   setDialogOpen(false);
