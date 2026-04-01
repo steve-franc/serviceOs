@@ -763,6 +763,29 @@ const OrderHistory = () => {
             </div>}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!viewingReport} onOpenChange={(open) => { if (!open) { setViewingReport(null); setViewingReportData(null); } }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Daily Report Breakdown</DialogTitle>
+            <DialogDescription>
+              {viewingReport && `Day ended: ${format(new Date(viewingReport.created_at), "PPP 'at' p")}`}
+            </DialogDescription>
+          </DialogHeader>
+          {loadingReportData ? (
+            <p className="text-center text-muted-foreground py-8">Loading report details...</p>
+          ) : viewingReportData ? (
+            <>
+              {renderReportBreakdown(viewingReportData, viewingReport ? format(new Date(viewingReport.created_at), "PPP") : "")}
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" className="flex-1" onClick={() => { setViewingReport(null); setViewingReportData(null); }}>
+                  Close
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </Layout>;
 };
 export default OrderHistory;
