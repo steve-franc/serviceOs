@@ -653,7 +653,7 @@ const Admin = () => {
                   </Card>
                 ) : reports.map(report => <Card key={report.id}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-4">
                         <div>
                           <CardTitle className="text-lg">
                             {format(new Date(report.report_date), "PPP")}
@@ -662,9 +662,14 @@ const Admin = () => {
                             Staff: {report.profiles?.full_name || "Unknown"}
                           </CardDescription>
                         </div>
-                        <Badge variant="outline" className="text-lg px-4 py-2">
-                          {formatPrice(report.total_revenue, report.currency || 'TRY')}
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-lg px-4 py-2">
+                            {formatPrice(report.total_revenue, report.currency || 'TRY')}
+                          </Badge>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>
+                            View Breakdown
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
