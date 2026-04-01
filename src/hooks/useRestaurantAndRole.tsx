@@ -9,6 +9,7 @@ interface RestaurantRoleState {
   restaurantId: string | null;
   restaurantName: string | null;
   role: UserRole;
+  authLoading: boolean;
   loading: boolean;
   hasRole: boolean;
   isManager: boolean;
@@ -22,6 +23,7 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   restaurantId: null,
   restaurantName: null,
   role: null,
+  authLoading: true,
   loading: true,
   hasRole: false,
   isManager: false,
@@ -35,16 +37,25 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadAll = async () => {
+    const loadAll = async (initialUser?: User | null) => {
       try {
-        const { data: authData } = await supabase.auth.getUser();
-        const currentUser = authData?.user;
+        let currentUser = initialUser;
+
+        if (typeof currentUser === "undefined") {
+          const { data: sessionData } = await supabase.auth.getSession();
+          currentUser = sessionData.session?.user ?? null;
+        }
+
         if (cancelled) return;
+
+        setUser(currentUser);
+        setAuthLoading(false);
 
         if (!currentUser) {
           setUser(null);
@@ -55,7 +66,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        setUser(currentUser);
+        setLoading(true);
 
         // 1) Load membership
         let { data: membership } = await supabase
@@ -128,13 +139,20 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("Error loading restaurant/role:", err);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setAuthLoading(false);
+          setLoading(false);
+        }
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
+
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
       setLoading(true);
-      setTimeout(() => loadAll(), 0);
+      setTimeout(() => loadAll(session?.user ?? null), 0);
     });
 
     loadAll();
@@ -150,6 +168,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     restaurantId,
     restaurantName,
     role,
+    authLoading,
     loading,
     hasRole: role !== null,
     isManager: role === "manager",
@@ -198,6 +217,6 @@ export function useAuth() {
   return {
     user: ctx.user,
     session: null, // not needed in this app
-    loading: ctx.loading,
+    loading: ctx.authLoading,
   };
 }
