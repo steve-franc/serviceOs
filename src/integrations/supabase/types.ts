@@ -275,6 +275,7 @@ export type Database = {
           payment_method: string
           restaurant_id: string | null
           staff_id: string
+          status: string
           total: number
         }
         Insert: {
@@ -291,6 +292,7 @@ export type Database = {
           payment_method: string
           restaurant_id?: string | null
           staff_id: string
+          status?: string
           total: number
         }
         Update: {
@@ -307,6 +309,7 @@ export type Database = {
           payment_method?: string
           restaurant_id?: string | null
           staff_id?: string
+          status?: string
           total?: number
         }
         Relationships: [
