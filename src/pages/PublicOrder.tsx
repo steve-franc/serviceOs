@@ -226,7 +226,7 @@ const PublicOrder = () => {
             currency: currency,
             restaurant_id: restaurantId,
             order_number: 0,
-            discount_amount: calculateDiscountAmount(),
+            discount_amount: 0,
           },
         ])
         .select()
@@ -519,62 +519,7 @@ const PublicOrder = () => {
 
                 <Separator />
 
-                {/* Discount */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5" />
-                    Discount
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex rounded-md border border-input overflow-hidden">
-                      <button
-                        type="button"
-                        className={`px-2.5 py-1 text-xs font-medium transition-colors ${discountType === "percentage" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
-                        onClick={() => setDiscountType("percentage")}
-                      >
-                        <Percent className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        className={`px-2.5 py-1 text-xs font-medium transition-colors ${discountType === "fixed" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
-                        onClick={() => setDiscountType("fixed")}
-                      >
-                        {getCurrencySymbol(currency)}
-                      </button>
-                    </div>
-                    <Input
-                      type="number"
-                      placeholder={discountType === "percentage" ? "0%" : "0.00"}
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value)}
-                      className="h-8 text-sm max-w-24"
-                      min={0}
-                      max={discountType === "percentage" ? 100 : undefined}
-                      step={discountType === "percentage" ? 1 : 0.01}
-                    />
-                    {calculateDiscountAmount() > 0 && (
-                      <span className="text-sm text-destructive font-medium">
-                        -{formatPrice(calculateDiscountAmount(), currency)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  {calculateDiscountAmount() > 0 && (
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Subtotal</span>
-                      <span>{formatPrice(calculateSubtotal(), currency)}</span>
-                    </div>
-                  )}
-                  {calculateDiscountAmount() > 0 && (
-                    <div className="flex justify-between text-sm text-destructive">
-                      <span>Discount</span>
-                      <span>-{formatPrice(calculateDiscountAmount(), currency)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary">{formatPrice(calculateTotal(), currency)}</span>
