@@ -317,11 +317,11 @@ const OrderHistory = () => {
               </p>
               {isPending ? (
                 <div className="flex gap-2">
-                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700" onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')}>
+                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700" onClick={() => handleConfirmOrder(order.id)}>
                     <CheckCircle className="h-4 w-4" />
                     Confirm
                   </Button>
-                  <Button size="sm" variant="destructive" className="gap-1" onClick={() => handleUpdateOrderStatus(order.id, 'declined')}>
+                  <Button size="sm" variant="destructive" className="gap-1" onClick={() => handleDeclineOrder(order.id)}>
                     <XCircle className="h-4 w-4" />
                     Decline
                   </Button>
