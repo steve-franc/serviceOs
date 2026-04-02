@@ -220,7 +220,8 @@ const CreateOrder = () => {
         currency: currency,
         is_public_order: false,
         restaurant_id: restaurantId,
-        order_number: 0 // Trigger will set the correct number
+        order_number: 0,
+        discount_amount: calculateDiscountAmount(),
       }]).select().single();
       if (orderError) throw orderError;
       const orderItemsData = orderItems.map(item => ({
