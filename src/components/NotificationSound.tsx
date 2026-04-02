@@ -53,8 +53,8 @@ export const NotificationSound = () => {
           playNotificationSound();
           const customerName = (payload.new as any)?.customer_name || 'A customer';
           toast.success(`🔔 New online order from ${customerName}!`, {
-            duration: 8000,
-            description: 'Tap to view order details.',
+            duration: 10000,
+            description: 'Go to Order History to confirm or decline.',
           });
         }
       )
