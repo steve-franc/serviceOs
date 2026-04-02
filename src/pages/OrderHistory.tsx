@@ -226,7 +226,7 @@ const OrderHistory = () => {
 
 
   const renderOrderCard = (order: Order) => <Card key={order.id} className="hover:shadow-md transition-shadow">
-      <CardHeader className="bg-[F5F5F0] bg-[#f5f5f0]">
+      <CardHeader>
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <CardTitle className="text-xl flex items-center gap-2">
