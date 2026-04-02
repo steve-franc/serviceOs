@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS set_order_number_trigger ON public.orders;
