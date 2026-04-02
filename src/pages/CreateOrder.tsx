@@ -155,6 +155,8 @@ const CreateOrder = () => {
     setOrderItems([]);
     setPaymentMethod("Cash");
     setNotes("");
+    setDiscountType("percentage");
+    setDiscountValue("");
     setDrawerOpen(false);
     setAmountGiven("");
     sessionStorage.removeItem('pendingOrder');
