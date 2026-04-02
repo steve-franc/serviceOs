@@ -113,11 +113,6 @@ const PublicOrder = () => {
   };
 
   const addToOrder = (menuItem: MenuItem) => {
-    // Validate currency matches restaurant currency
-    if (menuItem.currency !== currency) {
-      toast.error(`This item uses ${menuItem.currency} but the restaurant uses ${currency}`);
-      return;
-    }
 
     if (isMobile) haptics.tap();
     
@@ -500,7 +495,7 @@ const PublicOrder = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="customerEmail">Your Email *</Label>
+                    <Label htmlFor="customerEmail">Your Email (Optional)</Label>
                     <Input
                       id="customerEmail"
                       type="email"
@@ -508,7 +503,6 @@ const PublicOrder = () => {
                       onChange={(e) => setCustomerEmail(e.target.value.slice(0, 255))}
                       placeholder="john@example.com"
                       className="mt-2"
-                      required
                       maxLength={255}
                     />
                   </div>
@@ -563,7 +557,7 @@ const PublicOrder = () => {
                         className={`px-2.5 py-1 text-xs font-medium transition-colors ${discountType === "fixed" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
                         onClick={() => setDiscountType("fixed")}
                       >
-                        ₺
+                        {getCurrencySymbol(currency)}
                       </button>
                     </div>
                     <Input
