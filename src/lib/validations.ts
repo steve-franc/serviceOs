@@ -42,7 +42,7 @@ export type PaymentMethod = typeof PAYMENT_METHODS[number];
 // Order validation schemas
 export const publicOrderSchema = z.object({
   customerName: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
-  customerEmail: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  customerEmail: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters").optional().or(z.literal("")),
   notes: z.string().max(1000, "Notes must be less than 1000 characters").optional(),
   paymentMethod: z.enum(PAYMENT_METHODS),
 });
