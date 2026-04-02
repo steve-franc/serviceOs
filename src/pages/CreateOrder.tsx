@@ -95,11 +95,11 @@ const CreateOrder = () => {
   // Persist order state to sessionStorage
   useEffect(() => {
     if (orderItems.length > 0) {
-      sessionStorage.setItem('pendingOrder', JSON.stringify({ orderItems, paymentMethod, notes }));
+      sessionStorage.setItem('pendingOrder', JSON.stringify({ orderItems, paymentMethod, notes, discountType, discountValue }));
     } else {
       sessionStorage.removeItem('pendingOrder');
     }
-  }, [orderItems, paymentMethod, notes]);
+  }, [orderItems, paymentMethod, notes, discountType, discountValue]);
   const addToOrder = (menuItem: MenuItem) => {
     // Validate currency matches restaurant currency
     if (menuItem.currency !== currency) {
