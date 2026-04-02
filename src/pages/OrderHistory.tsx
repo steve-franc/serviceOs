@@ -61,7 +61,15 @@ const OrderHistory = () => {
   const { data: ordersData, isLoading: loading } = useOrders();
   const invalidateOrders = useInvalidateOrders();
   
-  const recentOrders = (ordersData?.recentOrders || []) as Order[];
+  const recentOrdersRaw = (ordersData?.recentOrders || []) as Order[];
+  // Sort pending orders to the top
+  const recentOrders = useMemo(() => {
+    return [...recentOrdersRaw].sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      return 0;
+    });
+  }, [recentOrdersRaw]);
   const archivedOrders = (ordersData?.archivedOrders || []) as Order[];
   const dailyReports = (ordersData?.dailyReports || []) as DailyReportInfo[];
   const lastEndDayDate = ordersData?.lastEndDayDate ?? null;
