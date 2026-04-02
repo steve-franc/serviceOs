@@ -212,7 +212,7 @@ const PublicOrder = () => {
     // Validate all input fields
     const validation = validateInput(publicOrderSchema, {
       customerName,
-      customerEmail,
+      customerEmail: customerEmail || undefined,
       notes: notes || undefined,
       paymentMethod,
     });
@@ -239,7 +239,7 @@ const PublicOrder = () => {
             payment_method: paymentMethod,
             notes: notes || null,
             customer_name: customerName,
-            customer_email: customerEmail,
+            customer_email: customerEmail || null,
             is_public_order: true,
             currency: currency,
             restaurant_id: restaurantId,
