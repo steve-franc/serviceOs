@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator";
 import ExpenseManager from "@/components/expenses/ExpenseManager";
 import { useOrders, useInvalidateOrders } from "@/hooks/useQueries";
+import { stopAlarm } from "@/components/NotificationSound";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 
 interface DailyReportInfo {
@@ -236,14 +237,36 @@ const OrderHistory = () => {
 
 
 
-  const handleUpdateOrderStatus = async (orderId: string, status: 'confirmed' | 'declined') => {
+  const handleConfirmOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+      const { error } = await supabase.from("orders").update({ status: 'confirmed' }).eq("id", orderId);
       if (error) throw error;
-      toast.success(`Order ${status === 'confirmed' ? 'confirmed' : 'declined'} successfully`);
+      toast.dismiss(`pending-order-${orderId}`);
+      toast.success("Order confirmed!");
       invalidateOrders();
+      // Check if any pending orders remain
+      const remaining = recentOrders.filter(o => o.status === 'pending' && o.id !== orderId);
+      if (remaining.length === 0) stopAlarm();
     } catch (error: any) {
-      toast.error(`Failed to ${status} order`);
+      toast.error("Failed to confirm order");
+    }
+  };
+
+  const handleDeclineOrder = async (orderId: string) => {
+    try {
+      // Delete order items first, then the order
+      const { error: itemsError } = await supabase.from("order_items").delete().eq("order_id", orderId);
+      if (itemsError) throw itemsError;
+      const { error } = await supabase.from("orders").delete().eq("id", orderId);
+      if (error) throw error;
+      toast.dismiss(`pending-order-${orderId}`);
+      toast.success("Order declined and removed");
+      invalidateOrders();
+      // Check if any pending orders remain
+      const remaining = recentOrders.filter(o => o.status === 'pending' && o.id !== orderId);
+      if (remaining.length === 0) stopAlarm();
+    } catch (error: any) {
+      toast.error("Failed to decline order");
     }
   };
 
