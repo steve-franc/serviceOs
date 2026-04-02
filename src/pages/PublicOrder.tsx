@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed, X } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Percent, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice, getCurrencySymbol } from "@/lib/currency";
@@ -42,6 +42,8 @@ const PublicOrder = () => {
   const [notes, setNotes] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
+  const [discountValue, setDiscountValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [restaurantName, setRestaurantName] = useState("Restaurant");
   const [currency, setCurrency] = useState("USD");
@@ -155,6 +157,8 @@ const PublicOrder = () => {
     setNotes("");
     setCustomerName("");
     setCustomerEmail("");
+    setDiscountType("percentage");
+    setDiscountValue("");
   };
 
   const calculateItemTotal = (item: OrderItem) => {
@@ -163,8 +167,22 @@ const PublicOrder = () => {
     return baseTotal + extraTotal;
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return orderItems.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  };
+
+  const calculateDiscountAmount = () => {
+    const subtotal = calculateSubtotal();
+    const val = parseFloat(discountValue);
+    if (!val || val <= 0) return 0;
+    if (discountType === "percentage") {
+      return Math.min(subtotal, subtotal * (Math.min(val, 100) / 100));
+    }
+    return Math.min(subtotal, val);
+  };
+
+  const calculateTotal = () => {
+    return Math.max(0, calculateSubtotal() - calculateDiscountAmount());
   };
 
   const handleSubmitOrder = async () => {
@@ -207,7 +225,8 @@ const PublicOrder = () => {
             is_public_order: true,
             currency: currency,
             restaurant_id: restaurantId,
-            order_number: 0, // Trigger will set the correct number
+            order_number: 0,
+            discount_amount: calculateDiscountAmount(),
           },
         ])
         .select()
@@ -467,7 +486,62 @@ const PublicOrder = () => {
 
                 <Separator />
 
+                {/* Discount */}
                 <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5" />
+                    Discount
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex rounded-md border border-input overflow-hidden">
+                      <button
+                        type="button"
+                        className={`px-2.5 py-1 text-xs font-medium transition-colors ${discountType === "percentage" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
+                        onClick={() => setDiscountType("percentage")}
+                      >
+                        <Percent className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-2.5 py-1 text-xs font-medium transition-colors ${discountType === "fixed" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
+                        onClick={() => setDiscountType("fixed")}
+                      >
+                        ₺
+                      </button>
+                    </div>
+                    <Input
+                      type="number"
+                      placeholder={discountType === "percentage" ? "0%" : "0.00"}
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(e.target.value)}
+                      className="h-8 text-sm max-w-24"
+                      min={0}
+                      max={discountType === "percentage" ? 100 : undefined}
+                      step={discountType === "percentage" ? 1 : 0.01}
+                    />
+                    {calculateDiscountAmount() > 0 && (
+                      <span className="text-sm text-destructive font-medium">
+                        -{formatPrice(calculateDiscountAmount(), currency)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  {calculateDiscountAmount() > 0 && (
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span>{formatPrice(calculateSubtotal(), currency)}</span>
+                    </div>
+                  )}
+                  {calculateDiscountAmount() > 0 && (
+                    <div className="flex justify-between text-sm text-destructive">
+                      <span>Discount</span>
+                      <span>-{formatPrice(calculateDiscountAmount(), currency)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary">{formatPrice(calculateTotal(), currency)}</span>

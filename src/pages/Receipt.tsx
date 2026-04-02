@@ -25,6 +25,7 @@ interface OrderData {
   created_at: string;
   currency: string;
   edited_at: string | null;
+  discount_amount: number;
 }
 
 interface OrderItemData {
@@ -369,6 +370,18 @@ const Receipt = () => {
                 <Separator />
 
                 <div className="space-y-2">
+                  {order.discount_amount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(order.total + order.discount_amount, order.currency)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-destructive">
+                        <span>Discount</span>
+                        <span>-{formatPrice(order.discount_amount, order.currency)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-xl font-bold">
                     <span>Total</span>
                     <span className="text-primary">{formatPrice(order.total, order.currency)}</span>

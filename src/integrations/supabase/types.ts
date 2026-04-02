@@ -266,6 +266,7 @@ export type Database = {
           currency: string
           customer_email: string | null
           customer_name: string | null
+          discount_amount: number
           edited_at: string | null
           id: string
           is_public_order: boolean
@@ -281,6 +282,7 @@ export type Database = {
           currency?: string
           customer_email?: string | null
           customer_name?: string | null
+          discount_amount?: number
           edited_at?: string | null
           id?: string
           is_public_order?: boolean
@@ -296,6 +298,7 @@ export type Database = {
           currency?: string
           customer_email?: string | null
           customer_name?: string | null
+          discount_amount?: number
           edited_at?: string | null
           id?: string
           is_public_order?: boolean
