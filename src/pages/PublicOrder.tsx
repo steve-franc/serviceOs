@@ -225,7 +225,8 @@ const PublicOrder = () => {
             is_public_order: true,
             currency: currency,
             restaurant_id: restaurantId,
-            order_number: 0, // Trigger will set the correct number
+            order_number: 0,
+            discount_amount: calculateDiscountAmount(),
           },
         ])
         .select()
