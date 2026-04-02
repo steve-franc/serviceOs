@@ -566,11 +566,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_public_order: {
+        Args: {
+          _customer_email: string
+          _customer_name: string
+          _items: Json
+          _notes: string
+          _payment_method: string
+          _restaurant_id: string
+        }
+        Returns: {
+          id: string
+          order_number: number
+        }[]
+      }
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
       get_next_order_number: {
         Args: { _restaurant_id: string }
         Returns: number
       }
+      get_public_receipt: { Args: { _order_id: string }; Returns: Json }
       has_role:
         | {
             Args: {
