@@ -153,7 +153,6 @@ export type Database = {
           restaurant_id: string | null
           staff_id: string
           stock_qty: number
-          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -171,7 +170,6 @@ export type Database = {
           restaurant_id?: string | null
           staff_id: string
           stock_qty?: number
-          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -189,7 +187,6 @@ export type Database = {
           restaurant_id?: string | null
           staff_id?: string
           stock_qty?: number
-          tags?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -211,18 +208,21 @@ export type Database = {
       }
       menu_tags: {
         Row: {
+          category: string
           created_at: string
           id: string
           name: string
           restaurant_id: string
         }
         Insert: {
+          category?: string
           created_at?: string
           id?: string
           name: string
           restaurant_id: string
         }
         Update: {
+          category?: string
           created_at?: string
           id?: string
           name?: string
