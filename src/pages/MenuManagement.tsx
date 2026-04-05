@@ -494,6 +494,15 @@ const MenuManagement = () => {
                                   Stock: {item.stock_qty}
                                 </Badge>}
                             </div>
+                            {item.tags && item.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {item.tags.map((tag: string) => (
+                                  <Badge key={tag} variant="outline" className="text-xs bg-accent/50">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                         {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
