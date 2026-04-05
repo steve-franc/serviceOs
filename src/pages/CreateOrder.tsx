@@ -282,7 +282,7 @@ const CreateOrder = () => {
   }, {} as Record<string, MenuItem[]>);
 
   // Auto-expand all categories when searching
-  const isSearching = searchQuery.trim().length > 0;
+  const isSearching = searchQuery.trim().length > 0 || selectedTags.size > 0;
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
