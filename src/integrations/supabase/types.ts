@@ -153,6 +153,7 @@ export type Database = {
           restaurant_id: string | null
           staff_id: string
           stock_qty: number
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -170,6 +171,7 @@ export type Database = {
           restaurant_id?: string | null
           staff_id: string
           stock_qty?: number
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -187,6 +189,7 @@ export type Database = {
           restaurant_id?: string | null
           staff_id?: string
           stock_qty?: number
+          tags?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -202,6 +205,35 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          restaurant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_tags_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
