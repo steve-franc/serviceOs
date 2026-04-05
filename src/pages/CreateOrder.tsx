@@ -253,14 +253,24 @@ const CreateOrder = () => {
   };
   // Filter by search then group by category
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return menuItems;
-    const q = searchQuery.toLowerCase();
-    return menuItems.filter(item =>
-      item.name.toLowerCase().includes(q) ||
-      (item.category && item.category.toLowerCase().includes(q)) ||
-      (item.description && item.description.toLowerCase().includes(q))
-    );
-  }, [menuItems, searchQuery]);
+    let items = menuItems;
+    // Filter by tags
+    if (selectedTags.size > 0) {
+      items = items.filter(item =>
+        item.tags && item.tags.some((tag: string) => selectedTags.has(tag))
+      );
+    }
+    // Filter by search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(q) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.description && item.description.toLowerCase().includes(q))
+      );
+    }
+    return items;
+  }, [menuItems, searchQuery, selectedTags]);
 
   const groupedByCategory = filteredItems.reduce((acc, item) => {
     const category = item.category || "Uncategorized";
