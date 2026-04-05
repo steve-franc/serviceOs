@@ -436,30 +436,54 @@ const OrderHistory = () => {
           </Card>}
 
         {!loading && (recentOrders.length > 0 || archivedOrders.length > 0 || dailyReports.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
+            {/* Tag Filter */}
+            {menuTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">Filter by tag:</span>
+                <Badge
+                  variant={selectedTag === "all" ? "default" : "outline"}
+                  className="cursor-pointer select-none"
+                  onClick={() => setSelectedTag("all")}
+                >
+                  All
+                </Badge>
+                {menuTags.map((tag: any) => (
+                  <Badge
+                    key={tag.id}
+                    variant={selectedTag === tag.name ? "default" : "outline"}
+                    className="cursor-pointer select-none"
+                    onClick={() => setSelectedTag(tag.name)}
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
             <TabsList>
               <TabsTrigger value="recent" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 {lastEndDayDate ? `Since ${format(new Date(lastEndDayDate), "PP p")}` : "All Orders"}
                 <Badge variant="secondary" className="ml-1">
-                  {recentOrders.length}
+                  {filteredRecentOrders.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="archived" className="flex items-center gap-2">
                 <Archive className="h-4 w-4" />
                 Archives
                 <Badge variant="secondary" className="ml-1">
-                  {archivedOrders.length}
+                  {filteredArchivedOrders.length}
                 </Badge>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="recent" className="space-y-4">
-              {recentOrders.length === 0 ? <Card>
+              {filteredRecentOrders.length === 0 ? <Card>
                   <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">No recent orders</p>
+                    <p className="text-muted-foreground">{selectedTag !== "all" ? "No orders match this tag" : "No recent orders"}</p>
                   </CardContent>
                 </Card> : <div className="space-y-4">
-                  {recentOrders.map(renderOrderCard)}
+                  {filteredRecentOrders.map(renderOrderCard)}
                 </div>}
             </TabsContent>
 
