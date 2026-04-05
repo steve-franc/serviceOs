@@ -448,28 +448,31 @@ const OrderHistory = () => {
 
         {!loading && (recentOrders.length > 0 || archivedOrders.length > 0 || dailyReports.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
             {/* Tag Filter */}
-            {menuTags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-muted-foreground">Filter by tag:</span>
-                <Badge
-                  variant={selectedTag === "all" ? "default" : "outline"}
-                  className="cursor-pointer select-none"
-                  onClick={() => setSelectedTag("all")}
-                >
-                  All
-                </Badge>
-                {menuTags.map((tag: any) => (
+            {menuTags.length > 0 && (() => {
+              const uniqueNames = [...new Set((menuTags as any[]).map(t => t.name))].sort();
+              return (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Filter by tag:</span>
                   <Badge
-                    key={tag.id}
-                    variant={selectedTag === tag.name ? "default" : "outline"}
+                    variant={selectedTag === "all" ? "default" : "outline"}
                     className="cursor-pointer select-none"
-                    onClick={() => setSelectedTag(tag.name)}
+                    onClick={() => setSelectedTag("all")}
                   >
-                    {tag.name}
+                    All
                   </Badge>
-                ))}
-              </div>
-            )}
+                  {uniqueNames.map((name: string) => (
+                    <Badge
+                      key={name}
+                      variant={selectedTag === name ? "default" : "outline"}
+                      className="cursor-pointer select-none"
+                      onClick={() => setSelectedTag(name)}
+                    >
+                      {name}
+                    </Badge>
+                  ))}
+                </div>
+              );
+            })()}
 
             <TabsList>
               <TabsTrigger value="recent" className="flex items-center gap-2">
