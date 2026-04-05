@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
-import { useMenuTags, useInvalidateMenuTags } from "@/hooks/useQueries";
+import { useMenuTags, useInvalidateMenuTags, useMenuItems } from "@/hooks/useQueries";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,8 +77,32 @@ const Admin = () => {
   const [editingBills, setEditingBills] = useState(false);
   const [billsInput, setBillsInput] = useState("");
   const [newTagName, setNewTagName] = useState("");
+  const [newTagCategory, setNewTagCategory] = useState("");
   const { data: menuTags = [], isLoading: tagsLoading } = useMenuTags();
   const invalidateTags = useInvalidateMenuTags();
+  const { data: menuItemsData = [] } = useMenuItems();
+
+  // Get unique categories from menu items
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    (menuItemsData as any[]).forEach(item => {
+      if (item.category) cats.add(item.category);
+    });
+    return Array.from(cats).sort();
+  }, [menuItemsData]);
+
+  // Group tags by name
+  const groupedTags = useMemo(() => {
+    const groups: Record<string, { categories: { id: string; category: string }[] }> = {};
+    (menuTags as any[]).forEach(tag => {
+      if (!groups[tag.name]) groups[tag.name] = { categories: [] };
+      if (tag.category) groups[tag.name].categories.push({ id: tag.id, category: tag.category });
+    });
+    return groups;
+  }, [menuTags]);
+
+  // Get unique tag names for the dropdown
+  const tagNames = useMemo(() => Object.keys(groupedTags).sort(), [groupedTags]);
   useEffect(() => {
     if (isManager && restaurantId) {
       fetchData();
