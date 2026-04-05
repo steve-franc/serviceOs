@@ -176,7 +176,7 @@ const MenuManagement = () => {
       currency: "TRY",
       is_inventory_item: item.is_inventory_item,
       stock_qty: item.stock_qty?.toString() || "",
-      tags: item.tags || [],
+      
     });
     setDialogOpen(true);
   };
@@ -191,7 +191,7 @@ const MenuManagement = () => {
       currency: "TRY",
       is_inventory_item: false,
       stock_qty: "",
-      tags: [],
+      
     });
     setEditingItem(null);
   };
