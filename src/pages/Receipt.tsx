@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Printer, ArrowLeft, Edit, Save, X, Calculator } from "lucide-react";
+import { Printer, ArrowLeft, Edit, Save, X, Calculator, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { PAYMENT_METHODS } from "@/lib/validations";
@@ -56,6 +56,8 @@ const Receipt = () => {
 
   // Change calculator
   const [amountGiven, setAmountGiven] = useState("");
+  const [restaurantName, setRestaurantName] = useState("Restaurant");
+  const isPendingPublicOrder = searchParams.get("pending") === "true";
 
   useEffect(() => {
     if (id) {
@@ -83,6 +85,18 @@ const Receipt = () => {
         const publicReceipt = data as unknown as { order: OrderData; items: OrderItemData[] };
         setOrder(publicReceipt.order);
         setOrderItems(publicReceipt.items || []);
+
+        // Fetch restaurant name for public receipts
+        const { data: orderRow } = await supabase.rpc("get_public_receipt", { _order_id: id! });
+        // We need the restaurant_id to get the name; extract from orders via a separate approach
+        // For now, try to get it from restaurant_settings
+        try {
+          const { data: allSettings } = await supabase.from("restaurant_settings").select("restaurant_name, restaurant_id").limit(100);
+          if (allSettings && allSettings.length > 0) {
+            // Just use the first one for public receipts since we can't easily get restaurant_id
+            setRestaurantName(allSettings[0].restaurant_name);
+          }
+        } catch {}
         return;
       }
 
@@ -103,6 +117,16 @@ const Receipt = () => {
 
       setOrder(orderData as OrderData);
       setOrderItems(itemsData || []);
+
+      // Fetch restaurant name
+      if (orderData.restaurant_id) {
+        const { data: settings } = await supabase
+          .from("restaurant_settings")
+          .select("restaurant_name")
+          .eq("restaurant_id", orderData.restaurant_id)
+          .maybeSingle();
+        if (settings) setRestaurantName(settings.restaurant_name);
+      }
     } catch (error: any) {
       toast.error("Failed to load receipt");
       navigate("/orders");
@@ -222,9 +246,48 @@ const Receipt = () => {
     );
   }
 
+  const isPublicView = !searchParams.has("edit") && isPendingPublicOrder;
+
+  // Pending approval screen for public orders
+  if (isPendingPublicOrder && order) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-8 pb-8 text-center space-y-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Clock className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <h2 className="text-xl font-bold">Waiting for Approval</h2>
+            <p className="text-muted-foreground text-sm">
+              Your order <span className="font-semibold text-foreground">#{order.order_number}</span> has been submitted and is waiting for the restaurant to confirm.
+            </p>
+            <Separator />
+            <div className="text-left space-y-2">
+              <p className="text-sm font-medium">Order Summary</p>
+              {orderItems.map((item) => (
+                <div key={item.id} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{item.quantity}× {item.menu_item_name}</span>
+                  <span>{formatPrice(item.subtotal, order.currency)}</span>
+                </div>
+              ))}
+              <Separator />
+              <div className="flex justify-between font-bold">
+                <span>Total</span>
+                <span className="text-primary">{formatPrice(order.total, order.currency)}</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              You will receive confirmation once your order is approved.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-3xl mx-auto space-y-4 px-2 sm:px-0">
         <div className="print:hidden flex items-center gap-3 flex-wrap">
           <Button variant="outline" onClick={() => navigate("/orders")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -272,7 +335,7 @@ const Receipt = () => {
 
         <Card className="print:shadow-none" id="receipt-print">
           <CardHeader className="text-center space-y-2">
-            <CardTitle className="text-2xl">Restaurant POS</CardTitle>
+            <CardTitle className="text-2xl">{restaurantName}</CardTitle>
             <p className="text-sm text-muted-foreground">Order Receipt</p>
             {order.edited_at && (
               <Badge variant="outline" className="mx-auto text-yellow-600 border-yellow-400">
