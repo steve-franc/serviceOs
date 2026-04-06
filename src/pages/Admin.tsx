@@ -126,13 +126,50 @@ const Admin = () => {
     if (!restaurantId) return;
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("fixed_daily_bills")
+      .select("fixed_daily_bills, payment_methods")
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
     if (data) {
       setFixedDailyBills(Number(data.fixed_daily_bills) || 0);
       setBillsInput(String(data.fixed_daily_bills || 0));
+      if (Array.isArray(data.payment_methods)) {
+        setConfiguredPaymentMethods(data.payment_methods as string[]);
+      }
     }
+  };
+
+  const addPaymentMethod = async () => {
+    const method = newPaymentMethod.trim();
+    if (!method || !restaurantId) return;
+    if (configuredPaymentMethods.includes(method)) {
+      toast.error("Payment method already exists");
+      return;
+    }
+    const updated = [...configuredPaymentMethods, method];
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ payment_methods: updated })
+      .eq("restaurant_id", restaurantId);
+    if (error) { toast.error("Failed to add payment method"); return; }
+    setConfiguredPaymentMethods(updated);
+    setNewPaymentMethod("");
+    toast.success(`Added "${method}"`);
+  };
+
+  const removePaymentMethod = async (method: string) => {
+    if (!restaurantId) return;
+    const updated = configuredPaymentMethods.filter(m => m !== method);
+    if (updated.length === 0) {
+      toast.error("Must have at least one payment method");
+      return;
+    }
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ payment_methods: updated })
+      .eq("restaurant_id", restaurantId);
+    if (error) { toast.error("Failed to remove payment method"); return; }
+    setConfiguredPaymentMethods(updated);
+    toast.success(`Removed "${method}"`);
   };
 
   const saveFixedDailyBills = async () => {
