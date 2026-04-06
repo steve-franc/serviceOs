@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp } from "lucide-react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
@@ -49,6 +50,7 @@ const PublicOrder = () => {
   const [restaurantId, setRestaurantId] = useState<string | null>(urlRestaurantId || null);
   const [publicOrdersDisabled, setPublicOrdersDisabled] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!urlRestaurantId) {
@@ -283,6 +285,102 @@ const PublicOrder = () => {
     );
   }
 
+  const orderSummaryContent = (
+    <div className="space-y-4">
+      {orderItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          No items added yet
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {orderItems.map((item) => (
+            <div key={item.menuItem.id} className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0" onClick={() => removeFromOrder(item.menuItem.id)}>
+                  <X className="h-4 w-4" />
+                </Button>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{item.menuItem.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              {item.menuItem.per_unit_price && (
+                <div className="flex items-center gap-2 pl-2">
+                  <Label className="text-xs text-muted-foreground flex-1">
+                    Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateExtraUnits(item.menuItem.id, -1)}>
+                      <Minus className="h-2 w-2" />
+                    </Button>
+                    <span className="w-6 text-center text-xs">{item.extraUnits}</span>
+                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateExtraUnits(item.menuItem.id, 1)}>
+                      <Plus className="h-2 w-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <p className="font-medium text-sm">{formatPrice(calculateItemTotal(item), item.menuItem.currency)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Separator />
+
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="customerName">Your Name *</Label>
+          <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value.slice(0, 100))} placeholder="John Doe" className="mt-2" required maxLength={100} />
+        </div>
+        <div>
+          <Label htmlFor="customerEmail">Your Email (Optional)</Label>
+          <Input id="customerEmail" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value.slice(0, 255))} placeholder="john@example.com" className="mt-2" maxLength={255} />
+        </div>
+        <div>
+          <Label>Payment Method</Label>
+          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2 grid grid-cols-2 gap-2">
+            {PAYMENT_METHODS.map((method) => (
+              <div key={method} className="flex items-center space-x-2">
+                <RadioGroupItem value={method} id={`public-${method.toLowerCase()}`} />
+                <Label htmlFor={`public-${method.toLowerCase()}`} className="font-normal">{method}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+        <div>
+          <Label htmlFor="notes">Special Requests (Optional)</Label>
+          <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value.slice(0, 1000))} placeholder="Any special instructions..." className="mt-2" rows={2} maxLength={1000} />
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-lg font-bold">
+          <span>Total</span>
+          <span className="text-primary">{formatPrice(calculateTotal(), currency)}</span>
+        </div>
+        <Button className="w-full" size="lg" onClick={handleSubmitOrder} disabled={loading || orderItems.length === 0}>
+          {loading ? "Processing..." : "Place Order"}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -301,7 +399,7 @@ const PublicOrder = () => {
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Menu Items */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 pb-20 md:pb-0">
             {Object.entries(groupedItems).map(([category, items]) => (
               <div key={category}>
                 <h3 className="text-xl font-semibold mb-3">{category}</h3>
@@ -345,181 +443,54 @@ const PublicOrder = () => {
             )}
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  Your Order
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {orderItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-6">
-                    No items added yet
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {orderItems.map((item) => (
-                      <div key={item.menuItem.id} className="space-y-2">
-                        <div className="flex items-start gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0" 
-                            onClick={() => removeFromOrder(item.menuItem.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{item.menuItem.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.quantity > 0 
-                                ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base`
-                                : "Only extra units"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => updateQuantity(item.menuItem.id, -1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center text-sm font-medium">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => updateQuantity(item.menuItem.id, 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {item.menuItem.per_unit_price && (
-                          <div className="flex items-center gap-2 pl-2">
-                            <Label className="text-xs text-muted-foreground flex-1">
-                              Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
-                            </Label>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => updateExtraUnits(item.menuItem.id, -1)}
-                              >
-                                <Minus className="h-2 w-2" />
-                              </Button>
-                              <span className="w-6 text-center text-xs">
-                                {item.extraUnits}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => updateExtraUnits(item.menuItem.id, 1)}
-                              >
-                                <Plus className="h-2 w-2" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-end">
-                          <p className="font-medium text-sm">
-                            {formatPrice(calculateItemTotal(item), item.menuItem.currency)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="customerName">Your Name *</Label>
-                    <Input
-                      id="customerName"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value.slice(0, 100))}
-                      placeholder="John Doe"
-                      className="mt-2"
-                      required
-                      maxLength={100}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="customerEmail">Your Email (Optional)</Label>
-                    <Input
-                      id="customerEmail"
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value.slice(0, 255))}
-                      placeholder="john@example.com"
-                      className="mt-2"
-                      maxLength={255}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Payment Method</Label>
-                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2 grid grid-cols-2 gap-2">
-                      {PAYMENT_METHODS.map((method) => (
-                        <div key={method} className="flex items-center space-x-2">
-                          <RadioGroupItem value={method} id={`public-${method.toLowerCase()}`} />
-                          <Label htmlFor={`public-${method.toLowerCase()}`} className="font-normal">
-                            {method}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="notes">Special Requests (Optional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
-                      placeholder="Any special instructions..."
-                      className="mt-2"
-                      rows={2}
-                      maxLength={1000}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span className="text-primary">{formatPrice(calculateTotal(), currency)}</span>
-                  </div>
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={handleSubmitOrder}
-                    disabled={loading || orderItems.length === 0}
-                  >
-                    {loading ? "Processing..." : "Place Order"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Order Summary - Desktop only */}
+          {!isMobile && (
+            <div className="lg:col-span-1">
+              <Card className="sticky top-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Your Order
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {orderSummaryContent}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Mobile Drawer */}
+      {isMobile && (
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerTrigger asChild>
+            <Button className="fixed bottom-4 left-4 right-4 z-50 h-14 shadow-lg" size="lg">
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              <span className="flex-1 text-left">Your Order</span>
+              {orderItems.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {orderItems.length}
+                </Badge>
+              )}
+              <span className="ml-2 font-bold">{formatPrice(calculateTotal(), currency)}</span>
+              <ChevronUp className="h-5 w-5 ml-2" />
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Your Order
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6 overflow-y-auto">
+              {orderSummaryContent}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
     </div>
   );
 };
