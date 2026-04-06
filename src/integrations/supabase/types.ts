@@ -405,6 +405,7 @@ export type Database = {
           currency: string
           fixed_daily_bills: number
           id: string
+          payment_methods: Json
           restaurant_id: string | null
           restaurant_name: string
           updated_at: string
@@ -415,6 +416,7 @@ export type Database = {
           currency?: string
           fixed_daily_bills?: number
           id?: string
+          payment_methods?: Json
           restaurant_id?: string | null
           restaurant_name?: string
           updated_at?: string
@@ -425,6 +427,7 @@ export type Database = {
           currency?: string
           fixed_daily_bills?: number
           id?: string
+          payment_methods?: Json
           restaurant_id?: string | null
           restaurant_name?: string
           updated_at?: string
