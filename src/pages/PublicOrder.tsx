@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
-import { publicOrderSchema, validateInput, PAYMENT_METHODS } from "@/lib/validations";
+import { publicOrderSchema, validateInput, DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
 interface MenuItem {
   id: string;
   name: string;

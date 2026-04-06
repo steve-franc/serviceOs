@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Printer, ArrowLeft, Edit, Save, X, Calculator, Clock, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
-import { PAYMENT_METHODS } from "@/lib/validations";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
 
 interface OrderData {
   id: string;

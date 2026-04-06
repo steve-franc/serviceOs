@@ -23,7 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useTabs, useInvalidateTabs, useMenuItems } from "@/hooks/useQueries";
-import { PAYMENT_METHODS } from "@/lib/validations";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
 
 interface MenuItem {
   id: string;
