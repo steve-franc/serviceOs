@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed, X } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
@@ -232,7 +232,7 @@ const PublicOrder = () => {
 
       toast.success(`Order #${createdOrder.order_number} placed successfully!`);
       resetOrderState();
-      navigate(`/receipt/${createdOrder.id}`);
+      navigate(`/receipt/${createdOrder.id}?pending=true`);
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
     } finally {
@@ -240,8 +240,10 @@ const PublicOrder = () => {
     }
   };
 
+  const EXCLUDED_CATEGORIES = ['misc', 'utility', 'miscellaneous'];
   const groupedItems = menuItems.reduce((acc, item) => {
     const category = item.category || "Other";
+    if (EXCLUDED_CATEGORIES.includes(category.toLowerCase())) return acc;
     if (!acc[category]) acc[category] = [];
     acc[category].push(item);
     return acc;
