@@ -303,7 +303,7 @@ export type Database = {
           id: string
           is_public_order: boolean
           notes: string | null
-          order_number: number
+          order_number: string
           payment_method: string
           restaurant_id: string | null
           staff_id: string
@@ -320,7 +320,7 @@ export type Database = {
           id?: string
           is_public_order?: boolean
           notes?: string | null
-          order_number: number
+          order_number?: string
           payment_method: string
           restaurant_id?: string | null
           staff_id: string
@@ -337,7 +337,7 @@ export type Database = {
           id?: string
           is_public_order?: boolean
           notes?: string | null
-          order_number?: number
+          order_number?: string
           payment_method?: string
           restaurant_id?: string | null
           staff_id?: string
@@ -612,13 +612,13 @@ export type Database = {
         }
         Returns: {
           id: string
-          order_number: number
+          order_number: string
         }[]
       }
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
       get_next_order_number: {
         Args: { _restaurant_id: string }
-        Returns: number
+        Returns: string
       }
       get_public_receipt: { Args: { _order_id: string }; Returns: Json }
       has_role:
