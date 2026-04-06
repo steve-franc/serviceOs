@@ -566,6 +566,52 @@ const Admin = () => {
           </Card>
         )}
 
+        {/* Payment Methods Configuration */}
+        {restaurantId && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Payment Methods</CardTitle>
+              </div>
+              <CardDescription>
+                Configure which payment methods are available for orders.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {configuredPaymentMethods.map(method => (
+                  <Badge key={method} variant="secondary" className="gap-1 pr-1">
+                    {method}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 hover:text-destructive"
+                      onClick={() => removePaymentMethod(method)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="New payment method..."
+                  value={newPaymentMethod}
+                  onChange={(e) => setNewPaymentMethod(e.target.value)}
+                  className="max-w-xs"
+                  maxLength={50}
+                  onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
+                />
+                <Button size="sm" onClick={addPaymentMethod} disabled={!newPaymentMethod.trim()}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="staff" className="space-y-4">
           <TabsList className="flex-wrap">
             <TabsTrigger value="staff">Staff Management</TabsTrigger>
