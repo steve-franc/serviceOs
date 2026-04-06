@@ -51,6 +51,7 @@ const PublicOrder = () => {
   const [publicOrdersDisabled, setPublicOrdersDisabled] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>([...DEFAULT_PAYMENT_METHODS]);
 
   useEffect(() => {
     if (!urlRestaurantId) {
@@ -70,7 +71,7 @@ const PublicOrder = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("restaurant_id, restaurant_name, allow_public_orders")
+      .select("restaurant_id, restaurant_name, allow_public_orders, payment_methods")
       .eq("restaurant_id", urlRestaurantId!)
       .maybeSingle();
 
@@ -78,6 +79,10 @@ const PublicOrder = () => {
       setRestaurantName(data.restaurant_name);
       setCurrency("TRY");
       setRestaurantId(data.restaurant_id ?? null);
+      if (Array.isArray(data.payment_methods) && data.payment_methods.length > 0) {
+        setAvailablePaymentMethods(data.payment_methods as string[]);
+        setPaymentMethod(data.payment_methods[0] as string);
+      }
       if (!data.allow_public_orders) {
         setPublicOrdersDisabled(true);
       }
@@ -353,7 +358,7 @@ const PublicOrder = () => {
         <div>
           <Label>Payment Method</Label>
           <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2 grid grid-cols-2 gap-2">
-            {PAYMENT_METHODS.map((method) => (
+            {availablePaymentMethods.map((method) => (
               <div key={method} className="flex items-center space-x-2">
                 <RadioGroupItem value={method} id={`public-${method.toLowerCase()}`} />
                 <Label htmlFor={`public-${method.toLowerCase()}`} className="font-normal">{method}</Label>
