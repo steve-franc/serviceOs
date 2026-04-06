@@ -231,24 +231,6 @@ const Receipt = () => {
 
   const changeAmount = amountGiven ? parseFloat(amountGiven) - (order?.total || 0) : null;
 
-  if (loading) {
-    return (
-      <Layout>
-        <p className="text-center text-muted-foreground">Loading receipt...</p>
-      </Layout>
-    );
-  }
-
-  if (!order) {
-    return (
-      <Layout>
-        <p className="text-center text-muted-foreground">Order not found</p>
-      </Layout>
-    );
-  }
-
-  const isPublicView = !searchParams.has("edit") && isPendingPublicOrder;
-
   // Real-time listener for order status changes (for public waiting screen)
   useEffect(() => {
     if (!isPendingPublicOrder || !id) return;
@@ -286,6 +268,22 @@ const Receipt = () => {
       channel.unsubscribe();
     };
   }, [isPendingPublicOrder, id]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <p className="text-center text-muted-foreground">Loading receipt...</p>
+      </Layout>
+    );
+  }
+
+  if (!order) {
+    return (
+      <Layout>
+        <p className="text-center text-muted-foreground">Order not found</p>
+      </Layout>
+    );
+  }
 
   // Pending approval screen for public orders
   if (isPendingPublicOrder && order) {
