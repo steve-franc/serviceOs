@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X } from "lucide-react";
+import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuTags, useInvalidateMenuTags, useMenuItems } from "@/hooks/useQueries";
+import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,8 +79,12 @@ const Admin = () => {
   const [billsInput, setBillsInput] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [newTagCategory, setNewTagCategory] = useState("");
-  const [configuredPaymentMethods, setConfiguredPaymentMethods] = useState<string[]>([]);
+  const [configuredPaymentMethods, setConfiguredPaymentMethods] = useState<PaymentMethodConfig[]>([]);
   const [newPaymentMethod, setNewPaymentMethod] = useState("");
+  const [editingMethod, setEditingMethod] = useState<PaymentMethodConfig | null>(null);
+  const [editCurrency, setEditCurrency] = useState("");
+  const [editAccount, setEditAccount] = useState("");
+  const [editRate, setEditRate] = useState("");
   const { data: menuTags = [], isLoading: tagsLoading } = useMenuTags();
   const invalidateTags = useInvalidateMenuTags();
   const { data: menuItemsData = [] } = useMenuItems();
@@ -132,44 +137,66 @@ const Admin = () => {
     if (data) {
       setFixedDailyBills(Number(data.fixed_daily_bills) || 0);
       setBillsInput(String(data.fixed_daily_bills || 0));
-      if (Array.isArray(data.payment_methods)) {
-        setConfiguredPaymentMethods(data.payment_methods as string[]);
-      }
+      setConfiguredPaymentMethods(parsePaymentMethods(data.payment_methods));
     }
+  };
+
+  const savePaymentMethods = async (updated: PaymentMethodConfig[]) => {
+    if (!restaurantId) return false;
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ payment_methods: updated as any })
+      .eq("restaurant_id", restaurantId);
+    if (error) { toast.error("Failed to save payment methods"); return false; }
+    setConfiguredPaymentMethods(updated);
+    return true;
   };
 
   const addPaymentMethod = async () => {
     const method = newPaymentMethod.trim();
     if (!method || !restaurantId) return;
-    if (configuredPaymentMethods.includes(method)) {
+    if (configuredPaymentMethods.some(m => m.name === method)) {
       toast.error("Payment method already exists");
       return;
     }
-    const updated = [...configuredPaymentMethods, method];
-    const { error } = await supabase
-      .from("restaurant_settings")
-      .update({ payment_methods: updated })
-      .eq("restaurant_id", restaurantId);
-    if (error) { toast.error("Failed to add payment method"); return; }
-    setConfiguredPaymentMethods(updated);
-    setNewPaymentMethod("");
-    toast.success(`Added "${method}"`);
+    const newConfig: PaymentMethodConfig = { name: method, currency: "TRY", account_number: "", conversion_rate: 1 };
+    const updated = [...configuredPaymentMethods, newConfig];
+    if (await savePaymentMethods(updated)) {
+      setNewPaymentMethod("");
+      toast.success(`Added "${method}"`);
+    }
   };
 
-  const removePaymentMethod = async (method: string) => {
+  const removePaymentMethod = async (methodName: string) => {
     if (!restaurantId) return;
-    const updated = configuredPaymentMethods.filter(m => m !== method);
+    const updated = configuredPaymentMethods.filter(m => m.name !== methodName);
     if (updated.length === 0) {
       toast.error("Must have at least one payment method");
       return;
     }
-    const { error } = await supabase
-      .from("restaurant_settings")
-      .update({ payment_methods: updated })
-      .eq("restaurant_id", restaurantId);
-    if (error) { toast.error("Failed to remove payment method"); return; }
-    setConfiguredPaymentMethods(updated);
-    toast.success(`Removed "${method}"`);
+    if (await savePaymentMethods(updated)) {
+      toast.success(`Removed "${methodName}"`);
+    }
+  };
+
+  const openEditMethod = (method: PaymentMethodConfig) => {
+    setEditingMethod(method);
+    setEditCurrency(method.currency);
+    setEditAccount(method.account_number);
+    setEditRate(String(method.conversion_rate));
+  };
+
+  const saveEditMethod = async () => {
+    if (!editingMethod) return;
+    const updated = configuredPaymentMethods.map(m =>
+      m.name === editingMethod.name
+        ? { ...m, currency: editCurrency.trim() || "TRY", account_number: editAccount.trim(), conversion_rate: parseFloat(editRate) || 1 }
+        : m
+    );
+    if (await savePaymentMethods(updated)) {
+      toast.success(`Updated "${editingMethod.name}"`);
+      setEditingMethod(null);
+    }
   };
 
   const saveFixedDailyBills = async () => {
