@@ -18,6 +18,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuTags, useInvalidateMenuTags, useMenuItems } from "@/hooks/useQueries";
 import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
