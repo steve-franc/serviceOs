@@ -15,7 +15,8 @@ import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
-import { publicOrderSchema, validateInput, DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
+import { publicOrderSchema, validateInput } from "@/lib/validations";
+import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
 interface MenuItem {
   id: string;
   name: string;
@@ -51,7 +52,7 @@ const PublicOrder = () => {
   const [publicOrdersDisabled, setPublicOrdersDisabled] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>([...DEFAULT_PAYMENT_METHODS]);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethodConfig[]>([]);
 
   useEffect(() => {
     if (!urlRestaurantId) {
@@ -79,10 +80,9 @@ const PublicOrder = () => {
       setRestaurantName(data.restaurant_name);
       setCurrency("TRY");
       setRestaurantId(data.restaurant_id ?? null);
-      if (Array.isArray(data.payment_methods) && data.payment_methods.length > 0) {
-        setAvailablePaymentMethods(data.payment_methods as string[]);
-        setPaymentMethod(data.payment_methods[0] as string);
-      }
+      const methods = parsePaymentMethods(data.payment_methods);
+      setAvailablePaymentMethods(methods);
+      setPaymentMethod(methods[0]?.name || "Cash");
       if (!data.allow_public_orders) {
         setPublicOrdersDisabled(true);
       }
