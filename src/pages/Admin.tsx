@@ -606,19 +606,23 @@ const Admin = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {configuredPaymentMethods.map(method => (
-                  <Badge key={method} variant="secondary" className="gap-1 pr-1">
-                    {method}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 hover:text-destructive"
-                      onClick={() => removePaymentMethod(method)}
-                    >
-                      <X className="h-3 w-3" />
+                  <div key={method.name} className="flex items-center gap-2 p-2 border rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{method.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {method.currency} · Rate: {method.conversion_rate}
+                        {method.account_number ? ` · Acct: ${method.account_number}` : ""}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMethod(method)}>
+                      <Settings className="h-3.5 w-3.5" />
                     </Button>
-                  </Badge>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => removePaymentMethod(method.name)}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 ))}
               </div>
               <div className="flex items-center gap-2">
@@ -636,6 +640,36 @@ const Admin = () => {
                 </Button>
               </div>
             </CardContent>
+
+            {/* Edit payment method dialog */}
+            <Dialog open={!!editingMethod} onOpenChange={(open) => !open && setEditingMethod(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Configure "{editingMethod?.name}"</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Currency Code</Label>
+                    <Input value={editCurrency} onChange={e => setEditCurrency(e.target.value.slice(0, 10))} placeholder="TRY" className="mt-2" maxLength={10} />
+                  </div>
+                  <div>
+                    <Label>Account Number / Details</Label>
+                    <Input value={editAccount} onChange={e => setEditAccount(e.target.value.slice(0, 200))} placeholder="e.g. TR12 3456 7890..." className="mt-2" maxLength={200} />
+                  </div>
+                  <div>
+                    <Label>Conversion Rate (1 TRY = ?)</Label>
+                    <Input type="number" value={editRate} onChange={e => setEditRate(e.target.value)} placeholder="1" className="mt-2" min={0} step="0.0001" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      If 1 TRY = 0.03 USD, enter 0.03. If same currency, keep at 1.
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingMethod(null)}>Cancel</Button>
+                  <Button onClick={saveEditMethod}>Save</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </Card>
         )}
 
