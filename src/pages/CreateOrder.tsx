@@ -19,7 +19,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuItems, useMenuTags, useRestaurantSettings } from "@/hooks/useQueries";
-import { staffOrderSchema, validateInput, DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
+import { staffOrderSchema, validateInput } from "@/lib/validations";
+import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
 interface MenuItem {
   id: string;
   name: string;
@@ -47,7 +48,7 @@ const CreateOrder = () => {
   const { data: menuItemsData = [] } = useMenuItems(true);
   const { data: menuTags = [] } = useMenuTags();
   const { data: restaurantSettings } = useRestaurantSettings();
-  const paymentMethods: string[] = (restaurantSettings?.payment_methods as string[] | null) || [...DEFAULT_PAYMENT_METHODS];
+  const paymentMethods: string[] = getMethodNames(parsePaymentMethods(restaurantSettings?.payment_methods));
   const menuItems = menuItemsData as MenuItem[];
   // Restore persisted order from sessionStorage
   const [orderItems, setOrderItems] = useState<OrderItem[]>(() => {

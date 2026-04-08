@@ -23,7 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useTabs, useInvalidateTabs, useMenuItems, useRestaurantSettings } from "@/hooks/useQueries";
-import { DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
+import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
 
 interface MenuItem {
   id: string;
@@ -148,7 +148,7 @@ const TabDetail = ({
   const isMobile = useIsMobile();
   const haptics = useHaptics();
   const { data: restaurantSettings } = useRestaurantSettings();
-  const paymentMethods: string[] = (restaurantSettings?.payment_methods as string[] | null) || [...DEFAULT_PAYMENT_METHODS];
+  const paymentMethods: string[] = getMethodNames(parsePaymentMethods(restaurantSettings?.payment_methods));
 
   const [tabItems, setTabItems] = useState<TabItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
