@@ -22,6 +22,7 @@ export type Database = {
           description: string
           id: string
           restaurant_id: string
+          source: string | null
           staff_id: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           description: string
           id?: string
           restaurant_id: string
+          source?: string | null
           staff_id: string
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           description?: string
           id?: string
           restaurant_id?: string
+          source?: string | null
           staff_id?: string
         }
         Relationships: [
@@ -449,8 +452,10 @@ export type Database = {
           created_at: string
           currency: string
           fixed_daily_bills: number
+          fixed_monthly_expenses: number
           id: string
           payment_methods: Json
+          profit_margin_threshold: number
           restaurant_id: string | null
           restaurant_name: string
           updated_at: string
@@ -460,8 +465,10 @@ export type Database = {
           created_at?: string
           currency?: string
           fixed_daily_bills?: number
+          fixed_monthly_expenses?: number
           id?: string
           payment_methods?: Json
+          profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
           updated_at?: string
@@ -471,8 +478,10 @@ export type Database = {
           created_at?: string
           currency?: string
           fixed_daily_bills?: number
+          fixed_monthly_expenses?: number
           id?: string
           payment_methods?: Json
+          profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
           updated_at?: string

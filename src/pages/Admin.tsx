@@ -78,6 +78,12 @@ const Admin = () => {
   const [fixedDailyBills, setFixedDailyBills] = useState<number>(0);
   const [editingBills, setEditingBills] = useState(false);
   const [billsInput, setBillsInput] = useState("");
+  const [fixedMonthlyExpenses, setFixedMonthlyExpenses] = useState<number>(0);
+  const [editingMonthly, setEditingMonthly] = useState(false);
+  const [monthlyInput, setMonthlyInput] = useState("");
+  const [profitMarginThreshold, setProfitMarginThreshold] = useState<number>(20);
+  const [editingThreshold, setEditingThreshold] = useState(false);
+  const [thresholdInput, setThresholdInput] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [newTagCategory, setNewTagCategory] = useState("");
   const [configuredPaymentMethods, setConfiguredPaymentMethods] = useState<PaymentMethodConfig[]>([]);
@@ -132,14 +138,44 @@ const Admin = () => {
     if (!restaurantId) return;
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("fixed_daily_bills, payment_methods")
+      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold")
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
     if (data) {
       setFixedDailyBills(Number(data.fixed_daily_bills) || 0);
       setBillsInput(String(data.fixed_daily_bills || 0));
       setConfiguredPaymentMethods(parsePaymentMethods(data.payment_methods));
+      setFixedMonthlyExpenses(Number((data as any).fixed_monthly_expenses) || 0);
+      setMonthlyInput(String((data as any).fixed_monthly_expenses || 0));
+      setProfitMarginThreshold(Number((data as any).profit_margin_threshold) || 20);
+      setThresholdInput(String((data as any).profit_margin_threshold || 20));
     }
+  };
+
+  const saveFixedMonthlyExpenses = async () => {
+    if (!restaurantId) return;
+    const value = parseFloat(monthlyInput) || 0;
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ fixed_monthly_expenses: value } as any)
+      .eq("restaurant_id", restaurantId);
+    if (error) { toast.error("Failed to save"); return; }
+    setFixedMonthlyExpenses(value);
+    setEditingMonthly(false);
+    toast.success("Monthly fixed expenses updated");
+  };
+
+  const saveProfitThreshold = async () => {
+    if (!restaurantId) return;
+    const value = parseFloat(thresholdInput) || 20;
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ profit_margin_threshold: value } as any)
+      .eq("restaurant_id", restaurantId);
+    if (error) { toast.error("Failed to save"); return; }
+    setProfitMarginThreshold(value);
+    setEditingThreshold(false);
+    toast.success("Profit margin threshold updated");
   };
 
   const savePaymentMethods = async (updated: PaymentMethodConfig[]) => {
@@ -558,7 +594,62 @@ const Admin = () => {
           )}
         </Card>
 
-        {/* Public Ordering Link */}
+        {/* Fixed Monthly Expenses */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Fixed Monthly Expenses</CardTitle>
+              </div>
+              {!editingMonthly ? (
+                <Button variant="outline" size="sm" onClick={() => { setEditingMonthly(true); setMonthlyInput(String(fixedMonthlyExpenses)); }}>
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input type="number" value={monthlyInput} onChange={(e) => setMonthlyInput(e.target.value)} className="w-28 h-8" min={0} step="0.01" />
+                  <Button size="sm" onClick={saveFixedMonthlyExpenses}><Save className="h-3 w-3 mr-1" />Save</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingMonthly(false)}>Cancel</Button>
+                </div>
+              )}
+            </div>
+            <CardDescription>
+              {fixedMonthlyExpenses > 0
+                ? `₺${fixedMonthlyExpenses.toFixed(2)}/month → ₺${(fixedMonthlyExpenses / 30).toFixed(2)}/day deducted from daily profit`
+                : "Set monthly fixed costs (rent, salaries, etc.) to deduct daily from profits"}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Profit Margin Threshold */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Low Profit Alert Threshold</CardTitle>
+              </div>
+              {!editingThreshold ? (
+                <Button variant="outline" size="sm" onClick={() => { setEditingThreshold(true); setThresholdInput(String(profitMarginThreshold)); }}>
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input type="number" value={thresholdInput} onChange={(e) => setThresholdInput(e.target.value)} className="w-20 h-8" min={0} max={100} step="1" />
+                  <span className="text-sm">%</span>
+                  <Button size="sm" onClick={saveProfitThreshold}><Save className="h-3 w-3 mr-1" />Save</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingThreshold(false)}>Cancel</Button>
+                </div>
+              )}
+            </div>
+            <CardDescription>
+              Alert when daily profit margin drops below {profitMarginThreshold}%
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+
         {restaurantId && (
           <Card className="border-accent/20">
             <CardHeader className="pb-3">

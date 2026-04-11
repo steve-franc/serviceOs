@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLocation } from "react-router-dom";
+import { useAlerts } from "@/hooks/useAlerts";
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const { hasRole } = useUserRole();
   const location = useLocation();
+  useAlerts();
 
   const showSidebar =
     hasRole && !["/auth", "/", "/order"].includes(location.pathname) && !location.pathname.startsWith("/receipt/");

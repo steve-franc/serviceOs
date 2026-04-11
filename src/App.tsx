@@ -23,6 +23,7 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const TabsPage = lazy(() => import("./pages/Tabs"));
 const ReportBreakdown = lazy(() => import("./pages/ReportBreakdown"));
 const Debtors = lazy(() => import("./pages/Debtors"));
+const Reports = lazy(() => import("./pages/Reports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -98,6 +99,7 @@ const App = () => {
               <Route path="/tabs" element={<ProtectedRoute><TabsPage /></ProtectedRoute>} />
               <Route path="/debtors" element={<ProtectedRoute><Debtors /></ProtectedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

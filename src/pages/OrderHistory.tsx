@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { formatDateFull } from "@/lib/date-format";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import ExpenseManager from "@/components/expenses/ExpenseManager";
-import { useOrders, useInvalidateOrders, useMenuTags, useMenuItems } from "@/hooks/useQueries";
+import { useOrders, useInvalidateOrders, useMenuTags, useMenuItems, useExpenses, useRestaurantSettings } from "@/hooks/useQueries";
 import { stopAlarm } from "@/components/NotificationSound";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 
@@ -61,6 +62,8 @@ const OrderHistory = () => {
   const { restaurantId } = useRestaurantContext();
   const { data: ordersData, isLoading: loading } = useOrders();
   const invalidateOrders = useInvalidateOrders();
+  const { data: expensesData = [] } = useExpenses();
+  const { data: settingsData } = useRestaurantSettings();
 
   // Real-time: refresh orders on any insert/update/delete
   useEffect(() => {
@@ -449,7 +452,7 @@ const OrderHistory = () => {
                 </p>
               </div>
               <CardDescription>
-                {recentOrders.filter(o => o.status === 'confirmed').length} confirmed order{recentOrders.filter(o => o.status === 'confirmed').length !== 1 ? 's' : ''} since {lastEndDayDate ? format(new Date(lastEndDayDate), "PP p") : "start"}
+                {recentOrders.filter(o => o.status === 'confirmed').length} confirmed order{recentOrders.filter(o => o.status === 'confirmed').length !== 1 ? 's' : ''} since {lastEndDayDate ? formatDateFull(lastEndDayDate) : "start"}
               </CardDescription>
             </CardHeader>
           </Card>
@@ -635,36 +638,103 @@ const OrderHistory = () => {
           <DialogHeader className="print:hidden">
             <DialogTitle className="text-2xl">Daily Report</DialogTitle>
             <DialogDescription>
-              Summary for {format(new Date(), "PPP")}
+              Summary for {formatDateFull(new Date())}
             </DialogDescription>
           </DialogHeader>
 
-          {dailyReport && <div className="space-y-6">
+          {dailyReport && (() => {
+            const totalExp = (expensesData as any[]).reduce((s: number, e: any) => s + Number(e.amount), 0);
+            const dailyFixed = Number((settingsData as any)?.fixed_monthly_expenses || 0) / 30;
+            const totalDeductions = totalExp + dailyFixed;
+            const netProfit = dailyReport.total_revenue - totalDeductions;
+            const margin = dailyReport.total_revenue > 0 ? (netProfit / dailyReport.total_revenue) * 100 : 0;
+
+            return <div className="space-y-6">
               <div className="print:text-center print:mb-6">
                 <h1 className="text-2xl font-bold hidden print:block">Daily Report</h1>
                 <p className="text-muted-foreground hidden print:block">
-                  {format(new Date(), "PPP")}
+                  {formatDateFull(new Date())}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 print:mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:mb-6">
                 <Card className="print:shadow-none print:border-2">
                   <CardHeader className="pb-3">
                     <CardDescription>Total Orders</CardDescription>
-                    <CardTitle className="text-3xl text-primary">
+                    <CardTitle className="text-2xl text-primary">
                       {dailyReport.total_orders}
                     </CardTitle>
                   </CardHeader>
                 </Card>
-
                 <Card className="print:shadow-none print:border-2">
                   <CardHeader className="pb-3">
-                    <CardDescription>Total Revenue</CardDescription>
-                    <CardTitle className="text-3xl text-primary">
+                    <CardDescription>Revenue</CardDescription>
+                    <CardTitle className="text-2xl text-primary">
                       {formatPrice(dailyReport.total_revenue)}
                     </CardTitle>
                   </CardHeader>
                 </Card>
+                <Card className="print:shadow-none print:border-2">
+                  <CardHeader className="pb-3">
+                    <CardDescription>Expenses</CardDescription>
+                    <CardTitle className="text-2xl text-destructive">
+                      {formatPrice(totalDeductions)}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card className={`print:shadow-none print:border-2 ${netProfit >= 0 ? "border-green-500/30" : "border-destructive/30"}`}>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Net Profit</CardDescription>
+                    <CardTitle className={`text-2xl ${netProfit >= 0 ? "text-green-600" : "text-destructive"}`}>
+                      {formatPrice(netProfit)}
+                    </CardTitle>
+                    <CardDescription className="text-xs">{margin.toFixed(1)}% margin</CardDescription>
+                  </CardHeader>
+                </Card>
+              </div>
+
+              {/* Expense summary in report */}
+              {(totalExp > 0 || dailyFixed > 0) && (
+                <>
+                  <Separator />
+                  <div className="print:mb-6">
+                    <h3 className="font-semibold mb-3">Expense Summary</h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        const bySource: Record<string, number> = {};
+                        (expensesData as any[]).forEach((e: any) => {
+                          const src = e.source || "Unspecified";
+                          bySource[src] = (bySource[src] || 0) + Number(e.amount);
+                        });
+                        return Object.entries(bySource).map(([src, total]) => (
+                          <div key={src} className="flex justify-between p-2 bg-muted rounded text-sm">
+                            <span>{src}</span>
+                            <span className="text-destructive font-medium">-{formatPrice(total)}</span>
+                          </div>
+                        ));
+                      })()}
+                      {dailyFixed > 0 && (
+                        <div className="flex justify-between p-2 bg-muted rounded text-sm">
+                          <span>Fixed Monthly Costs (÷30)</span>
+                          <span className="text-destructive font-medium">-{formatPrice(dailyFixed)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between p-2 bg-destructive/10 rounded font-bold text-sm">
+                        <span>Total Outgoing</span>
+                        <span className="text-destructive">-{formatPrice(totalDeductions)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Expected to receive */}
+              <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
+                <div>
+                  <p className="font-semibold">Expected to Receive</p>
+                  <p className="text-xs text-muted-foreground">Revenue minus all expenses</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">{formatPrice(netProfit)}</p>
               </div>
 
               <Separator />
@@ -780,7 +850,8 @@ const OrderHistory = () => {
                   Close
                 </Button>
               </div>
-            </div>}
+            </div>;
+          })()}
         </DialogContent>
       </Dialog>
 
