@@ -137,16 +137,6 @@ const ReportBreakdown = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="max-w-5xl mx-auto py-12 text-center">
-          <p className="text-muted-foreground">Loading report...</p>
-        </div>
-      </Layout>
-    );
-  }
-
   // Build tag-to-categories mapping
   const tagCategoryMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
@@ -158,6 +148,17 @@ const ReportBreakdown = () => {
   }, [menuTags]);
 
   const uniqueTags = useMemo(() => Object.keys(tagCategoryMap).sort(), [tagCategoryMap]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="max-w-5xl mx-auto py-12 text-center">
+          <p className="text-muted-foreground">Loading report...</p>
+        </div>
+      </Layout>
+    );
+  }
+
 
   // Filter items by selected tag
   const isItemInTag = (itemName: string) => {
