@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Printer, ArrowLeft, Edit, Save, X, Calculator, Clock, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
-import { DEFAULT_PAYMENT_METHODS } from "@/lib/validations";
+import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
 
 interface OrderData {
   id: string;
@@ -57,7 +57,7 @@ const Receipt = () => {
   // Change calculator
   const [amountGiven, setAmountGiven] = useState("");
   const [restaurantName, setRestaurantName] = useState("Restaurant");
-  const [paymentMethods, setPaymentMethods] = useState<string[]>([...DEFAULT_PAYMENT_METHODS]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(["Cash", "Card"]);
   const isPendingPublicOrder = searchParams.get("pending") === "true";
   const [orderStatus, setOrderStatus] = useState<string>("pending");
 
@@ -129,9 +129,8 @@ const Receipt = () => {
           .maybeSingle();
         if (settings) {
           setRestaurantName(settings.restaurant_name);
-          if (Array.isArray(settings.payment_methods) && settings.payment_methods.length > 0) {
-            setPaymentMethods(settings.payment_methods as string[]);
-          }
+          const parsed = parsePaymentMethods(settings.payment_methods);
+          setPaymentMethods(getMethodNames(parsed));
         }
       }
     } catch (error: any) {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Share2, Copy, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Share2, Copy, Check, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatPrice } from "@/lib/currency";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuItems, useInvalidateMenuItems, useRestaurantSettings } from "@/hooks/useQueries";
 import { menuItemSchema, validateInput } from "@/lib/validations";
@@ -41,6 +42,8 @@ const MenuManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -195,7 +198,19 @@ const MenuManagement = () => {
     });
     setEditingItem(null);
   };
-  const groupedItems = menuItems.reduce((acc, item) => {
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return menuItems;
+    const q = searchQuery.toLowerCase();
+    return menuItems.filter(item =>
+      item.name.toLowerCase().includes(q) ||
+      (item.category && item.category.toLowerCase().includes(q)) ||
+      (item.description && item.description.toLowerCase().includes(q))
+    );
+  }, [menuItems, searchQuery]);
+
+  const isSearching = searchQuery.trim().length > 0;
+
+  const groupedItems = filteredItems.reduce((acc, item) => {
     const category = item.category || "Uncategorized";
     if (!acc[category]) acc[category] = [];
     acc[category].push(item);
@@ -209,6 +224,15 @@ const MenuManagement = () => {
     acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
+
+  const toggleCategory = (cat: string) => {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
 
   const generateMenuText = () => {
     let text = "📋 MENU\n\n";
@@ -432,65 +456,98 @@ const MenuManagement = () => {
 
         {loading && <p className="text-center text-muted-foreground">Loading menu...</p>}
 
+        {!loading && menuItems.length > 0 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search menu items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
+
         {!loading && menuItems.length === 0 && <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground mb-4">No menu items yet</p>
-              <Button onClick={() => setDialogOpen(true)} className="bg-[435663] bg-[#435663]">
+              <Button onClick={() => setDialogOpen(true)} className="bg-[#435663]">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Item
               </Button>
             </CardContent>
           </Card>}
 
-        {!loading && menuItems.length > 0 && <div className="space-y-6">
-            {Object.entries(groupedItems).map(([category, items]) => <div key={category}>
-                <h3 className="text-xl font-semibold mb-3">{category}</h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {items.map(item => <Card key={item.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg">{item.name}</CardTitle>
-                            <div className="flex flex-col gap-2 mt-1">
-                              <Badge variant="secondary" className="font-bold w-fit">
-                                {formatPrice(item.base_price, item.currency)}
-                              </Badge>
-                              {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
-                                  +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
-                                  </Badge>}
-                              {item.is_inventory_item && <Badge variant={item.stock_qty > 0 ? "outline" : "destructive"} className="text-xs w-fit">
-                                  Stock: {item.stock_qty}
-                                </Badge>}
+        {!loading && filteredItems.length > 0 && <div className="space-y-4">
+            {Object.entries(groupedItems).map(([category, items]) => {
+              const isOpen = isSearching || !collapsedCategories.has(category);
+              return (
+                <Collapsible key={category} open={isOpen} onOpenChange={() => !isSearching && toggleCategory(category)}>
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors">
+                    {isSearching ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : isOpen ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <h3 className="text-xl font-semibold">{category}</h3>
+                    <Badge variant="secondary" className="ml-auto">{items.length}</Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-3">
+                      {items.map(item => <Card key={item.id} className="hover:shadow-md transition-shadow">
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <CardTitle className="text-lg">{item.name}</CardTitle>
+                                <div className="flex flex-col gap-2 mt-1">
+                                  <Badge variant="secondary" className="font-bold w-fit">
+                                    {formatPrice(item.base_price, item.currency)}
+                                  </Badge>
+                                  {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
+                                      +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
+                                      </Badge>}
+                                  {item.is_inventory_item && <Badge variant={item.stock_qty > 0 ? "outline" : "destructive"} className="text-xs w-fit">
+                                      Stock: {item.stock_qty}
+                                    </Badge>}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
-                        <div className="flex items-center gap-2 mt-3">
-                          <Switch
-                            checked={item.is_available}
-                            onCheckedChange={() => handleToggleAvailability(item)}
-                            id={`available-${item.id}`}
-                          />
-                          <Label htmlFor={`available-${item.id}`} className="text-sm font-normal">
-                            {item.is_available ? 'Available' : 'Unavailable'}
-                          </Label>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1">
-                            <Pencil className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>)}
-                </div>
-              </div>)}
+                            {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
+                            <div className="flex items-center gap-2 mt-3">
+                              <Switch
+                                checked={item.is_available}
+                                onCheckedChange={() => handleToggleAvailability(item)}
+                                id={`available-${item.id}`}
+                              />
+                              <Label htmlFor={`available-${item.id}`} className="text-sm font-normal">
+                                {item.is_available ? 'Available' : 'Unavailable'}
+                              </Label>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1">
+                                <Pencil className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>)}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
           </div>}
+
+        {!loading && filteredItems.length === 0 && menuItems.length > 0 && (
+          <p className="text-center text-muted-foreground py-8">No items match your search</p>
+        )}
       </div>
     </Layout>;
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
@@ -45,6 +45,7 @@ const Inventory = () => {
   const { data: items = [], isLoading: loading } = useInventory();
   const invalidate = useInvalidateInventory();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -134,6 +135,16 @@ const Inventory = () => {
     });
     setEditingItem(null);
   };
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items as InventoryItem[];
+    const q = searchQuery.toLowerCase();
+    return (items as InventoryItem[]).filter(item =>
+      item.name.toLowerCase().includes(q) ||
+      (item.description && item.description.toLowerCase().includes(q)) ||
+      item.status.toLowerCase().includes(q)
+    );
+  }, [items, searchQuery]);
 
   return (
     <Layout>
@@ -233,6 +244,18 @@ const Inventory = () => {
           </Dialog>
         </div>
 
+        {!loading && items.length > 0 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search inventory..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
+
         {loading && <p className="text-center text-muted-foreground">Loading inventory...</p>}
 
         {!loading && items.length === 0 && (
@@ -247,9 +270,9 @@ const Inventory = () => {
           </Card>
         )}
 
-        {!loading && items.length > 0 && (
+        {!loading && filteredItems.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {(items as InventoryItem[]).map((item) => (
+            {filteredItems.map((item) => (
               <Card key={item.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">

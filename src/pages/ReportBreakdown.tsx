@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Printer } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Printer, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { toast } from "sonner";
@@ -29,6 +30,12 @@ interface OrderWithItems {
   items: OrderItem[];
 }
 
+interface MenuTag {
+  id: string;
+  name: string;
+  category: string;
+}
+
 const ReportBreakdown = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -38,6 +45,9 @@ const ReportBreakdown = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [paymentMethods, setPaymentMethods] = useState<Record<string, { count: number; total: number }>>({});
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
+  const [menuTags, setMenuTags] = useState<MenuTag[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>("all");
+  const [menuItemCategories, setMenuItemCategories] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadReport();
@@ -104,12 +114,40 @@ const ReportBreakdown = () => {
         setPaymentMethods(pm);
         setOrders(ordersWithItems);
       }
+
+      // Fetch menu tags and menu item categories for tag filtering
+      if (report.restaurant_id) {
+        const [tagsResult, menuResult] = await Promise.all([
+          supabase.from("menu_tags").select("*").eq("restaurant_id", report.restaurant_id),
+          supabase.from("menu_items").select("name, category").eq("restaurant_id", report.restaurant_id),
+        ]);
+        if (tagsResult.data) setMenuTags(tagsResult.data as MenuTag[]);
+        if (menuResult.data) {
+          const catMap: Record<string, string> = {};
+          menuResult.data.forEach((item: any) => {
+            if (item.category) catMap[item.name] = item.category;
+          });
+          setMenuItemCategories(catMap);
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to load report");
     } finally {
       setLoading(false);
     }
   };
+
+  // Build tag-to-categories mapping
+  const tagCategoryMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    menuTags.forEach(tag => {
+      if (!map[tag.name]) map[tag.name] = new Set();
+      map[tag.name].add(tag.category);
+    });
+    return map;
+  }, [menuTags]);
+
+  const uniqueTags = useMemo(() => Object.keys(tagCategoryMap).sort(), [tagCategoryMap]);
 
   if (loading) {
     return (
@@ -121,16 +159,38 @@ const ReportBreakdown = () => {
     );
   }
 
+
+  // Filter items by selected tag
+  const isItemInTag = (itemName: string) => {
+    if (selectedTag === "all") return true;
+    const tagCategories = tagCategoryMap[selectedTag];
+    if (!tagCategories) return false;
+    const itemCategory = menuItemCategories[itemName];
+    return itemCategory ? tagCategories.has(itemCategory) : false;
+  };
+
   // Build items breakdown
-  const itemMap: Record<string, { totalQty: number; totalRevenue: number }> = {};
+  const itemMap: Record<string, { totalQty: number; totalRevenue: number; category?: string }> = {};
   orders.forEach(order => {
     order.items.forEach(item => {
-      if (!itemMap[item.menu_item_name]) itemMap[item.menu_item_name] = { totalQty: 0, totalRevenue: 0 };
+      if (!isItemInTag(item.menu_item_name)) return;
+      if (!itemMap[item.menu_item_name]) itemMap[item.menu_item_name] = { totalQty: 0, totalRevenue: 0, category: menuItemCategories[item.menu_item_name] };
       itemMap[item.menu_item_name].totalQty += item.quantity;
       itemMap[item.menu_item_name].totalRevenue += item.subtotal;
     });
   });
   const sortedItems = Object.entries(itemMap).sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue);
+
+  // Group sorted items by category
+  const itemsByCategory: Record<string, typeof sortedItems> = {};
+  sortedItems.forEach(([name, data]) => {
+    const cat = data.category || "Uncategorized";
+    if (!itemsByCategory[cat]) itemsByCategory[cat] = [];
+    itemsByCategory[cat].push([name, data]);
+  });
+
+  const filteredTotalRevenue = sortedItems.reduce((sum, [, d]) => sum + d.totalRevenue, 0);
+  const filteredTotalQty = sortedItems.reduce((sum, [, d]) => sum + d.totalQty, 0);
 
   return (
     <Layout>
@@ -197,18 +257,50 @@ const ReportBreakdown = () => {
           <>
             <Separator />
             <div>
-              <h3 className="font-semibold mb-4 text-lg">Items Sold</h3>
-              <div className="space-y-3">
-                {sortedItems.map(([name, data]) => (
-                  <div key={name} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div>
-                      <p className="font-medium">{name}</p>
-                      <p className="text-sm text-muted-foreground">{data.totalQty} sold</p>
-                    </div>
-                    <p className="text-lg font-bold text-primary">{formatPrice(data.totalRevenue)}</p>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 className="font-semibold text-lg">Items Sold</h3>
+                {uniqueTags.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <Select value={selectedTag} onValueChange={setSelectedTag}>
+                      <SelectTrigger className="w-[160px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Items</SelectItem>
+                        {uniqueTags.map(tag => (
+                          <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
+                )}
               </div>
+              {selectedTag !== "all" && (
+                <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg mb-3">
+                  <div>
+                    <p className="font-medium text-sm">Tag: {selectedTag}</p>
+                    <p className="text-xs text-muted-foreground">{filteredTotalQty} items sold</p>
+                  </div>
+                  <p className="text-lg font-bold text-primary">{formatPrice(filteredTotalRevenue)}</p>
+                </div>
+              )}
+              {Object.entries(itemsByCategory).map(([category, catItems]) => (
+                <div key={category} className="mb-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">{category}</p>
+                  <div className="space-y-2">
+                    {catItems.map(([name, data]) => (
+                      <div key={name} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{name}</p>
+                          <p className="text-sm text-muted-foreground">{data.totalQty} sold</p>
+                        </div>
+                        <p className="text-lg font-bold text-primary">{formatPrice(data.totalRevenue)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
