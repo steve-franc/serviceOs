@@ -257,18 +257,50 @@ const ReportBreakdown = () => {
           <>
             <Separator />
             <div>
-              <h3 className="font-semibold mb-4 text-lg">Items Sold</h3>
-              <div className="space-y-3">
-                {sortedItems.map(([name, data]) => (
-                  <div key={name} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div>
-                      <p className="font-medium">{name}</p>
-                      <p className="text-sm text-muted-foreground">{data.totalQty} sold</p>
-                    </div>
-                    <p className="text-lg font-bold text-primary">{formatPrice(data.totalRevenue)}</p>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 className="font-semibold text-lg">Items Sold</h3>
+                {uniqueTags.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <Select value={selectedTag} onValueChange={setSelectedTag}>
+                      <SelectTrigger className="w-[160px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Items</SelectItem>
+                        {uniqueTags.map(tag => (
+                          <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
+                )}
               </div>
+              {selectedTag !== "all" && (
+                <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg mb-3">
+                  <div>
+                    <p className="font-medium text-sm">Tag: {selectedTag}</p>
+                    <p className="text-xs text-muted-foreground">{filteredTotalQty} items sold</p>
+                  </div>
+                  <p className="text-lg font-bold text-primary">{formatPrice(filteredTotalRevenue)}</p>
+                </div>
+              )}
+              {Object.entries(itemsByCategory).map(([category, catItems]) => (
+                <div key={category} className="mb-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">{category}</p>
+                  <div className="space-y-2">
+                    {catItems.map(([name, data]) => (
+                      <div key={name} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{name}</p>
+                          <p className="text-sm text-muted-foreground">{data.totalQty} sold</p>
+                        </div>
+                        <p className="text-lg font-bold text-primary">{formatPrice(data.totalRevenue)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
