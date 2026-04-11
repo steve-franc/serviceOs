@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Printer, Tag } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowLeft, Printer, Tag, TrendingDown, TrendingUp } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
+import { formatDateFull } from "@/lib/date-format";
+import { format } from "date-fns";
 import { toast } from "sonner";
 
 interface OrderItem {
@@ -27,6 +28,7 @@ interface OrderWithItems {
   payment_method: string;
   notes: string | null;
   created_at: string;
+  customer_name: string | null;
   items: OrderItem[];
 }
 
@@ -34,6 +36,15 @@ interface MenuTag {
   id: string;
   name: string;
   category: string;
+}
+
+interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string | null;
+  source: string | null;
+  created_at: string;
 }
 
 const ReportBreakdown = () => {
@@ -48,6 +59,8 @@ const ReportBreakdown = () => {
   const [menuTags, setMenuTags] = useState<MenuTag[]>([]);
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [menuItemCategories, setMenuItemCategories] = useState<Record<string, string>>({});
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [fixedMonthlyExpenses, setFixedMonthlyExpenses] = useState(0);
 
   useEffect(() => {
     loadReport();
@@ -59,7 +72,6 @@ const ReportBreakdown = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get this report
       const { data: report, error: reportError } = await supabase
         .from("daily_reports")
         .select("*")
@@ -71,7 +83,6 @@ const ReportBreakdown = () => {
       setTotalOrders(report.total_orders);
       setTotalRevenue(Number(report.total_revenue));
 
-      // Get all reports for this restaurant to find the previous cutoff
       const { data: allReports } = await supabase
         .from("daily_reports")
         .select("id, created_at")
@@ -83,29 +94,42 @@ const ReportBreakdown = () => {
       const prevCutoff = prevReport ? new Date(prevReport.created_at) : new Date(0);
       const reportTimestamp = new Date(report.created_at);
 
-      // Fetch orders for this period
-      const { data: ordersData } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("restaurant_id", report.restaurant_id)
-        .gte("created_at", prevCutoff.toISOString())
-        .lt("created_at", reportTimestamp.toISOString())
-        .order("created_at", { ascending: false });
+      // Fetch orders, expenses, tags, menu items, settings in parallel
+      const [ordersResult, expensesResult, tagsResult, menuResult, settingsResult] = await Promise.all([
+        supabase.from("orders").select("*").eq("restaurant_id", report.restaurant_id)
+          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .order("created_at", { ascending: false }),
+        supabase.from("daily_expenses").select("*").eq("restaurant_id", report.restaurant_id)
+          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .order("created_at", { ascending: false }),
+        supabase.from("menu_tags").select("*").eq("restaurant_id", report.restaurant_id),
+        supabase.from("menu_items").select("name, category").eq("restaurant_id", report.restaurant_id),
+        supabase.from("restaurant_settings").select("fixed_monthly_expenses").eq("restaurant_id", report.restaurant_id).maybeSingle(),
+      ]);
 
-      if (ordersData && ordersData.length > 0) {
-        const orderIds = ordersData.map(o => o.id);
+      if (expensesResult.data) setExpenses(expensesResult.data as Expense[]);
+      if (settingsResult.data) setFixedMonthlyExpenses(Number((settingsResult.data as any).fixed_monthly_expenses) || 0);
+      if (tagsResult.data) setMenuTags(tagsResult.data as MenuTag[]);
+      if (menuResult.data) {
+        const catMap: Record<string, string> = {};
+        menuResult.data.forEach((item: any) => {
+          if (item.category) catMap[item.name] = item.category;
+        });
+        setMenuItemCategories(catMap);
+      }
+
+      if (ordersResult.data && ordersResult.data.length > 0) {
+        const orderIds = ordersResult.data.map(o => o.id);
         const { data: itemsData } = await supabase
-          .from("order_items")
-          .select("*")
-          .in("order_id", orderIds);
+          .from("order_items").select("*").in("order_id", orderIds);
 
-        const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
+        const ordersWithItems: OrderWithItems[] = ordersResult.data.map(order => ({
           ...order,
           items: itemsData?.filter(item => item.order_id === order.id) || []
         }));
 
         const pm: Record<string, { count: number; total: number }> = {};
-        ordersData.forEach(order => {
+        ordersResult.data.forEach(order => {
           if (!pm[order.payment_method]) pm[order.payment_method] = { count: 0, total: 0 };
           pm[order.payment_method].count++;
           pm[order.payment_method].total += Number(order.total);
@@ -114,22 +138,6 @@ const ReportBreakdown = () => {
         setPaymentMethods(pm);
         setOrders(ordersWithItems);
       }
-
-      // Fetch menu tags and menu item categories for tag filtering
-      if (report.restaurant_id) {
-        const [tagsResult, menuResult] = await Promise.all([
-          supabase.from("menu_tags").select("*").eq("restaurant_id", report.restaurant_id),
-          supabase.from("menu_items").select("name, category").eq("restaurant_id", report.restaurant_id),
-        ]);
-        if (tagsResult.data) setMenuTags(tagsResult.data as MenuTag[]);
-        if (menuResult.data) {
-          const catMap: Record<string, string> = {};
-          menuResult.data.forEach((item: any) => {
-            if (item.category) catMap[item.name] = item.category;
-          });
-          setMenuItemCategories(catMap);
-        }
-      }
     } catch (error: any) {
       toast.error(error.message || "Failed to load report");
     } finally {
@@ -137,7 +145,6 @@ const ReportBreakdown = () => {
     }
   };
 
-  // Build tag-to-categories mapping
   const tagCategoryMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
     menuTags.forEach(tag => {
@@ -149,6 +156,45 @@ const ReportBreakdown = () => {
 
   const uniqueTags = useMemo(() => Object.keys(tagCategoryMap).sort(), [tagCategoryMap]);
 
+  // Expense calculations
+  const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const dailyFixedDeduction = fixedMonthlyExpenses / 30;
+  const totalDeductions = totalExpenses + dailyFixedDeduction;
+  const netProfit = totalRevenue - totalDeductions;
+  const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  // Group expenses by source
+  const expensesBySource: Record<string, number> = {};
+  expenses.forEach(exp => {
+    const src = exp.source || "Unspecified";
+    expensesBySource[src] = (expensesBySource[src] || 0) + Number(exp.amount);
+  });
+
+  // Tag revenue deductions: expenses sourced from a tag should be deducted from that tag's revenue
+  const tagDeductions: Record<string, number> = {};
+  expenses.forEach(exp => {
+    if (exp.source && uniqueTags.includes(exp.source)) {
+      tagDeductions[exp.source] = (tagDeductions[exp.source] || 0) + Number(exp.amount);
+    }
+  });
+
+  // Customer analytics
+  const customerStats = useMemo(() => {
+    const map: Record<string, { count: number; total: number; items: Record<string, number> }> = {};
+    orders.forEach(order => {
+      const name = order.customer_name || "Walk-in";
+      if (!map[name]) map[name] = { count: 0, total: 0, items: {} };
+      map[name].count++;
+      map[name].total += Number(order.total);
+      order.items.forEach(item => {
+        map[name].items[item.menu_item_name] = (map[name].items[item.menu_item_name] || 0) + item.quantity;
+      });
+    });
+    return Object.entries(map)
+      .sort(([, a], [, b]) => b.total - a.total)
+      .slice(0, 10);
+  }, [orders]);
+
   if (loading) {
     return (
       <Layout>
@@ -159,8 +205,6 @@ const ReportBreakdown = () => {
     );
   }
 
-
-  // Filter items by selected tag
   const isItemInTag = (itemName: string) => {
     if (selectedTag === "all") return true;
     const tagCategories = tagCategoryMap[selectedTag];
@@ -169,7 +213,6 @@ const ReportBreakdown = () => {
     return itemCategory ? tagCategories.has(itemCategory) : false;
   };
 
-  // Build items breakdown
   const itemMap: Record<string, { totalQty: number; totalRevenue: number; category?: string }> = {};
   orders.forEach(order => {
     order.items.forEach(item => {
@@ -181,7 +224,6 @@ const ReportBreakdown = () => {
   });
   const sortedItems = Object.entries(itemMap).sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue);
 
-  // Group sorted items by category
   const itemsByCategory: Record<string, typeof sortedItems> = {};
   sortedItems.forEach(([name, data]) => {
     const cat = data.category || "Uncategorized";
@@ -192,7 +234,6 @@ const ReportBreakdown = () => {
   const filteredTotalRevenue = sortedItems.reduce((sum, [, d]) => sum + d.totalRevenue, 0);
   const filteredTotalQty = sortedItems.reduce((sum, [, d]) => sum + d.totalQty, 0);
 
-  // Payment methods filtered by tag
   const filteredPaymentMethods: Record<string, { count: number; total: number }> = {};
   if (selectedTag !== "all") {
     orders.forEach(order => {
@@ -217,7 +258,7 @@ const ReportBreakdown = () => {
           <div className="flex-1">
             <h2 className="text-3xl font-bold">Daily Report</h2>
             <p className="text-muted-foreground">
-              {reportDate && `Day ended: ${format(new Date(reportDate), "PPP 'at' p")}`}
+              {reportDate && formatDateFull(reportDate)}
             </p>
           </div>
           <Button onClick={() => window.print()} className="gap-2">
@@ -229,11 +270,12 @@ const ReportBreakdown = () => {
         <div className="hidden print:block text-center mb-6">
           <h1 className="text-2xl font-bold">Daily Report</h1>
           <p className="text-muted-foreground">
-            {reportDate && format(new Date(reportDate), "PPP 'at' p")}
+            {reportDate && formatDateFull(reportDate)}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* Revenue & Profit Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Total Orders</CardDescription>
@@ -246,7 +288,136 @@ const ReportBreakdown = () => {
               <CardTitle className="text-3xl text-primary">{formatPrice(totalRevenue)}</CardTitle>
             </CardHeader>
           </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Total Expenses</CardDescription>
+              <CardTitle className="text-3xl text-destructive">{formatPrice(totalDeductions)}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className={netProfit >= 0 ? "border-green-500/30" : "border-destructive/30"}>
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-1">
+                {netProfit >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                Net Profit
+              </CardDescription>
+              <CardTitle className={`text-3xl ${netProfit >= 0 ? "text-green-600" : "text-destructive"}`}>
+                {formatPrice(netProfit)}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {profitMargin.toFixed(1)}% margin
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </div>
+
+        {/* Expense Breakdown */}
+        {(expenses.length > 0 || dailyFixedDeduction > 0) && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="font-semibold mb-4 text-lg">Expense Breakdown</h3>
+              <div className="space-y-3">
+                {Object.entries(expensesBySource).map(([source, total]) => (
+                  <div key={source} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">{source}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {expenses.filter(e => (e.source || "Unspecified") === source).length} item(s)
+                      </p>
+                    </div>
+                    <p className="text-lg font-bold text-destructive">-{formatPrice(total)}</p>
+                  </div>
+                ))}
+                {dailyFixedDeduction > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">Fixed Monthly Costs (÷30)</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatPrice(fixedMonthlyExpenses)} / month
+                      </p>
+                    </div>
+                    <p className="text-lg font-bold text-destructive">-{formatPrice(dailyFixedDeduction)}</p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg font-bold">
+                  <p>Total Outgoing</p>
+                  <p className="text-destructive">-{formatPrice(totalDeductions)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Individual expenses */}
+            {expenses.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Expense Details</p>
+                <div className="space-y-1">
+                  {expenses.map(exp => (
+                    <div key={exp.id} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
+                      <div className="flex-1">
+                        <span className="font-medium">{exp.description}</span>
+                        {exp.source && <span className="text-muted-foreground ml-2">({exp.source})</span>}
+                      </div>
+                      <span className="text-destructive font-medium">-{formatPrice(exp.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Revenue to Receive (after deductions) */}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Expected to Receive</p>
+                <p className="text-xs text-muted-foreground">Revenue minus all expenses</p>
+              </div>
+              <p className="text-3xl font-bold text-primary">{formatPrice(netProfit)}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tag Revenue with Deductions */}
+        {Object.keys(tagDeductions).length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="font-semibold mb-4 text-lg">Tag Revenue After Expenses</h3>
+              <div className="space-y-3">
+                {uniqueTags.map(tagName => {
+                  // Calculate tag revenue
+                  let tagRevenue = 0;
+                  orders.forEach(order => {
+                    order.items.forEach(item => {
+                      const itemCat = menuItemCategories[item.menu_item_name];
+                      if (itemCat && tagCategoryMap[tagName]?.has(itemCat)) {
+                        tagRevenue += item.subtotal;
+                      }
+                    });
+                  });
+                  const deduction = tagDeductions[tagName] || 0;
+                  if (tagRevenue === 0 && deduction === 0) return null;
+                  return (
+                    <div key={tagName} className="p-3 bg-muted rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium">{tagName}</p>
+                        <Badge variant={tagRevenue - deduction >= 0 ? "default" : "destructive"}>
+                          Net: {formatPrice(tagRevenue - deduction)}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>Revenue: {formatPrice(tagRevenue)}</span>
+                        {deduction > 0 && <span className="text-destructive">Expenses: -{formatPrice(deduction)}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
 
         {Object.keys(paymentMethods).length > 0 && (
           <>
@@ -336,6 +507,32 @@ const ReportBreakdown = () => {
           </>
         )}
 
+        {/* Top Customers */}
+        {customerStats.length > 0 && customerStats.some(([name]) => name !== "Walk-in") && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="font-semibold mb-4 text-lg">Top Customers</h3>
+              <div className="space-y-3">
+                {customerStats.filter(([name]) => name !== "Walk-in").map(([name, data]) => {
+                  const topItem = Object.entries(data.items).sort(([, a], [, b]) => b - a)[0];
+                  return (
+                    <div key={name} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">{name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {data.count} order(s) {topItem ? `• Favorite: ${topItem[0]}` : ""}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-primary">{formatPrice(data.total)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
         {orders.length > 0 && (
           <>
             <Separator />
@@ -350,6 +547,9 @@ const ReportBreakdown = () => {
                         <Badge variant="outline">{order.payment_method}</Badge>
                       </div>
                       <CardDescription>{format(new Date(order.created_at), "PPp")}</CardDescription>
+                      {order.customer_name && (
+                        <CardDescription>Customer: {order.customer_name}</CardDescription>
+                      )}
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="space-y-2">
