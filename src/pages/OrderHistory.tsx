@@ -452,7 +452,7 @@ const OrderHistory = () => {
                 </p>
               </div>
               <CardDescription>
-                {recentOrders.filter(o => o.status === 'confirmed').length} confirmed order{recentOrders.filter(o => o.status === 'confirmed').length !== 1 ? 's' : ''} since {lastEndDayDate ? format(new Date(lastEndDayDate), "PP p") : "start"}
+                {recentOrders.filter(o => o.status === 'confirmed').length} confirmed order{recentOrders.filter(o => o.status === 'confirmed').length !== 1 ? 's' : ''} since {lastEndDayDate ? formatDateFull(lastEndDayDate) : "start"}
               </CardDescription>
             </CardHeader>
           </Card>
