@@ -30,6 +30,12 @@ interface OrderWithItems {
   items: OrderItem[];
 }
 
+interface MenuTag {
+  id: string;
+  name: string;
+  category: string;
+}
+
 const ReportBreakdown = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,6 +45,9 @@ const ReportBreakdown = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [paymentMethods, setPaymentMethods] = useState<Record<string, { count: number; total: number }>>({});
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
+  const [menuTags, setMenuTags] = useState<MenuTag[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>("all");
+  const [menuItemCategories, setMenuItemCategories] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadReport();
