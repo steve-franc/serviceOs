@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Check, X, Users, AlertCircle } from "lucide-react";
+import { Plus, Check, X, Users, AlertCircle, Pencil } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { Separator } from "@/components/ui/separator";
@@ -32,10 +32,11 @@ const Debtors = () => {
   const [debtors, setDebtors] = useState<Debtor[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingDebtor, setEditingDebtor] = useState<Debtor | null>(null);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
 
   useEffect(() => {
@@ -56,30 +57,60 @@ const Debtors = () => {
     setLoading(false);
   };
 
-  const handleCreate = async () => {
+  const openCreate = () => {
+    setEditingDebtor(null);
+    setName("");
+    setAmount("");
+    setNotes("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (debtor: Debtor) => {
+    setEditingDebtor(debtor);
+    setName(debtor.customer_name);
+    setAmount(debtor.amount_owed.toString());
+    setNotes(debtor.notes || "");
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
     if (!restaurantId || !name.trim() || !amount) return;
-    setCreating(true);
+    setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("debtors").insert({
-        restaurant_id: restaurantId,
-        customer_name: name.trim(),
-        amount_owed: parseFloat(amount),
-        notes: notes.trim() || null,
-        staff_id: user.id,
-      });
-      if (error) throw error;
-      toast.success("Debtor added");
+      if (editingDebtor) {
+        const { error } = await supabase
+          .from("debtors")
+          .update({
+            customer_name: name.trim(),
+            amount_owed: parseFloat(amount),
+            notes: notes.trim() || null,
+          })
+          .eq("id", editingDebtor.id);
+        if (error) throw error;
+        toast.success("Debtor updated");
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
+        const { error } = await supabase.from("debtors").insert({
+          restaurant_id: restaurantId,
+          customer_name: name.trim(),
+          amount_owed: parseFloat(amount),
+          notes: notes.trim() || null,
+          staff_id: user.id,
+        });
+        if (error) throw error;
+        toast.success("Debtor added");
+      }
       setDialogOpen(false);
+      setEditingDebtor(null);
       setName("");
       setAmount("");
       setNotes("");
       fetchDebtors();
     } catch (err: any) {
-      toast.error(err.message || "Failed to add debtor");
+      toast.error(err.message || "Failed to save debtor");
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
@@ -132,7 +163,7 @@ const Debtors = () => {
             <h2 className="text-3xl font-bold">Debtors</h2>
             <p className="text-muted-foreground">Track customers with outstanding payments</p>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Add Debtor
           </Button>
@@ -158,7 +189,7 @@ const Debtors = () => {
             <CardContent className="py-12 text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No debtors recorded</p>
-              <Button onClick={() => setDialogOpen(true)} variant="outline" className="mt-4">
+              <Button onClick={openCreate} variant="outline" className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Add a debtor
               </Button>
@@ -183,6 +214,9 @@ const Debtors = () => {
                       <Badge variant="destructive" className="text-base px-3 py-1">
                         {formatPrice(debtor.amount_owed, debtor.currency)}
                       </Badge>
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openEdit(debtor)} title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleResolved(debtor)} title="Mark as paid">
                         <Check className="h-4 w-4" />
                       </Button>
@@ -238,11 +272,10 @@ const Debtors = () => {
           </div>
         )}
 
-        {/* Add debtor dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Debtor</DialogTitle>
+              <DialogTitle>{editingDebtor ? "Edit Debtor" : "Add Debtor"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -284,8 +317,8 @@ const Debtors = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreate} disabled={creating || !name.trim() || !amount}>
-                {creating ? "Adding..." : "Add Debtor"}
+              <Button onClick={handleSave} disabled={saving || !name.trim() || !amount}>
+                {saving ? "Saving..." : editingDebtor ? "Update" : "Add Debtor"}
               </Button>
             </DialogFooter>
           </DialogContent>

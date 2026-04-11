@@ -2,10 +2,29 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantContext } from "@/hooks/useRestaurantAndRole";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 // ── Menu Items ──────────────────────────────────────────────
 export function useMenuItems(availableOnly = false) {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  // Subscribe to realtime changes on menu_items
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`menu-items-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_items', filter: `restaurant_id=eq.${restaurantId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["menu-items", restaurantId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["menu-items", restaurantId, availableOnly],
     queryFn: async () => {
