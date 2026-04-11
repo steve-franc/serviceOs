@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import ExpenseManager from "@/components/expenses/ExpenseManager";
-import { useOrders, useInvalidateOrders, useMenuTags, useMenuItems } from "@/hooks/useQueries";
+import { useOrders, useInvalidateOrders, useMenuTags, useMenuItems, useExpenses, useRestaurantSettings } from "@/hooks/useQueries";
 import { stopAlarm } from "@/components/NotificationSound";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 
