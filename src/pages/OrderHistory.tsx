@@ -850,7 +850,8 @@ const OrderHistory = () => {
                   Close
                 </Button>
               </div>
-            </div>}
+            </div>;
+          })()}
         </DialogContent>
       </Dialog>
 
