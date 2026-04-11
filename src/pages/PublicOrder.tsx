@@ -106,6 +106,7 @@ const PublicOrder = () => {
       .from("menu_items")
       .select("*")
       .eq("is_available", true)
+      .eq("is_public", true)
       .eq("restaurant_id", restaurantId)
       .order("category")
       .order("name");

@@ -27,6 +27,7 @@ interface MenuItem {
   per_unit_price: number | null;
   description: string | null;
   is_available: boolean;
+  is_public: boolean;
   pricing_unit: string;
   currency: string;
   is_inventory_item: boolean;
@@ -165,6 +166,20 @@ const MenuManagement = () => {
       invalidateMenu();
     } catch (error: any) {
       toast.error("Failed to update availability");
+    }
+  };
+
+  const handleTogglePublic = async (item: MenuItem) => {
+    try {
+      const { error } = await supabase
+        .from("menu_items")
+        .update({ is_public: !item.is_public })
+        .eq("id", item.id);
+      if (error) throw error;
+      toast.success(`${item.name} is now ${!item.is_public ? 'public' : 'internal only'}`);
+      invalidateMenu();
+    } catch (error: any) {
+      toast.error("Failed to update visibility");
     }
   };
   const handleEdit = (item: MenuItem) => {
@@ -523,6 +538,16 @@ const MenuManagement = () => {
                               />
                               <Label htmlFor={`available-${item.id}`} className="text-sm font-normal">
                                 {item.is_available ? 'Available' : 'Unavailable'}
+                              </Label>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Switch
+                                checked={item.is_public}
+                                onCheckedChange={() => handleTogglePublic(item)}
+                                id={`public-${item.id}`}
+                              />
+                              <Label htmlFor={`public-${item.id}`} className="text-sm font-normal">
+                                {item.is_public ? 'Public' : 'Internal Only'}
                               </Label>
                             </div>
                           </CardHeader>

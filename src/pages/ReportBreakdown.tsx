@@ -192,6 +192,21 @@ const ReportBreakdown = () => {
   const filteredTotalRevenue = sortedItems.reduce((sum, [, d]) => sum + d.totalRevenue, 0);
   const filteredTotalQty = sortedItems.reduce((sum, [, d]) => sum + d.totalQty, 0);
 
+  // Payment methods filtered by tag
+  const filteredPaymentMethods: Record<string, { count: number; total: number }> = {};
+  if (selectedTag !== "all") {
+    orders.forEach(order => {
+      const tagItemsTotal = order.items
+        .filter(item => isItemInTag(item.menu_item_name))
+        .reduce((sum, item) => sum + item.subtotal, 0);
+      if (tagItemsTotal > 0) {
+        if (!filteredPaymentMethods[order.payment_method]) filteredPaymentMethods[order.payment_method] = { count: 0, total: 0 };
+        filteredPaymentMethods[order.payment_method].count++;
+        filteredPaymentMethods[order.payment_method].total += tagItemsTotal;
+      }
+    });
+  }
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6" id="report-print">
@@ -277,12 +292,28 @@ const ReportBreakdown = () => {
                 )}
               </div>
               {selectedTag !== "all" && (
-                <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg mb-3">
-                  <div>
-                    <p className="font-medium text-sm">Tag: {selectedTag}</p>
-                    <p className="text-xs text-muted-foreground">{filteredTotalQty} items sold</p>
+                <div className="space-y-3 mb-3">
+                  <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">Tag: {selectedTag}</p>
+                      <p className="text-xs text-muted-foreground">{filteredTotalQty} items sold</p>
+                    </div>
+                    <p className="text-lg font-bold text-primary">{formatPrice(filteredTotalRevenue)}</p>
                   </div>
-                  <p className="text-lg font-bold text-primary">{formatPrice(filteredTotalRevenue)}</p>
+                  {Object.keys(filteredPaymentMethods).length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">By Payment Method</p>
+                      {Object.entries(filteredPaymentMethods).map(([method, data]) => (
+                        <div key={method} className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm">
+                          <div>
+                            <p className="font-medium">{method}</p>
+                            <p className="text-xs text-muted-foreground">{data.count} order(s)</p>
+                          </div>
+                          <p className="font-bold text-primary">{formatPrice(data.total)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {Object.entries(itemsByCategory).map(([category, catItems]) => (
