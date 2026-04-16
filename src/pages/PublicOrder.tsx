@@ -181,6 +181,8 @@ const PublicOrder = () => {
     setNotes("");
     setCustomerName("");
     setCustomerEmail("");
+    setCustomerPhone("");
+    setCustomerLocation("");
   };
 
   const calculateItemTotal = (item: OrderItem) => {
@@ -203,6 +205,8 @@ const PublicOrder = () => {
     const validation = validateInput(publicOrderSchema, {
       customerName,
       customerEmail: customerEmail || undefined,
+      customerPhone,
+      customerLocation,
       notes: notes || undefined,
       paymentMethod,
     });
@@ -228,6 +232,8 @@ const PublicOrder = () => {
         _restaurant_id: restaurantId,
         _customer_name: validatedData.customerName,
         _customer_email: validatedData.customerEmail || null,
+        _customer_phone: validatedData.customerPhone || null,
+        _customer_location: validatedData.customerLocation || null,
         _payment_method: validatedData.paymentMethod,
         _notes: validatedData.notes || null,
         _items: payloadItems,
@@ -351,6 +357,14 @@ const PublicOrder = () => {
         <div>
           <Label htmlFor="customerName">Your Name *</Label>
           <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value.slice(0, 100))} placeholder="John Doe" className="mt-2" required maxLength={100} />
+        </div>
+        <div>
+          <Label htmlFor="customerPhone">Phone Number *</Label>
+          <Input id="customerPhone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.slice(0, 30))} placeholder="+90 555 123 4567" className="mt-2" required maxLength={30} />
+        </div>
+        <div>
+          <Label htmlFor="customerLocation">Location / Address *</Label>
+          <Input id="customerLocation" value={customerLocation} onChange={(e) => setCustomerLocation(e.target.value.slice(0, 300))} placeholder="Your delivery address" className="mt-2" required maxLength={300} />
         </div>
         <div>
           <Label htmlFor="customerEmail">Your Email (Optional)</Label>
