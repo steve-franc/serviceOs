@@ -10,6 +10,9 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
+import dashboardPreview from "@/assets/dashboard-preview.jpg";
+import menuPreview from "@/assets/menu-preview.jpg";
+import ordersPreview from "@/assets/orders-preview.jpg";
 
 const features = [
   {
@@ -50,6 +53,24 @@ const features = [
   },
 ];
 
+const screenshots = [
+  {
+    src: dashboardPreview,
+    title: "Dashboard & Analytics",
+    description: "Track revenue, orders, and daily targets in real time",
+  },
+  {
+    src: menuPreview,
+    title: "Menu Management",
+    description: "Organize items by category with availability controls",
+  },
+  {
+    src: ordersPreview,
+    title: "Order Creation",
+    description: "Quickly build orders with a visual menu and live cart",
+  },
+];
+
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +82,7 @@ const Landing = () => {
               <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              Elite<span className="text-primary">Order</span>
+              Service<span className="text-primary">OS</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
@@ -77,7 +98,6 @@ const Landing = () => {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Background decoration */}
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute -top-40 right-0 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
           <div className="absolute bottom-0 left-0 h-[400px] w-[400px] rounded-full bg-accent/40 blur-3xl" />
@@ -115,6 +135,44 @@ const Landing = () => {
                 <Link to="/order">Place a Public Order</Link>
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Screenshots */}
+      <section className="border-t bg-card/30 py-20 md:py-28">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              See it in action
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              A glimpse into the ServiceOS dashboard and tools.
+            </p>
+          </div>
+
+          <div className="mx-auto max-w-5xl space-y-12">
+            {screenshots.map((shot, i) => (
+              <div
+                key={shot.title}
+                className={`flex flex-col items-center gap-6 md:flex-row ${i % 2 !== 0 ? "md:flex-row-reverse" : ""}`}
+              >
+                <div className="flex-1 overflow-hidden rounded-xl border shadow-lg">
+                  <img
+                    src={shot.src}
+                    alt={shot.title}
+                    className="w-full"
+                    loading="lazy"
+                    width={1280}
+                    height={720}
+                  />
+                </div>
+                <div className="flex-shrink-0 text-center md:w-64 md:text-left">
+                  <h3 className="text-xl font-semibold">{shot.title}</h3>
+                  <p className="mt-2 text-muted-foreground">{shot.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -174,9 +232,9 @@ const Landing = () => {
         <div className="container mx-auto flex flex-col items-center gap-2 px-4 text-sm text-muted-foreground md:flex-row md:justify-between">
           <div className="flex items-center gap-2">
             <UtensilsCrossed className="h-4 w-4 text-primary" />
-            <span>EliteOrder</span>
+            <span>ServiceOS</span>
           </div>
-          <p>© {new Date().getFullYear()} EliteOrder. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ServiceOS. All rights reserved.</p>
         </div>
       </footer>
     </div>
