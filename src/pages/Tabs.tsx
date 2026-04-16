@@ -13,10 +13,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   Plus, Minus, X, ChevronDown, ChevronRight, ChevronUp,
-  Receipt, Clock, ArrowLeft, ShoppingCart, CreditCard,
+  Receipt, Clock, ArrowLeft, ShoppingCart, CreditCard, Trash2,
 } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -621,15 +625,47 @@ const TabDetail = ({
             <Plus className="h-4 w-4 mr-2" />
             Add Items
           </Button>
-          <Button
-            variant="secondary"
-            className="flex-1"
-            disabled={tabItems.length === 0}
-            onClick={() => setCloseDialogOpen(true)}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Close Tab
-          </Button>
+          {tabItems.length > 0 ? (
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setCloseDialogOpen(true)}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Close Tab
+            </Button>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="flex-1">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Tab
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Empty Tab</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this tab. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      const { error } = await supabase.from("tabs").delete().eq("id", tab.id);
+                      if (error) { toast.error("Failed to delete tab"); return; }
+                      toast.success("Tab deleted");
+                      onClosed();
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         {/* Close tab dialog */}
