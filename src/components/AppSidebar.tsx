@@ -62,7 +62,7 @@ export function AppSidebar() {
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
             <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
           </div>
-          {!collapsed && <h1 className="text-xl font-bold truncate">{restaurantName || "Tablix"}</h1>}
+          {!collapsed && <h1 className="text-xl font-bold truncate">{restaurantName || "ServiceOS"}</h1>}
         </div>
       </SidebarHeader>
 
