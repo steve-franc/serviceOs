@@ -18,10 +18,9 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const menuItems = [
+const staffItems = [
   { title: "Create Order", url: "/order/create", icon: ShoppingCart },
   { title: "Tabs", url: "/tabs", icon: Receipt },
   { title: "Debtors", url: "/debtors", icon: Users },
@@ -35,12 +34,19 @@ const managerItems = [
   { title: "Admin", url: "/admin", icon: Shield },
 ];
 
+// Investors get a read-only set: orders (daily), reports, admin (read-only)
+const investorItems = [
+  { title: "Orders", url: "/orders", icon: History },
+  { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "Admin", url: "/admin", icon: Shield },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { isManager } = useUserRole();
+  const { isManager, isInvestor } = useUserRole();
   const { restaurantName } = useRestaurantContext();
 
   const handleSignOut = async () => {
@@ -55,6 +61,9 @@ export function AppSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Investors see only their reduced set; everyone else sees staff items.
+  const primaryItems = isInvestor ? investorItems : staffItems;
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b">
@@ -68,10 +77,10 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>{isInvestor ? "Observer" : "Navigation"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {primaryItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
