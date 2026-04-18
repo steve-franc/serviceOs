@@ -735,6 +735,10 @@ export type Database = {
             }
             Returns: boolean
           }
+      is_investor: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_manager:
         | { Args: { _user_id: string }; Returns: boolean }
         | {
