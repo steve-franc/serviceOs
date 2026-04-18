@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings } from "lucide-react";
+import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { formatPrice } from "@/lib/currency";
+import { dailyShareOfMonthly, daysInMonth } from "@/lib/date-format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -67,8 +68,11 @@ const Admin = () => {
   const navigate = useNavigate();
   const {
     isManager,
+    isInvestor,
+    canViewReports,
     loading: roleLoading
   } = useUserRole();
+  const readOnly = !isManager; // investors view but cannot edit
   const { restaurantId, loading: restaurantLoading } = useRestaurantContext();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -122,11 +126,11 @@ const Admin = () => {
   // Get unique tag names for the dropdown
   const tagNames = useMemo(() => Object.keys(groupedTags).sort(), [groupedTags]);
   useEffect(() => {
-    if (isManager && restaurantId) {
+    if (canViewReports && restaurantId) {
       fetchData();
       fetchFixedDailyBills();
     }
-  }, [isManager, restaurantId, dateFilter]);
+  }, [canViewReports, restaurantId, dateFilter]);
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -494,7 +498,7 @@ const Admin = () => {
         </div>
       </Layout>;
   }
-  if (!isManager) {
+  if (!canViewReports) {
     return <Navigate to="/" replace />;
   }
   const todayRevenue = todayOrders.reduce((sum, order) => sum + Number(order.total), 0);
@@ -632,7 +636,7 @@ const Admin = () => {
             </div>
             <CardDescription>
               {fixedMonthlyExpenses > 0
-                ? `₺${fixedMonthlyExpenses.toFixed(2)}/month → ₺${(fixedMonthlyExpenses / 30).toFixed(2)}/day deducted from daily profit`
+                ? `₺${fixedMonthlyExpenses.toFixed(2)}/month → ₺${dailyShareOfMonthly(fixedMonthlyExpenses).toFixed(2)}/day (÷ ${daysInMonth()} days this month) deducted from daily profit`
                 : "Add your monthly fixed costs (rent, salaries, etc.) to deduct daily from profits"}
             </CardDescription>
           </CardHeader>

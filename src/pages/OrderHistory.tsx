@@ -508,32 +508,47 @@ const OrderHistory = () => {
           </Card>}
 
         {!loading && (recentOrders.length > 0 || archivedOrders.length > 0 || dailyReports.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
-            {/* Tag Filter */}
-            {menuTags.length > 0 && (() => {
-              const uniqueNames = [...new Set((menuTags as any[]).map(t => t.name))].sort();
-              return (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Filter by tag:</span>
-                  <Badge
-                    variant={selectedTag === "all" ? "default" : "outline"}
-                    className="cursor-pointer select-none"
-                    onClick={() => setSelectedTag("all")}
-                  >
-                    All
-                  </Badge>
-                  {uniqueNames.map((name: string) => (
+            {/* Tag + Payment Filters */}
+            <div className="flex flex-col gap-3">
+              {menuTags.length > 0 && (() => {
+                const uniqueNames = [...new Set((menuTags as any[]).map(t => t.name))].sort();
+                return (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Filter by tag:</span>
                     <Badge
-                      key={name}
-                      variant={selectedTag === name ? "default" : "outline"}
+                      variant={selectedTag === "all" ? "default" : "outline"}
                       className="cursor-pointer select-none"
-                      onClick={() => setSelectedTag(name)}
+                      onClick={() => setSelectedTag("all")}
                     >
-                      {name}
+                      All
                     </Badge>
-                  ))}
-                </div>
-              );
-            })()}
+                    {uniqueNames.map((name: string) => (
+                      <Badge
+                        key={name}
+                        variant={selectedTag === name ? "default" : "outline"}
+                        className="cursor-pointer select-none"
+                        onClick={() => setSelectedTag(name)}
+                      >
+                        {name}
+                      </Badge>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">Payment:</span>
+                {(["all", "paid", "unpaid"] as const).map(opt => (
+                  <Badge
+                    key={opt}
+                    variant={paymentFilter === opt ? "default" : "outline"}
+                    className="cursor-pointer select-none capitalize"
+                    onClick={() => setPaymentFilter(opt)}
+                  >
+                    {opt}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             <TabsList>
               <TabsTrigger value="recent" className="flex items-center gap-2">
@@ -682,7 +697,7 @@ const OrderHistory = () => {
 
           {dailyReport && (() => {
             const totalExp = (expensesData as any[]).reduce((s: number, e: any) => s + Number(e.amount), 0);
-            const dailyFixed = Number((settingsData as any)?.fixed_monthly_expenses || 0) / 30;
+            const dailyFixed = dailyShareOfMonthly(Number((settingsData as any)?.fixed_monthly_expenses || 0));
             const totalDeductions = totalExp + dailyFixed;
             const netProfit = dailyReport.total_revenue - totalDeductions;
             const margin = dailyReport.total_revenue > 0 ? (netProfit / dailyReport.total_revenue) * 100 : 0;

@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Printer, Tag, TrendingDown, TrendingUp } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
-import { formatDateFull } from "@/lib/date-format";
+import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -156,9 +156,9 @@ const ReportBreakdown = () => {
 
   const uniqueTags = useMemo(() => Object.keys(tagCategoryMap).sort(), [tagCategoryMap]);
 
-  // Expense calculations
+  // Expense calculations — daily share uses actual days in current month
   const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const dailyFixedDeduction = fixedMonthlyExpenses / 30;
+  const dailyFixedDeduction = dailyShareOfMonthly(fixedMonthlyExpenses, reportDate || undefined);
   const totalDeductions = totalExpenses + dailyFixedDeduction;
   const netProfit = totalRevenue - totalDeductions;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
