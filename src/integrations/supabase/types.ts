@@ -355,6 +355,7 @@ export type Database = {
           notes: string | null
           order_number: string
           payment_method: string
+          payment_status: string
           restaurant_id: string | null
           staff_id: string
           status: string
@@ -374,6 +375,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           payment_method: string
+          payment_status?: string
           restaurant_id?: string | null
           staff_id: string
           status?: string
@@ -393,6 +395,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           payment_method?: string
+          payment_status?: string
           restaurant_id?: string | null
           staff_id?: string
           status?: string
@@ -461,11 +464,15 @@ export type Database = {
           fixed_monthly_expenses: number
           id: string
           monthly_bills: Json | null
+          notify_low_margin: boolean
+          notify_low_stock: boolean
+          notify_new_order: boolean
           payment_methods: Json
           profit_margin_threshold: number
           restaurant_id: string | null
           restaurant_name: string
           updated_at: string
+          whatsapp_phone: string | null
         }
         Insert: {
           allow_public_orders?: boolean
@@ -475,11 +482,15 @@ export type Database = {
           fixed_monthly_expenses?: number
           id?: string
           monthly_bills?: Json | null
+          notify_low_margin?: boolean
+          notify_low_stock?: boolean
+          notify_new_order?: boolean
           payment_methods?: Json
           profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
           updated_at?: string
+          whatsapp_phone?: string | null
         }
         Update: {
           allow_public_orders?: boolean
@@ -489,11 +500,15 @@ export type Database = {
           fixed_monthly_expenses?: number
           id?: string
           monthly_bills?: Json | null
+          notify_low_margin?: boolean
+          notify_low_stock?: boolean
+          notify_new_order?: boolean
           payment_methods?: Json
           profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
           updated_at?: string
+          whatsapp_phone?: string | null
         }
         Relationships: [
           {
@@ -728,7 +743,7 @@ export type Database = {
           }
     }
     Enums: {
-      app_role: "server" | "ops" | "counter" | "manager"
+      app_role: "server" | "ops" | "counter" | "manager" | "investor"
       inventory_status: "available" | "almost_finished" | "finished"
     }
     CompositeTypes: {
@@ -857,7 +872,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["server", "ops", "counter", "manager"],
+      app_role: ["server", "ops", "counter", "manager", "investor"],
       inventory_status: ["available", "almost_finished", "finished"],
     },
   },
