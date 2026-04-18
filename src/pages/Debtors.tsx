@@ -196,7 +196,30 @@ const Debtors = () => {
           </Card>
         )}
 
-        {unresolvedDebtors.length === 0 && resolvedDebtors.length === 0 ? (
+        {/* Search + status filter */}
+        {debtors.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value.slice(0, 100))}
+                placeholder="Search by customer name..."
+                className="pl-9"
+                maxLength={100}
+              />
+            </div>
+            <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
+                <TabsTrigger value="paid">Paid</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
+
+        {debtors.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -207,9 +230,15 @@ const Debtors = () => {
               </Button>
             </CardContent>
           </Card>
+        ) : filteredAll.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No debtors match your filter</p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
-            {unresolvedDebtors.map(debtor => (
+            {showUnpaid && unresolvedDebtors.map(debtor => (
               <Card key={debtor.id}>
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between gap-3">
@@ -241,17 +270,19 @@ const Debtors = () => {
               </Card>
             ))}
 
-            {resolvedDebtors.length > 0 && (
+            {showPaid && resolvedDebtors.length > 0 && (
               <>
-                <Separator />
-                <Button
-                  variant="ghost"
-                  className="w-full text-muted-foreground"
-                  onClick={() => setShowResolved(!showResolved)}
-                >
-                  {showResolved ? "Hide" : "Show"} {resolvedDebtors.length} resolved debtor(s)
-                </Button>
-                {showResolved && resolvedDebtors.map(debtor => (
+                {showUnpaid && unresolvedDebtors.length > 0 && <Separator />}
+                {statusFilter === "all" && (
+                  <Button
+                    variant="ghost"
+                    className="w-full text-muted-foreground"
+                    onClick={() => setShowResolved(!showResolved)}
+                  >
+                    {showResolved ? "Hide" : "Show"} {resolvedDebtors.length} resolved debtor(s)
+                  </Button>
+                )}
+                {(statusFilter === "paid" || showResolved) && resolvedDebtors.map(debtor => (
                   <Card key={debtor.id} className="opacity-60">
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between gap-3">
