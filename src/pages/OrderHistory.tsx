@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe } from "lucide-react";
+import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { formatDateFull } from "@/lib/date-format";
+import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPrice } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,6 +37,7 @@ interface Order {
   is_public_order?: boolean;
   customer_name?: string | null;
   status?: string;
+  payment_status?: string;
 }
 interface OrderItem {
   id: string;
@@ -107,6 +108,7 @@ const OrderHistory = () => {
   const { data: menuTags = [] } = useMenuTags();
   const { data: allMenuItems = [] } = useMenuItems();
   const [selectedTag, setSelectedTag] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [orderItemsMap, setOrderItemsMap] = useState<Record<string, string[]>>({});
 
   // Build set of categories for the selected tag
