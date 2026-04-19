@@ -598,8 +598,7 @@ const Admin = () => {
                   Edit
                 </Button>
               )}
-              {!readOnly && editingBills ? null : null}
-              {readOnly ? null : !editingBills ? null : (
+              {!readOnly && editingBills && (
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -936,43 +935,51 @@ const Admin = () => {
                             <p className="text-xs text-muted-foreground">ID: {member.id.substring(0, 8)}...</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Select value={member.role} onValueChange={value => handleRoleChange(member.id, value)}>
-                              <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Assign role" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="server">Server</SelectItem>
-                                <SelectItem value="ops">Ops</SelectItem>
-                                <SelectItem value="counter">Counter</SelectItem>
-                                <SelectItem value="manager">Manager</SelectItem>
-                                <SelectItem value="investor">Observer</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                  <UserMinus className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove Staff Member</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove {member.full_name} from this restaurant? 
-                                    They will lose access to all restaurant data and orders.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleRemoveStaff(member.id, member.full_name)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Remove
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            {readOnly ? (
+                              <Badge variant="outline" className="capitalize">
+                                {member.role || "—"}
+                              </Badge>
+                            ) : (
+                              <>
+                                <Select value={member.role} onValueChange={value => handleRoleChange(member.id, value)}>
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Assign role" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="server">Server</SelectItem>
+                                    <SelectItem value="ops">Ops</SelectItem>
+                                    <SelectItem value="counter">Counter</SelectItem>
+                                    <SelectItem value="manager">Manager</SelectItem>
+                                    <SelectItem value="investor">Observer</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                      <UserMinus className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remove Staff Member</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to remove {member.full_name} from this restaurant? 
+                                        They will lose access to all restaurant data and orders.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleRemoveStaff(member.id, member.full_name)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Remove
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))
