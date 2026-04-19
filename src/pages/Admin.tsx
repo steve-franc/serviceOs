@@ -1002,60 +1002,62 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Add tag-category mapping */}
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const name = newTagName.trim();
-                    if (!name || !newTagCategory || !restaurantId) return;
-                    const { error } = await supabase.from("menu_tags").insert({
-                      name,
-                      category: newTagCategory,
-                      restaurant_id: restaurantId,
-                    });
-                    if (error) {
-                      if (error.code === '23505') toast.error("This category is already in this tag");
-                      else toast.error("Failed to add");
-                      return;
-                    }
-                    setNewTagName("");
-                    setNewTagCategory("");
-                    invalidateTags();
-                    toast.success(`Category "${newTagCategory}" added to tag "${name}"`);
-                  }}
-                  className="flex flex-wrap gap-2 items-end"
-                >
-                  <div className="space-y-1">
-                    <Label className="text-xs">Tag Name</Label>
-                    <Input
-                      placeholder="e.g. Breakfast, Drinks..."
-                      value={newTagName}
-                      onChange={(e) => setNewTagName(e.target.value)}
-                      maxLength={50}
-                      className="w-40"
-                      list="existing-tags"
-                    />
-                    <datalist id="existing-tags">
-                      {tagNames.map(n => <option key={n} value={n} />)}
-                    </datalist>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Category</Label>
-                    <Select value={newTagCategory} onValueChange={setNewTagCategory}>
-                      <SelectTrigger className="w-44">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="submit" size="sm" disabled={!newTagName.trim() || !newTagCategory}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </form>
+                {!readOnly && (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const name = newTagName.trim();
+                      if (!name || !newTagCategory || !restaurantId) return;
+                      const { error } = await supabase.from("menu_tags").insert({
+                        name,
+                        category: newTagCategory,
+                        restaurant_id: restaurantId,
+                      });
+                      if (error) {
+                        if (error.code === '23505') toast.error("This category is already in this tag");
+                        else toast.error("Failed to add");
+                        return;
+                      }
+                      setNewTagName("");
+                      setNewTagCategory("");
+                      invalidateTags();
+                      toast.success(`Category "${newTagCategory}" added to tag "${name}"`);
+                    }}
+                    className="flex flex-wrap gap-2 items-end"
+                  >
+                    <div className="space-y-1">
+                      <Label className="text-xs">Tag Name</Label>
+                      <Input
+                        placeholder="e.g. Breakfast, Drinks..."
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        maxLength={50}
+                        className="w-40"
+                        list="existing-tags"
+                      />
+                      <datalist id="existing-tags">
+                        {tagNames.map(n => <option key={n} value={n} />)}
+                      </datalist>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Category</Label>
+                      <Select value={newTagCategory} onValueChange={setNewTagCategory}>
+                        <SelectTrigger className="w-44">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" size="sm" disabled={!newTagName.trim() || !newTagCategory}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </form>
+                )}
 
                 {categories.length === 0 && (
                   <p className="text-sm text-muted-foreground">
@@ -1074,37 +1076,41 @@ const Admin = () => {
                       <div key={tagName} className="border rounded-lg p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold text-base">{tagName}</h4>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive h-7 text-xs"
-                            onClick={async () => {
-                              const ids = tagCats.map(c => c.id);
-                              for (const id of ids) {
-                                await supabase.from("menu_tags").delete().eq("id", id);
-                              }
-                              invalidateTags();
-                              toast.success(`Tag "${tagName}" deleted`);
-                            }}
-                          >
-                            Delete Tag
-                          </Button>
+                          {!readOnly && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive h-7 text-xs"
+                              onClick={async () => {
+                                const ids = tagCats.map(c => c.id);
+                                for (const id of ids) {
+                                  await supabase.from("menu_tags").delete().eq("id", id);
+                                }
+                                invalidateTags();
+                                toast.success(`Tag "${tagName}" deleted`);
+                              }}
+                            >
+                              Delete Tag
+                            </Button>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {tagCats.map(({ id, category }) => (
                             <Badge key={id} variant="secondary" className="gap-1 py-1 px-3">
                               {category}
-                              <button
-                                onClick={async () => {
-                                  const { error } = await supabase.from("menu_tags").delete().eq("id", id);
-                                  if (error) { toast.error("Failed to remove"); return; }
-                                  invalidateTags();
-                                  toast.success(`Removed "${category}" from "${tagName}"`);
-                                }}
-                                className="ml-1 hover:text-destructive"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
+                              {!readOnly && (
+                                <button
+                                  onClick={async () => {
+                                    const { error } = await supabase.from("menu_tags").delete().eq("id", id);
+                                    if (error) { toast.error("Failed to remove"); return; }
+                                    invalidateTags();
+                                    toast.success(`Removed "${category}" from "${tagName}"`);
+                                  }}
+                                  className="ml-1 hover:text-destructive"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
                             </Badge>
                           ))}
                         </div>
