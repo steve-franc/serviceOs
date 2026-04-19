@@ -34,9 +34,9 @@ const managerItems = [
   { title: "Admin", url: "/admin", icon: Shield },
 ];
 
-// Investors get a read-only set: orders (daily), reports, admin (read-only)
-const investorItems = [
-  { title: "Orders", url: "/orders", icon: History },
+// Observers (DB role: investor) get a strict read-only set:
+// Reports + Admin only — no order taking, no edits.
+const observerItems = [
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Admin", url: "/admin", icon: Shield },
 ];
@@ -61,8 +61,8 @@ export function AppSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Investors see only their reduced set; everyone else sees staff items.
-  const primaryItems = isInvestor ? investorItems : staffItems;
+  // Observers see only their reduced set; everyone else sees staff items.
+  const primaryItems = isInvestor ? observerItems : staffItems;
 
   return (
     <Sidebar collapsible="icon">

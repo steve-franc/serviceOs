@@ -30,19 +30,46 @@ function playChime() {
       globalAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     const ctx = globalAudioCtx;
+    // Resume if the browser auto-suspended it.
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
     const now = ctx.currentTime;
-    [587.33, 880, 1046.5].forEach((freq, i) => {
+
+    // Master gain — boosted for a much LOUDER alarm.
+    const master = ctx.createGain();
+    master.gain.value = 1.0;
+    master.connect(ctx.destination);
+
+    // Bright triangle/square stack: 4 stepped notes for an attention-grabbing siren.
+    const notes = [880, 1175, 1480, 1760];
+    notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
+      osc.type = i % 2 === 0 ? 'square' : 'triangle';
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.35, now + i * 0.2);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.2 + 0.35);
+      const start = now + i * 0.18;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.9, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
       osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + i * 0.2);
-      osc.stop(now + i * 0.2 + 0.35);
+      gain.connect(master);
+      osc.start(start);
+      osc.stop(start + 0.35);
     });
+
+    // Low-end thump for body — makes it cut through phone speakers.
+    const sub = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.value = 220;
+    subGain.gain.setValueAtTime(0.0001, now);
+    subGain.gain.exponentialRampToValueAtTime(0.6, now + 0.02);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    sub.connect(subGain);
+    subGain.connect(master);
+    sub.start(now);
+    sub.stop(now + 0.65);
   } catch (e) {
     console.warn('Could not play notification sound:', e);
   }

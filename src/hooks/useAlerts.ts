@@ -26,12 +26,35 @@ export function useAlerts() {
     if (!restaurantId || checkedRef.current) return;
     checkedRef.current = true;
 
+    // Suppress identical alerts within this browser session for 30 minutes
+    // so they don't pop up on every page refresh / route change.
+    const SUPPRESS_MS = 30 * 60 * 1000;
+    const suppressKey = (key: string) => `alert-suppress:${restaurantId}:${key}`;
+
+    const isSuppressed = (key: string) => {
+      try {
+        const raw = sessionStorage.getItem(suppressKey(key));
+        if (!raw) return false;
+        const ts = Number(raw);
+        if (!Number.isFinite(ts)) return false;
+        return Date.now() - ts < SUPPRESS_MS;
+      } catch {
+        return false;
+      }
+    };
+    const markSuppressed = (key: string) => {
+      try { sessionStorage.setItem(suppressKey(key), String(Date.now())); } catch { /* noop */ }
+    };
+
     const showWhatsAppToast = (
       kind: "warning" | "error",
       message: string,
       phone: string | null,
       durationMs: number,
+      dedupeKey: string,
     ) => {
+      if (isSuppressed(dedupeKey)) return;
+      markSuppressed(dedupeKey);
       const wa = normalizePhone(phone);
       const action = wa
         ? { label: "Send to WhatsApp", onClick: () => openWhatsApp(phone, message) }
@@ -66,7 +89,12 @@ export function useAlerts() {
 
           if (lowStock && lowStock.length > 0) {
             const names = lowStock.map(i => `${i.name} (${i.stock_qty} left)`).join(", ");
-            showWhatsAppToast("warning", `Low stock alert: ${names}`, phone, 10000);
+            // Dedupe key reflects the items + their counts; alert re-fires if stock changes.
+            const key = "low-stock:" + lowStock
+              .map(i => `${i.name}=${i.stock_qty}`)
+              .sort()
+              .join("|");
+            showWhatsAppToast("warning", `Low stock alert: ${names}`, phone, 10000, key);
           }
         }
 
@@ -97,7 +125,9 @@ export function useAlerts() {
 
           if (revenue > 0 && margin < threshold) {
             const msg = `Low profit margin: ${margin.toFixed(1)}% (threshold: ${threshold}%). Revenue: ₺${revenue.toFixed(2)}, Expenses: ₺${(expenseTotal + dailyFixed).toFixed(2)}`;
-            showWhatsAppToast("warning", msg, phone, 15000);
+            // Bucket the margin so small fluctuations don't re-fire.
+            const key = `low-margin:${Math.floor(margin)}:${threshold}`;
+            showWhatsAppToast("warning", msg, phone, 15000, key);
           }
         }
       } catch {
