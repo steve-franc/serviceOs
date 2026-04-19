@@ -37,6 +37,8 @@ const queryClient = new QueryClient({
   },
 });
 
+import { useUserRole } from "./hooks/useRestaurantAndRole";
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
@@ -55,10 +57,28 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+// Observers (DB role: investor) are read-only — they can only access /reports and /admin.
+const ObserverBlockedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { isInvestor, loading: roleLoading } = useUserRole();
 
-  if (loading) {
+  if (authLoading || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  if (isInvestor) return <Navigate to="/reports" replace />;
+  return <>{children}</>;
+};
+
+const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { isInvestor, loading: roleLoading } = useUserRole();
+
+  if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -67,7 +87,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user) {
-    return <Navigate to="/order/create" replace />;
+    return <Navigate to={isInvestor ? "/reports" : "/order/create"} replace />;
   }
 
   return <>{children}</>;
@@ -89,15 +109,15 @@ const App = () => {
               <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
               <Route path="/auth" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
               <Route path="/order/:restaurantId" element={<PublicOrder />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/menu" element={<ProtectedRoute><MenuManagement /></ProtectedRoute>} />
-              <Route path="/order/create" element={<ProtectedRoute><CreateOrder /></ProtectedRoute>} />
-              <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ObserverBlockedRoute><Dashboard /></ObserverBlockedRoute>} />
+              <Route path="/menu" element={<ObserverBlockedRoute><MenuManagement /></ObserverBlockedRoute>} />
+              <Route path="/order/create" element={<ObserverBlockedRoute><CreateOrder /></ObserverBlockedRoute>} />
+              <Route path="/orders" element={<ObserverBlockedRoute><OrderHistory /></ObserverBlockedRoute>} />
               <Route path="/receipt/:id" element={<Receipt />} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-              <Route path="/tabs" element={<ProtectedRoute><TabsPage /></ProtectedRoute>} />
-              <Route path="/debtors" element={<ProtectedRoute><Debtors /></ProtectedRoute>} />
+              <Route path="/inventory" element={<ObserverBlockedRoute><Inventory /></ObserverBlockedRoute>} />
+              <Route path="/tabs" element={<ObserverBlockedRoute><TabsPage /></ObserverBlockedRoute>} />
+              <Route path="/debtors" element={<ObserverBlockedRoute><Debtors /></ObserverBlockedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

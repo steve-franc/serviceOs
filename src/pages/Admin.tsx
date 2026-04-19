@@ -593,11 +593,12 @@ const Admin = () => {
                 <Target className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">Daily Bills Target</CardTitle>
               </div>
-              {!editingBills ? (
+              {!readOnly && !editingBills && (
                 <Button variant="outline" size="sm" onClick={() => { setEditingBills(true); setBillsInput(String(fixedDailyBills)); }}>
                   Edit
                 </Button>
-              ) : (
+              )}
+              {!readOnly && editingBills && (
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -649,12 +650,14 @@ const Admin = () => {
                 <Calendar className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">Fixed Monthly Expenses</CardTitle>
               </div>
-              <Button variant="outline" size="sm" onClick={() => {
-                setEditBills(monthlyBills.length > 0 ? [...monthlyBills] : [{ name: "", amount: 0 }]);
-                setBillsDialogOpen(true);
-              }}>
-                {monthlyBills.length > 0 ? "Edit Bills" : "Add Bills"}
-              </Button>
+              {!readOnly && (
+                <Button variant="outline" size="sm" onClick={() => {
+                  setEditBills(monthlyBills.length > 0 ? [...monthlyBills] : [{ name: "", amount: 0 }]);
+                  setBillsDialogOpen(true);
+                }}>
+                  {monthlyBills.length > 0 ? "Edit Bills" : "Add Bills"}
+                </Button>
+              )}
             </div>
             <CardDescription>
               {fixedMonthlyExpenses > 0
@@ -748,11 +751,12 @@ const Admin = () => {
                 <AlertCircle className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">Low Profit Alert Threshold</CardTitle>
               </div>
-              {!editingThreshold ? (
+              {!readOnly && !editingThreshold && (
                 <Button variant="outline" size="sm" onClick={() => { setEditingThreshold(true); setThresholdInput(String(profitMarginThreshold)); }}>
                   Edit
                 </Button>
-              ) : (
+              )}
+              {!readOnly && editingThreshold && (
                 <div className="flex items-center gap-2">
                   <Input type="number" value={thresholdInput} onChange={(e) => setThresholdInput(e.target.value)} className="w-20 h-8" min={0} max={100} step="1" />
                   <span className="text-sm">%</span>
@@ -842,29 +846,35 @@ const Admin = () => {
                         {method.account_number ? ` · Acct: ${method.account_number}` : ""}
                       </p>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMethod(method)}>
-                      <Settings className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => removePaymentMethod(method.name)}>
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
+                    {!readOnly && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMethod(method)}>
+                          <Settings className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => removePaymentMethod(method.name)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="New payment method..."
-                  value={newPaymentMethod}
-                  onChange={(e) => setNewPaymentMethod(e.target.value)}
-                  className="max-w-xs"
-                  maxLength={50}
-                  onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
-                />
-                <Button size="sm" onClick={addPaymentMethod} disabled={!newPaymentMethod.trim()}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="New payment method..."
+                    value={newPaymentMethod}
+                    onChange={(e) => setNewPaymentMethod(e.target.value)}
+                    className="max-w-xs"
+                    maxLength={50}
+                    onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
+                  />
+                  <Button size="sm" onClick={addPaymentMethod} disabled={!newPaymentMethod.trim()}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              )}
             </CardContent>
 
             {/* Edit payment method dialog */}
@@ -925,43 +935,51 @@ const Admin = () => {
                             <p className="text-xs text-muted-foreground">ID: {member.id.substring(0, 8)}...</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Select value={member.role} onValueChange={value => handleRoleChange(member.id, value)}>
-                              <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Assign role" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="server">Server</SelectItem>
-                                <SelectItem value="ops">Ops</SelectItem>
-                                <SelectItem value="counter">Counter</SelectItem>
-                                <SelectItem value="manager">Manager</SelectItem>
-                                <SelectItem value="investor">Observer</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                  <UserMinus className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove Staff Member</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove {member.full_name} from this restaurant? 
-                                    They will lose access to all restaurant data and orders.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleRemoveStaff(member.id, member.full_name)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Remove
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            {readOnly ? (
+                              <Badge variant="outline" className="capitalize">
+                                {member.role || "—"}
+                              </Badge>
+                            ) : (
+                              <>
+                                <Select value={member.role} onValueChange={value => handleRoleChange(member.id, value)}>
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Assign role" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="server">Server</SelectItem>
+                                    <SelectItem value="ops">Ops</SelectItem>
+                                    <SelectItem value="counter">Counter</SelectItem>
+                                    <SelectItem value="manager">Manager</SelectItem>
+                                    <SelectItem value="investor">Observer</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                      <UserMinus className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remove Staff Member</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to remove {member.full_name} from this restaurant? 
+                                        They will lose access to all restaurant data and orders.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleRemoveStaff(member.id, member.full_name)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Remove
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))
@@ -984,60 +1002,62 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Add tag-category mapping */}
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const name = newTagName.trim();
-                    if (!name || !newTagCategory || !restaurantId) return;
-                    const { error } = await supabase.from("menu_tags").insert({
-                      name,
-                      category: newTagCategory,
-                      restaurant_id: restaurantId,
-                    });
-                    if (error) {
-                      if (error.code === '23505') toast.error("This category is already in this tag");
-                      else toast.error("Failed to add");
-                      return;
-                    }
-                    setNewTagName("");
-                    setNewTagCategory("");
-                    invalidateTags();
-                    toast.success(`Category "${newTagCategory}" added to tag "${name}"`);
-                  }}
-                  className="flex flex-wrap gap-2 items-end"
-                >
-                  <div className="space-y-1">
-                    <Label className="text-xs">Tag Name</Label>
-                    <Input
-                      placeholder="e.g. Breakfast, Drinks..."
-                      value={newTagName}
-                      onChange={(e) => setNewTagName(e.target.value)}
-                      maxLength={50}
-                      className="w-40"
-                      list="existing-tags"
-                    />
-                    <datalist id="existing-tags">
-                      {tagNames.map(n => <option key={n} value={n} />)}
-                    </datalist>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Category</Label>
-                    <Select value={newTagCategory} onValueChange={setNewTagCategory}>
-                      <SelectTrigger className="w-44">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="submit" size="sm" disabled={!newTagName.trim() || !newTagCategory}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </form>
+                {!readOnly && (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const name = newTagName.trim();
+                      if (!name || !newTagCategory || !restaurantId) return;
+                      const { error } = await supabase.from("menu_tags").insert({
+                        name,
+                        category: newTagCategory,
+                        restaurant_id: restaurantId,
+                      });
+                      if (error) {
+                        if (error.code === '23505') toast.error("This category is already in this tag");
+                        else toast.error("Failed to add");
+                        return;
+                      }
+                      setNewTagName("");
+                      setNewTagCategory("");
+                      invalidateTags();
+                      toast.success(`Category "${newTagCategory}" added to tag "${name}"`);
+                    }}
+                    className="flex flex-wrap gap-2 items-end"
+                  >
+                    <div className="space-y-1">
+                      <Label className="text-xs">Tag Name</Label>
+                      <Input
+                        placeholder="e.g. Breakfast, Drinks..."
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        maxLength={50}
+                        className="w-40"
+                        list="existing-tags"
+                      />
+                      <datalist id="existing-tags">
+                        {tagNames.map(n => <option key={n} value={n} />)}
+                      </datalist>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Category</Label>
+                      <Select value={newTagCategory} onValueChange={setNewTagCategory}>
+                        <SelectTrigger className="w-44">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" size="sm" disabled={!newTagName.trim() || !newTagCategory}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </form>
+                )}
 
                 {categories.length === 0 && (
                   <p className="text-sm text-muted-foreground">
@@ -1056,37 +1076,41 @@ const Admin = () => {
                       <div key={tagName} className="border rounded-lg p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold text-base">{tagName}</h4>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive h-7 text-xs"
-                            onClick={async () => {
-                              const ids = tagCats.map(c => c.id);
-                              for (const id of ids) {
-                                await supabase.from("menu_tags").delete().eq("id", id);
-                              }
-                              invalidateTags();
-                              toast.success(`Tag "${tagName}" deleted`);
-                            }}
-                          >
-                            Delete Tag
-                          </Button>
+                          {!readOnly && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive h-7 text-xs"
+                              onClick={async () => {
+                                const ids = tagCats.map(c => c.id);
+                                for (const id of ids) {
+                                  await supabase.from("menu_tags").delete().eq("id", id);
+                                }
+                                invalidateTags();
+                                toast.success(`Tag "${tagName}" deleted`);
+                              }}
+                            >
+                              Delete Tag
+                            </Button>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {tagCats.map(({ id, category }) => (
                             <Badge key={id} variant="secondary" className="gap-1 py-1 px-3">
                               {category}
-                              <button
-                                onClick={async () => {
-                                  const { error } = await supabase.from("menu_tags").delete().eq("id", id);
-                                  if (error) { toast.error("Failed to remove"); return; }
-                                  invalidateTags();
-                                  toast.success(`Removed "${category}" from "${tagName}"`);
-                                }}
-                                className="ml-1 hover:text-destructive"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
+                              {!readOnly && (
+                                <button
+                                  onClick={async () => {
+                                    const { error } = await supabase.from("menu_tags").delete().eq("id", id);
+                                    if (error) { toast.error("Failed to remove"); return; }
+                                    invalidateTags();
+                                    toast.success(`Removed "${category}" from "${tagName}"`);
+                                  }}
+                                  className="ml-1 hover:text-destructive"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
                             </Badge>
                           ))}
                         </div>

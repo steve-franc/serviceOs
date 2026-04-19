@@ -190,6 +190,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          inventory_id: string | null
           is_available: boolean
           is_inventory_item: boolean
           is_public: boolean
@@ -208,6 +209,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          inventory_id?: string | null
           is_available?: boolean
           is_inventory_item?: boolean
           is_public?: boolean
@@ -226,6 +228,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          inventory_id?: string | null
           is_available?: boolean
           is_inventory_item?: boolean
           is_public?: boolean
@@ -238,6 +241,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "menu_items_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "menu_items_restaurant_id_fkey"
             columns: ["restaurant_id"]

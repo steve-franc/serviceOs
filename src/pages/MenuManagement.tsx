@@ -402,7 +402,7 @@ const MenuManagement = () => {
                     </Label>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Track stock for this item. It will become unavailable when stock reaches 0.
+                    Tracks stock and auto-creates a matching row in <strong>Inventory</strong>. Updating the quantity in Inventory will sync back here.
                   </p>
                   {formData.is_inventory_item && (
                     <div className="space-y-2">
