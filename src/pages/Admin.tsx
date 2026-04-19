@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
@@ -100,6 +101,8 @@ const Admin = () => {
   const [editCurrency, setEditCurrency] = useState("");
   const [editAccount, setEditAccount] = useState("");
   const [editRate, setEditRate] = useState("");
+  const [allowPublicOrders, setAllowPublicOrders] = useState<boolean>(true);
+  const [savingPublicOrders, setSavingPublicOrders] = useState(false);
   const { data: menuTags = [], isLoading: tagsLoading } = useMenuTags();
   const invalidateTags = useInvalidateMenuTags();
   const { data: menuItemsData = [] } = useMenuItems();
@@ -146,7 +149,7 @@ const Admin = () => {
     if (!restaurantId) return;
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills")
+      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders")
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
     if (data) {
@@ -159,7 +162,26 @@ const Admin = () => {
       setMonthlyBills(Array.isArray(bills) ? bills : []);
       setProfitMarginThreshold(Number((data as any).profit_margin_threshold) || 20);
       setThresholdInput(String((data as any).profit_margin_threshold || 20));
+      setAllowPublicOrders(Boolean((data as any).allow_public_orders ?? true));
     }
+  };
+
+  const togglePublicOrders = async (next: boolean) => {
+    if (!restaurantId) return;
+    setSavingPublicOrders(true);
+    const previous = allowPublicOrders;
+    setAllowPublicOrders(next);
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ allow_public_orders: next })
+      .eq("restaurant_id", restaurantId);
+    setSavingPublicOrders(false);
+    if (error) {
+      setAllowPublicOrders(previous);
+      toast.error("Failed to update public orders setting");
+      return;
+    }
+    toast.success(next ? "Public ordering enabled" : "Public ordering disabled");
   };
 
   const saveMonthlyBills = async (bills: { name: string; amount: number }[]) => {
