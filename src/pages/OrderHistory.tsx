@@ -174,17 +174,27 @@ const OrderHistory = () => {
   const filteredRecentOrders = useMemo(() => filterOrders(recentOrders), [recentOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
   const filteredArchivedOrders = useMemo(() => filterOrders(archivedOrders), [archivedOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
 
+  const [unpaidDialogOpen, setUnpaidDialogOpen] = useState(false);
+  const [unpaidTarget, setUnpaidTarget] = useState<Order | null>(null);
+
   const togglePaymentStatus = async (order: Order) => {
-    const next = (order.payment_status || "paid") === "paid" ? "unpaid" : "paid";
+    const isCurrentlyPaid = (order.payment_status || "paid") === "paid";
+    if (isCurrentlyPaid) {
+      // Going from paid → unpaid: collect debtor info first
+      setUnpaidTarget(order);
+      setUnpaidDialogOpen(true);
+      return;
+    }
+    // Going from unpaid → paid: just flip the flag
     const { error } = await supabase
       .from("orders")
-      .update({ payment_status: next } as any)
+      .update({ payment_status: "paid" } as any)
       .eq("id", order.id);
     if (error) {
       toast.error("Failed to update payment status");
       return;
     }
-    toast.success(next === "paid" ? "Marked as paid" : "Marked as unpaid");
+    toast.success("Marked as paid");
     invalidateOrders();
   };
 
