@@ -549,7 +549,13 @@ const Admin = () => {
   if (!canViewReports) {
     return <Navigate to="/" replace />;
   }
-  const todayRevenue = todayOrders.reduce((sum, order) => sum + Number(order.total), 0);
+  // Revenue rules:
+  //  • Only paid + confirmed orders count toward revenue.
+  //  • Today's expenses (logged spend since last End Day) deduct from revenue on the dashboard.
+  const todayPaidRevenue = sumPaidRevenue(todayOrders as any);
+  const todayUnpaidTotal = sumUnpaidRevenue(todayOrders as any);
+  const todayExpensesTotal = todayExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const todayRevenue = todayPaidRevenue - todayExpensesTotal;
   const pendingStaff = staff.filter(s => !s.role);
   return <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -577,7 +583,7 @@ const Admin = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
@@ -595,6 +601,11 @@ const Admin = () => {
                 Today's Orders
               </CardDescription>
               <CardTitle className="text-3xl">{todayOrders.length}</CardTitle>
+              {todayUnpaidTotal > 0 && (
+                <CardDescription className="text-xs text-amber-600">
+                  -{formatPrice(todayUnpaidTotal, 'TRY')} unpaid
+                </CardDescription>
+              )}
             </CardHeader>
           </Card>
 
@@ -605,8 +616,26 @@ const Admin = () => {
                 Today's Revenue
               </CardDescription>
               <CardTitle className="text-3xl">
-                {todayOrders.length > 0 ? formatPrice(todayRevenue, todayOrders[0]?.currency) : '₺0.00'}
+                {formatPrice(todayRevenue, todayOrders[0]?.currency || 'TRY')}
               </CardTitle>
+              <CardDescription className="text-xs">
+                Paid {formatPrice(todayPaidRevenue, 'TRY')} − Expenses {formatPrice(todayExpensesTotal, 'TRY')}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Today's Expenses
+              </CardDescription>
+              <CardTitle className="text-3xl text-destructive">
+                {formatPrice(todayExpensesTotal, 'TRY')}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {todayExpenses.length} entr{todayExpenses.length === 1 ? 'y' : 'ies'} since last End Day
+              </CardDescription>
             </CardHeader>
           </Card>
         </div>
