@@ -723,6 +723,21 @@ export type Database = {
               order_number: string
             }[]
           }
+      create_staff_order: {
+        Args: {
+          _customer_name: string
+          _discount_amount: number
+          _items: Json
+          _notes: string
+          _payment_method: string
+          _payment_status?: string
+          _restaurant_id: string
+        }
+        Returns: {
+          id: string
+          order_number: string
+        }[]
+      }
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
       get_next_order_number: {
         Args: { _restaurant_id: string }
