@@ -79,6 +79,7 @@ const Admin = () => {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [todayOrders, setTodayOrders] = useState<Order[]>([]);
+  const [todayExpenses, setTodayExpenses] = useState<{ amount: number; created_at: string }[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("7");
@@ -138,7 +139,7 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      await Promise.all([fetchStaff(), fetchOrders(), fetchTodayOrders(), fetchReports()]);
+      await Promise.all([fetchStaff(), fetchOrders(), fetchTodayOrders(), fetchTodayExpenses(), fetchReports()]);
     } catch (error) {
       toast.error("Failed to load admin data");
     } finally {
