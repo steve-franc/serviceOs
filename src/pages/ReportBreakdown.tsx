@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Printer, Tag, TrendingDown, TrendingUp } from "lucide-react";
+import { SmartBackButton } from "@/components/SmartBackButton";
 import { formatPrice } from "@/lib/currency";
 import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
 import { format } from "date-fns";
@@ -252,9 +253,7 @@ const ReportBreakdown = () => {
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6" id="report-print">
         <div className="flex items-center gap-4 print:hidden">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/orders")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <SmartBackButton />
           <div className="flex-1">
             <h2 className="text-3xl font-bold">Daily Report</h2>
             <p className="text-muted-foreground">

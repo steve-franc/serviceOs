@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Printer, ArrowLeft, Edit, Save, X, Calculator, Clock, CheckCircle } from "lucide-react";
+import { SmartBackButton } from "@/components/SmartBackButton";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
@@ -363,10 +364,7 @@ const Receipt = () => {
     <Layout>
       <div className="max-w-3xl mx-auto space-y-4 px-2 sm:px-0">
         <div className="print:hidden flex items-center gap-3 flex-wrap">
-          <Button variant="outline" onClick={() => navigate("/orders")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          <SmartBackButton variant="outline" size="sm" label="Back" />
           <Button onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
             Print Receipt
