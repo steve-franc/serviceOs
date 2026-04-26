@@ -324,7 +324,7 @@ const ReportBreakdown = () => {
         </div>
 
         {/* Expense Breakdown */}
-        {(expenses.length > 0 || dailyFixedDeduction > 0) && (
+        {(expenses.length > 0 || dailyFixedDeduction > 0 || unpaidDeduction > 0) && (
           <>
             <Separator />
             <div>
@@ -350,6 +350,15 @@ const ReportBreakdown = () => {
                       </p>
                     </div>
                     <p className="text-lg font-bold text-destructive">-{formatPrice(dailyFixedDeduction)}</p>
+                  </div>
+                )}
+                {unpaidDeduction > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">Unpaid Orders</p>
+                      <p className="text-xs text-muted-foreground">Outstanding — moved to Debtors</p>
+                    </div>
+                    <p className="text-lg font-bold text-destructive">-{formatPrice(unpaidDeduction)}</p>
                   </div>
                 )}
                 <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg font-bold">
