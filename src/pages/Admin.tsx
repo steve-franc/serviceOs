@@ -585,7 +585,7 @@ const Admin = () => {
           </Card>
         </div>
 
-        {/* Daily Bills Progress */}
+        {/* Daily Bills Progress — auto-calculated from monthly bills / 30 */}
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -593,53 +593,32 @@ const Admin = () => {
                 <Target className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">Daily Bills Target</CardTitle>
               </div>
-              {!readOnly && !editingBills && (
-                <Button variant="outline" size="sm" onClick={() => { setEditingBills(true); setBillsInput(String(fixedDailyBills)); }}>
-                  Edit
-                </Button>
-              )}
-              {!readOnly && editingBills && (
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={billsInput}
-                    onChange={(e) => setBillsInput(e.target.value)}
-                    className="w-28 h-8"
-                    min={0}
-                    step="0.01"
-                  />
-                  <Button size="sm" onClick={saveFixedDailyBills}>
-                    <Save className="h-3 w-3 mr-1" />
-                    Save
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingBills(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              )}
             </div>
             <CardDescription>
-              {fixedDailyBills > 0
-                ? `Target: ${formatPrice(fixedDailyBills, todayOrders[0]?.currency || 'TRY')} daily`
-                : "Set your daily operating costs to track profitability"}
+              {fixedMonthlyExpenses > 0
+                ? `Auto-calculated: ${formatPrice(fixedMonthlyExpenses, 'TRY')} ÷ 30 = ${formatPrice(fixedMonthlyExpenses / 30, 'TRY')}/day`
+                : "Add monthly bills below to auto-calculate your daily target (monthly ÷ 30)."}
             </CardDescription>
           </CardHeader>
-          {fixedDailyBills > 0 && (
-            <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Revenue vs Daily Bills</span>
-                <span className="font-medium">
-                  {formatPrice(todayRevenue, todayOrders[0]?.currency || 'TRY')} / {formatPrice(fixedDailyBills, todayOrders[0]?.currency || 'TRY')}
-                </span>
-              </div>
-              <Progress value={Math.min(100, fixedDailyBills > 0 ? (todayRevenue / fixedDailyBills) * 100 : 0)} className="h-4" />
-              <p className={`text-sm font-medium ${todayRevenue >= fixedDailyBills ? "text-green-600" : "text-amber-600"}`}>
-                {todayRevenue >= fixedDailyBills
-                  ? `✓ Bills covered! ${formatPrice(todayRevenue - fixedDailyBills, todayOrders[0]?.currency || 'TRY')} profit`
-                  : `${formatPrice(fixedDailyBills - todayRevenue, todayOrders[0]?.currency || 'TRY')} more needed`}
-              </p>
-            </CardContent>
-          )}
+          {fixedMonthlyExpenses > 0 && (() => {
+            const dailyTarget = fixedMonthlyExpenses / 30;
+            return (
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Revenue vs Daily Bills</span>
+                  <span className="font-medium">
+                    {formatPrice(todayRevenue, todayOrders[0]?.currency || 'TRY')} / {formatPrice(dailyTarget, todayOrders[0]?.currency || 'TRY')}
+                  </span>
+                </div>
+                <Progress value={Math.min(100, (todayRevenue / dailyTarget) * 100)} className="h-4" />
+                <p className={`text-sm font-medium ${todayRevenue >= dailyTarget ? "text-green-600" : "text-amber-600"}`}>
+                  {todayRevenue >= dailyTarget
+                    ? `✓ Bills covered! ${formatPrice(todayRevenue - dailyTarget, todayOrders[0]?.currency || 'TRY')} profit`
+                    : `${formatPrice(dailyTarget - todayRevenue, todayOrders[0]?.currency || 'TRY')} more needed`}
+                </p>
+              </CardContent>
+            );
+          })()}
         </Card>
 
         {/* Fixed Monthly Expenses */}
