@@ -680,6 +680,14 @@ const OrderHistory = () => {
           </Tabs>}
       </div>
 
+      <UnpaidOrderDialog
+        open={unpaidDialogOpen}
+        onOpenChange={setUnpaidDialogOpen}
+        order={unpaidTarget as any}
+        restaurantId={restaurantId}
+        onComplete={() => { setUnpaidTarget(null); invalidateOrders(); }}
+      />
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
