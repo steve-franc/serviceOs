@@ -233,7 +233,7 @@ const Reports = () => {
             )}
 
             {/* Expense Breakdown */}
-            {(Object.keys(expensesBySource).length > 0 || fixedDeduction > 0) && (
+            {(Object.keys(expensesBySource).length > 0 || fixedDeduction > 0 || unpaidTotal > 0) && (
               <>
                 <Separator />
                 <div>
@@ -249,9 +249,18 @@ const Reports = () => {
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div>
                           <p className="font-medium">Fixed Costs ({days} days)</p>
-                          <p className="text-xs text-muted-foreground">{formatPrice(fixedMonthlyExpenses)}/month</p>
+                          <p className="text-xs text-muted-foreground">{formatPrice(fixedMonthlyExpenses)}/month ÷ 30</p>
                         </div>
                         <p className="text-lg font-bold text-destructive">-{formatPrice(fixedDeduction)}</p>
+                      </div>
+                    )}
+                    {unpaidTotal > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">Unpaid Orders</p>
+                          <p className="text-xs text-muted-foreground">Tracked in Debtors</p>
+                        </div>
+                        <p className="text-lg font-bold text-destructive">-{formatPrice(unpaidTotal)}</p>
                       </div>
                     )}
                   </div>
