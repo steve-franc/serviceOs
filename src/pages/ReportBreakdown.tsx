@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Printer, Tag, TrendingDown, TrendingUp } from "lucide-react";
+import { SmartBackButton } from "@/components/SmartBackButton";
 import { formatPrice } from "@/lib/currency";
 import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
+import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -26,6 +28,8 @@ interface OrderWithItems {
   order_number: string;
   total: number;
   payment_method: string;
+  payment_status?: string | null;
+  status?: string | null;
   notes: string | null;
   created_at: string;
   customer_name: string | null;
@@ -130,10 +134,20 @@ const ReportBreakdown = () => {
 
         const pm: Record<string, { count: number; total: number }> = {};
         ordersResult.data.forEach(order => {
+          if ((order.payment_status ?? "paid") !== "paid") return;
           if (!pm[order.payment_method]) pm[order.payment_method] = { count: 0, total: 0 };
           pm[order.payment_method].count++;
           pm[order.payment_method].total += Number(order.total);
         });
+
+        // Recompute totals from PAID orders only — unpaid orders never count as revenue.
+        const paidRevenue = sumPaidRevenue(ordersResult.data as any);
+        setTotalRevenue(paidRevenue);
+        setTotalOrders(
+          ordersResult.data.filter(
+            (o: any) => (o.payment_status ?? "paid") === "paid" && (o.status ?? "confirmed") === "confirmed"
+          ).length
+        );
 
         setPaymentMethods(pm);
         setOrders(ordersWithItems);
@@ -156,10 +170,11 @@ const ReportBreakdown = () => {
 
   const uniqueTags = useMemo(() => Object.keys(tagCategoryMap).sort(), [tagCategoryMap]);
 
-  // Expense calculations — daily share uses actual days in current month
+  // Expense calculations — daily share of monthly bills uses /30 (business rule).
   const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const dailyFixedDeduction = dailyShareOfMonthly(fixedMonthlyExpenses, reportDate || undefined);
-  const totalDeductions = totalExpenses + dailyFixedDeduction;
+  const dailyFixedDeduction = dailyBillsTarget(fixedMonthlyExpenses);
+  const unpaidDeduction = sumUnpaidRevenue(orders as any);
+  const totalDeductions = totalExpenses + dailyFixedDeduction + unpaidDeduction;
   const netProfit = totalRevenue - totalDeductions;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
@@ -252,9 +267,7 @@ const ReportBreakdown = () => {
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6" id="report-print">
         <div className="flex items-center gap-4 print:hidden">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/orders")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <SmartBackButton />
           <div className="flex-1">
             <h2 className="text-3xl font-bold">Daily Report</h2>
             <p className="text-muted-foreground">
@@ -311,7 +324,7 @@ const ReportBreakdown = () => {
         </div>
 
         {/* Expense Breakdown */}
-        {(expenses.length > 0 || dailyFixedDeduction > 0) && (
+        {(expenses.length > 0 || dailyFixedDeduction > 0 || unpaidDeduction > 0) && (
           <>
             <Separator />
             <div>
@@ -337,6 +350,15 @@ const ReportBreakdown = () => {
                       </p>
                     </div>
                     <p className="text-lg font-bold text-destructive">-{formatPrice(dailyFixedDeduction)}</p>
+                  </div>
+                )}
+                {unpaidDeduction > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <p className="font-medium">Unpaid Orders</p>
+                      <p className="text-xs text-muted-foreground">Outstanding — moved to Debtors</p>
+                    </div>
+                    <p className="text-lg font-bold text-destructive">-{formatPrice(unpaidDeduction)}</p>
                   </div>
                 )}
                 <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg font-bold">

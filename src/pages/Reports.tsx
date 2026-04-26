@@ -10,6 +10,7 @@ import { BarChart3, TrendingUp, TrendingDown, Users, Calendar } from "lucide-rea
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, isWithinInterval } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { formatDateFull, formatDateShort, daysInMonth, dailyShareOfMonthly } from "@/lib/date-format";
+import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -32,6 +33,8 @@ interface OrderData {
   total: number;
   customer_name: string | null;
   payment_method: string;
+  payment_status?: string | null;
+  status?: string | null;
   created_at: string;
 }
 
@@ -77,7 +80,7 @@ const Reports = () => {
         supabase.from("daily_expenses").select("amount, source, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr),
-        supabase.from("orders").select("total, customer_name, payment_method, created_at")
+        supabase.from("orders").select("total, customer_name, payment_method, payment_status, status, created_at")
           .eq("restaurant_id", restaurantId).eq("status", "confirmed")
           .gte("created_at", startStr).lte("created_at", endStr),
         supabase.from("restaurant_settings").select("fixed_monthly_expenses")
@@ -95,15 +98,15 @@ const Reports = () => {
     }
   };
 
-  const totalRevenue = orders.reduce((s, o) => s + Number(o.total), 0);
+  const totalRevenue = sumPaidRevenue(orders as any);
+  const unpaidTotal = sumUnpaidRevenue(orders as any);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  // Use actual days in the reference month for daily share of fixed monthly bills.
-  const refMonth = dateRange.start;
-  const days = period === "week" ? 7 : daysInMonth(refMonth);
+  // Daily share of monthly bills is fixed at /30 per business rule.
+  const days = period === "week" ? 7 : daysInMonth(dateRange.start);
   const fixedDeduction = period === "month"
     ? fixedMonthlyExpenses
-    : dailyShareOfMonthly(fixedMonthlyExpenses, refMonth) * days;
-  const totalDeductions = totalExpenses + fixedDeduction;
+    : dailyBillsTarget(fixedMonthlyExpenses) * days;
+  const totalDeductions = totalExpenses + fixedDeduction + unpaidTotal;
   const netProfit = totalRevenue - totalDeductions;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
@@ -116,7 +119,9 @@ const Reports = () => {
 
   // Payment methods
   const pmBreakdown: Record<string, { count: number; total: number }> = {};
+  // Payment methods (only paid orders contribute)
   orders.forEach(o => {
+    if ((o.payment_status ?? "paid") !== "paid") return;
     if (!pmBreakdown[o.payment_method]) pmBreakdown[o.payment_method] = { count: 0, total: 0 };
     pmBreakdown[o.payment_method].count++;
     pmBreakdown[o.payment_method].total += Number(o.total);
@@ -228,7 +233,7 @@ const Reports = () => {
             )}
 
             {/* Expense Breakdown */}
-            {(Object.keys(expensesBySource).length > 0 || fixedDeduction > 0) && (
+            {(Object.keys(expensesBySource).length > 0 || fixedDeduction > 0 || unpaidTotal > 0) && (
               <>
                 <Separator />
                 <div>
@@ -244,9 +249,18 @@ const Reports = () => {
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div>
                           <p className="font-medium">Fixed Costs ({days} days)</p>
-                          <p className="text-xs text-muted-foreground">{formatPrice(fixedMonthlyExpenses)}/month</p>
+                          <p className="text-xs text-muted-foreground">{formatPrice(fixedMonthlyExpenses)}/month ÷ 30</p>
                         </div>
                         <p className="text-lg font-bold text-destructive">-{formatPrice(fixedDeduction)}</p>
+                      </div>
+                    )}
+                    {unpaidTotal > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">Unpaid Orders</p>
+                          <p className="text-xs text-muted-foreground">Tracked in Debtors</p>
+                        </div>
+                        <p className="text-lg font-bold text-destructive">-{formatPrice(unpaidTotal)}</p>
                       </div>
                     )}
                   </div>

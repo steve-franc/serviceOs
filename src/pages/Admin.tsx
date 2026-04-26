@@ -10,10 +10,11 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Shield, Users, ShoppingBag, TrendingUp, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle } from "lucide-react";
+import { Shield, Users, ShoppingBag, TrendingUp, TrendingDown, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { dailyShareOfMonthly, daysInMonth } from "@/lib/date-format";
+import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -78,6 +79,7 @@ const Admin = () => {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [todayOrders, setTodayOrders] = useState<Order[]>([]);
+  const [todayExpenses, setTodayExpenses] = useState<{ amount: number; created_at: string }[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("7");
@@ -137,7 +139,7 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      await Promise.all([fetchStaff(), fetchOrders(), fetchTodayOrders(), fetchReports()]);
+      await Promise.all([fetchStaff(), fetchOrders(), fetchTodayOrders(), fetchTodayExpenses(), fetchReports()]);
     } catch (error) {
       toast.error("Failed to load admin data");
     } finally {
@@ -344,6 +346,30 @@ const Admin = () => {
     
     setTodayOrders(ordersWithProfiles as any);
   };
+
+  const fetchTodayExpenses = async () => {
+    if (!restaurantId) {
+      setTodayExpenses([]);
+      return;
+    }
+    // Use latest daily report cutoff to mirror "today since last End Day".
+    const { data: latestReport } = await supabase
+      .from("daily_reports")
+      .select("created_at")
+      .eq("restaurant_id", restaurantId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let q = supabase
+      .from("daily_expenses")
+      .select("amount, created_at")
+      .eq("restaurant_id", restaurantId);
+    if (latestReport?.created_at) q = q.gt("created_at", latestReport.created_at);
+
+    const { data } = await q;
+    setTodayExpenses((data || []) as any);
+  };
   const fetchStaff = async () => {
     if (!restaurantId) {
       setStaff([]);
@@ -523,7 +549,13 @@ const Admin = () => {
   if (!canViewReports) {
     return <Navigate to="/" replace />;
   }
-  const todayRevenue = todayOrders.reduce((sum, order) => sum + Number(order.total), 0);
+  // Revenue rules:
+  //  • Only paid + confirmed orders count toward revenue.
+  //  • Today's expenses (logged spend since last End Day) deduct from revenue on the dashboard.
+  const todayPaidRevenue = sumPaidRevenue(todayOrders as any);
+  const todayUnpaidTotal = sumUnpaidRevenue(todayOrders as any);
+  const todayExpensesTotal = todayExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const todayRevenue = todayPaidRevenue - todayExpensesTotal;
   const pendingStaff = staff.filter(s => !s.role);
   return <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -551,7 +583,7 @@ const Admin = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
@@ -569,6 +601,11 @@ const Admin = () => {
                 Today's Orders
               </CardDescription>
               <CardTitle className="text-3xl">{todayOrders.length}</CardTitle>
+              {todayUnpaidTotal > 0 && (
+                <CardDescription className="text-xs text-amber-600">
+                  -{formatPrice(todayUnpaidTotal, 'TRY')} unpaid
+                </CardDescription>
+              )}
             </CardHeader>
           </Card>
 
@@ -579,8 +616,26 @@ const Admin = () => {
                 Today's Revenue
               </CardDescription>
               <CardTitle className="text-3xl">
-                {todayOrders.length > 0 ? formatPrice(todayRevenue, todayOrders[0]?.currency) : '₺0.00'}
+                {formatPrice(todayRevenue, todayOrders[0]?.currency || 'TRY')}
               </CardTitle>
+              <CardDescription className="text-xs">
+                Paid {formatPrice(todayPaidRevenue, 'TRY')} − Expenses {formatPrice(todayExpensesTotal, 'TRY')}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Today's Expenses
+              </CardDescription>
+              <CardTitle className="text-3xl text-destructive">
+                {formatPrice(todayExpensesTotal, 'TRY')}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {todayExpenses.length} entr{todayExpenses.length === 1 ? 'y' : 'ies'} since last End Day
+              </CardDescription>
             </CardHeader>
           </Card>
         </div>
@@ -601,20 +656,21 @@ const Admin = () => {
             </CardDescription>
           </CardHeader>
           {fixedMonthlyExpenses > 0 && (() => {
-            const dailyTarget = fixedMonthlyExpenses / 30;
+            const dailyTarget = dailyBillsTarget(fixedMonthlyExpenses);
+            const progressRevenue = todayPaidRevenue;
             return (
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Revenue vs Daily Bills</span>
+                  <span className="text-muted-foreground">Paid Revenue vs Daily Bills</span>
                   <span className="font-medium">
-                    {formatPrice(todayRevenue, todayOrders[0]?.currency || 'TRY')} / {formatPrice(dailyTarget, todayOrders[0]?.currency || 'TRY')}
+                    {formatPrice(progressRevenue, 'TRY')} / {formatPrice(dailyTarget, 'TRY')}
                   </span>
                 </div>
-                <Progress value={Math.min(100, (todayRevenue / dailyTarget) * 100)} className="h-4" />
-                <p className={`text-sm font-medium ${todayRevenue >= dailyTarget ? "text-green-600" : "text-amber-600"}`}>
-                  {todayRevenue >= dailyTarget
-                    ? `✓ Bills covered! ${formatPrice(todayRevenue - dailyTarget, todayOrders[0]?.currency || 'TRY')} profit`
-                    : `${formatPrice(dailyTarget - todayRevenue, todayOrders[0]?.currency || 'TRY')} more needed`}
+                <Progress value={Math.min(100, (progressRevenue / dailyTarget) * 100)} className="h-4" />
+                <p className={`text-sm font-medium ${progressRevenue >= dailyTarget ? "text-green-600" : "text-amber-600"}`}>
+                  {progressRevenue >= dailyTarget
+                    ? `✓ Bills covered! ${formatPrice(progressRevenue - dailyTarget, 'TRY')} above target`
+                    : `${formatPrice(dailyTarget - progressRevenue, 'TRY')} more needed`}
                 </p>
               </CardContent>
             );
