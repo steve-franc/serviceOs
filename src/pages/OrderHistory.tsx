@@ -106,6 +106,18 @@ const OrderHistory = () => {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  // End-Day confirmation flow
+  const [endDayPreview, setEndDayPreview] = useState<{
+    orders: OrderWithItems[];
+    paidCount: number;
+    paidRevenue: number;
+    unpaidCount: number;
+    unpaidTotal: number;
+    paymentMethods: Record<string, { count: number; total: number }>;
+    cutoffDate: Date;
+  } | null>(null);
+  const [showEndDayConfirm, setShowEndDayConfirm] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [groupBy, setGroupBy] = useState<"none" | "month" | "year">("none");
   const { data: menuTags = [] } = useMenuTags();
   const { data: allMenuItems = [] } = useMenuItems();
