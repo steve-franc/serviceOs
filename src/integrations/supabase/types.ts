@@ -481,6 +481,7 @@ export type Database = {
           profit_margin_threshold: number
           restaurant_id: string | null
           restaurant_name: string
+          timezone: string
           updated_at: string
           whatsapp_phone: string | null
         }
@@ -499,6 +500,7 @@ export type Database = {
           profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
+          timezone?: string
           updated_at?: string
           whatsapp_phone?: string | null
         }
@@ -517,6 +519,7 @@ export type Database = {
           profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
+          timezone?: string
           updated_at?: string
           whatsapp_phone?: string | null
         }
@@ -692,6 +695,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      close_day_for_restaurant: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
       create_public_order:
         | {
             Args: {
