@@ -743,6 +743,101 @@ const OrderHistory = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* End Day confirmation + preview */}
+      <Dialog open={showEndDayConfirm} onOpenChange={(o) => !generatingReport && setShowEndDayConfirm(o)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>End the day now?</DialogTitle>
+            <DialogDescription>
+              Review the orders and totals that will be saved into today's daily report.
+              The day also closes automatically at 23:59 local time — this manual close is optional.
+            </DialogDescription>
+          </DialogHeader>
+
+          {endDayPreview && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Orders</p>
+                  <p className="text-xl font-bold">{endDayPreview.orders.length}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Paid revenue</p>
+                  <p className="text-xl font-bold text-primary">{formatPrice(endDayPreview.paidRevenue)}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Unpaid</p>
+                  <p className="text-xl font-bold text-destructive">{formatPrice(endDayPreview.unpaidTotal)}</p>
+                  <p className="text-[10px] text-muted-foreground">{endDayPreview.unpaidCount} order(s)</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Since</p>
+                  <p className="text-sm font-medium">
+                    {endDayPreview.cutoffDate.getTime() === 0
+                      ? "Start"
+                      : format(endDayPreview.cutoffDate, "MMM d, HH:mm")}
+                  </p>
+                </div>
+              </div>
+
+              {Object.keys(endDayPreview.paymentMethods).length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Payment methods (paid)</p>
+                  <div className="space-y-1">
+                    {Object.entries(endDayPreview.paymentMethods).map(([name, info]) => (
+                      <div key={name} className="flex justify-between text-sm border-b py-1">
+                        <span>{name} <span className="text-muted-foreground">×{info.count}</span></span>
+                        <span className="font-medium">{formatPrice(info.total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-medium mb-2">Orders included ({endDayPreview.orders.length})</p>
+                <div className="border rounded-md max-h-64 overflow-y-auto divide-y">
+                  {endDayPreview.orders.map((o) => {
+                    const unpaid = (o.payment_status || "paid") !== "paid";
+                    return (
+                      <div key={o.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-mono text-xs">#{o.order_number}</span>
+                          <span className="text-muted-foreground truncate">
+                            {format(parseISO(o.created_at), "HH:mm")} • {o.payment_method}
+                          </span>
+                          {unpaid && <Badge variant="destructive" className="text-[10px]">Unpaid</Badge>}
+                        </div>
+                        <span className={unpaid ? "text-destructive font-medium" : "font-medium"}>
+                          {formatPrice(Number(o.total))}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowEndDayConfirm(false)}
+              disabled={generatingReport}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmEndDay}
+              disabled={generatingReport}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {generatingReport ? "Closing day…" : "Confirm & End Day"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showReport} onOpenChange={setShowReport}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-h-none print:overflow-visible print:max-w-none print:w-full print:h-auto print:border-none print:shadow-none print:p-0" id="eod-print">
           <DialogHeader className="print:hidden">
