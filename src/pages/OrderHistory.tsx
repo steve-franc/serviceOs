@@ -256,97 +256,118 @@ const OrderHistory = () => {
     setOrderToDelete(orderId);
     setDeleteDialogOpen(true);
   };
-  const handleEndDay = async () => {
-    setGeneratingReport(true);
+  // Step 1: load orders that WOULD be included and open the confirmation dialog.
+  const previewEndDay = async () => {
+    if (!restaurantId) {
+      toast.error("No restaurant found");
+      return;
+    }
+    setLoadingPreview(true);
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      if (!restaurantId) {
-        toast.error("No restaurant found");
-        setGeneratingReport(false);
-        return;
-      }
-
-      // Get the most recent daily report to find last end day using created_at timestamp
-      const {
-        data: lastReport
-      } = await supabase.from("daily_reports")
+      const { data: lastReport } = await supabase
+        .from("daily_reports")
         .select("created_at")
         .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      
-      // Use the exact timestamp of the last report as cutoff
       const cutoffDate = lastReport ? new Date(lastReport.created_at) : new Date(0);
-      const today = format(new Date(), "yyyy-MM-dd");
 
-      // Fetch all orders since last end day for this restaurant
-      const {
-        data: ordersData,
-        error: ordersError
-      } = await supabase.from("orders").select("*").eq("restaurant_id", restaurantId).eq("status", "confirmed").gte("created_at", cutoffDate.toISOString()).order("created_at", {
-        ascending: false
-      });
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("restaurant_id", restaurantId)
+        .eq("status", "confirmed")
+        .gte("created_at", cutoffDate.toISOString())
+        .order("created_at", { ascending: false });
       if (ordersError) throw ordersError;
       if (!ordersData || ordersData.length === 0) {
         toast.error("No orders found since last end day");
-        setGeneratingReport(false);
         return;
       }
 
-      // Fetch all order items for these orders
-      const orderIds = ordersData.map(o => o.id);
-      const {
-        data: itemsData,
-        error: itemsError
-      } = await supabase.from("order_items").select("*").in("order_id", orderIds);
-      if (itemsError) throw itemsError;
+      const orderIds = ordersData.map((o) => o.id);
+      const { data: itemsData } = await supabase
+        .from("order_items")
+        .select("*")
+        .in("order_id", orderIds);
 
-      // Combine orders with their items
-      const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
+      const ordersWithItems: OrderWithItems[] = ordersData.map((order) => ({
         ...order,
-        items: itemsData?.filter(item => item.order_id === order.id) || []
+        items: itemsData?.filter((item) => item.order_id === order.id) || [],
       }));
 
-      // Calculate totals — only PAID orders count toward revenue
-      const paidOrders = ordersData.filter((o: any) => (o.payment_status || 'paid') === 'paid');
-      const totalRevenue = paidOrders.reduce((sum: number, order: any) => sum + Number(order.total), 0);
+      const paidOrders = ordersData.filter(
+        (o: any) => (o.payment_status || "paid") === "paid"
+      );
+      const unpaidOrders = ordersData.filter(
+        (o: any) => (o.payment_status || "paid") !== "paid"
+      );
+      const paidRevenue = paidOrders.reduce(
+        (s: number, o: any) => s + Number(o.total),
+        0
+      );
+      const unpaidTotal = unpaidOrders.reduce(
+        (s: number, o: any) => s + Number(o.total),
+        0
+      );
       const paymentMethods: Record<string, { count: number; total: number }> = {};
-      paidOrders.forEach((order: any) => {
-        if (!paymentMethods[order.payment_method]) {
-          paymentMethods[order.payment_method] = { count: 0, total: 0 };
+      paidOrders.forEach((o: any) => {
+        if (!paymentMethods[o.payment_method]) {
+          paymentMethods[o.payment_method] = { count: 0, total: 0 };
         }
-        paymentMethods[order.payment_method].count++;
-        paymentMethods[order.payment_method].total += Number(order.total);
+        paymentMethods[o.payment_method].count++;
+        paymentMethods[o.payment_method].total += Number(o.total);
       });
 
-      // Save daily report - use insert (not upsert) to allow multiple reports per day
+      setEndDayPreview({
+        orders: ordersWithItems,
+        paidCount: paidOrders.length,
+        paidRevenue,
+        unpaidCount: unpaidOrders.length,
+        unpaidTotal,
+        paymentMethods,
+        cutoffDate,
+      });
+      setShowEndDayConfirm(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load preview");
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // Step 2: actually commit the daily report after the user confirms.
+  const confirmEndDay = async () => {
+    if (!endDayPreview) return;
+    setGeneratingReport(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      if (!restaurantId) throw new Error("No restaurant found");
+
+      const today = format(new Date(), "yyyy-MM-dd");
       const { error: reportError } = await supabase.from("daily_reports").insert({
         staff_id: user.id,
         restaurant_id: restaurantId,
         report_date: today,
-        total_orders: paidOrders.length,
-        total_revenue: totalRevenue,
-        payment_methods: paymentMethods
+        total_orders: endDayPreview.paidCount,
+        total_revenue: endDayPreview.paidRevenue,
+        payment_methods: endDayPreview.paymentMethods,
       });
       if (reportError) throw reportError;
 
-      // Set report data and show dialog
       setDailyReport({
-        total_orders: paidOrders.length,
-        total_revenue: totalRevenue,
-        payment_methods: paymentMethods,
-        orders: ordersWithItems
+        total_orders: endDayPreview.paidCount,
+        total_revenue: endDayPreview.paidRevenue,
+        payment_methods: endDayPreview.paymentMethods,
+        orders: endDayPreview.orders,
       });
+      setShowEndDayConfirm(false);
+      setEndDayPreview(null);
       setShowReport(true);
       toast.success("Daily report generated successfully");
-      invalidateOrders(); // Refresh orders to update the cutoff
+      invalidateOrders();
     } catch (error: any) {
       toast.error(error.message || "Failed to generate report");
     } finally {
