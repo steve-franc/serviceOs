@@ -214,7 +214,7 @@ const MenuManagement = () => {
       currency: "TRY",
       is_inventory_item: false,
       stock_qty: "",
-      
+      image_url: "",
     });
     setEditingItem(null);
   };
