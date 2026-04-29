@@ -26,6 +26,7 @@ interface MenuItem {
   description: string | null;
   pricing_unit: string;
   currency: string;
+  image_url: string | null;
 }
 
 interface OrderItem {
