@@ -58,6 +58,7 @@ const PublicOrder = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethodConfig[]>([]);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => {
