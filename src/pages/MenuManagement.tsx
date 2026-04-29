@@ -469,6 +469,37 @@ const MenuManagement = () => {
                     maxLength={1000}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Dish Photo (shown on public order page)</Label>
+                  {formData.image_url ? (
+                    <div className="relative w-full h-40 rounded-md overflow-hidden border bg-muted">
+                      <img src={formData.image_url} alt="Dish" className="w-full h-full object-cover" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7"
+                        onClick={removeImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-input rounded-md cursor-pointer hover:bg-muted/50 transition-colors">
+                      <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                      <span className="text-sm text-muted-foreground">
+                        {uploadingImage ? "Uploading..." : "Click to upload (max 5MB)"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={saving} className="flex-1">
                     {saving ? "Saving..." : editingItem ? "Update" : "Add"} Item
