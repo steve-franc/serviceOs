@@ -32,6 +32,7 @@ interface MenuItem {
   currency: string;
   is_inventory_item: boolean;
   stock_qty: number;
+  image_url: string | null;
 }
 const MenuManagement = () => {
   const { restaurantId } = useRestaurantContext();
