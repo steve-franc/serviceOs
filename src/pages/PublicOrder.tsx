@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -56,6 +57,16 @@ const PublicOrder = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethodConfig[]>([]);
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategory = (category: string) => {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!urlRestaurantId) {
@@ -483,49 +494,64 @@ const PublicOrder = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Menu Items */}
           <div className="lg:col-span-2 space-y-6 pb-20 md:pb-0">
-            {Object.entries(groupedItems).map(([category, items]) => (
-              <div key={category}>
-                <h3 className="text-xl font-semibold mb-3">{category}</h3>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {items.map((item) => (
-                    <Card
-                      key={item.id}
-                      className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
-                      onClick={() => addToOrder(item)}
-                    >
-                      {item.image_url && (
-                        <div className="w-full h-40 bg-muted overflow-hidden">
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <CardTitle className="text-base">{item.name}</CardTitle>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge variant="secondary">
-                              {formatPrice(item.base_price, item.currency)}
-                            </Badge>
-                            {item.per_unit_price && (
-                              <Badge variant="outline" className="text-xs">
-                                +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
-                              </Badge>
+            {Object.entries(groupedItems).map(([category, items]) => {
+              const isOpen = !collapsedCategories.has(category);
+              return (
+                <Collapsible key={category} open={isOpen} onOpenChange={() => toggleCategory(category)}>
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors">
+                    {isOpen ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <h3 className="text-xl font-semibold">{category}</h3>
+                    <Badge variant="secondary" className="ml-auto">{items.length}</Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="grid gap-3 sm:grid-cols-2 mt-3">
+                      {items.map((item) => (
+                        <Card
+                          key={item.id}
+                          className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
+                          onClick={() => addToOrder(item)}
+                        >
+                          <div className="flex flex-col sm:flex-row">
+                            {item.image_url && (
+                              <div className="w-full h-40 sm:h-[100px] sm:w-[100px] sm:shrink-0 bg-muted overflow-hidden flex items-center justify-center">
+                                <img
+                                  src={item.image_url}
+                                  alt={item.name}
+                                  loading="lazy"
+                                  className="w-full h-full sm:object-contain object-cover"
+                                />
+                              </div>
                             )}
+                            <CardHeader className="pb-3 flex-1">
+                              <div className="flex items-start justify-between">
+                                <CardTitle className="text-base">{item.name}</CardTitle>
+                                <div className="flex flex-col items-end gap-1">
+                                  <Badge variant="secondary">
+                                    {formatPrice(item.base_price, item.currency)}
+                                  </Badge>
+                                  {item.per_unit_price && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {item.description && (
+                                <CardDescription className="text-sm">{item.description}</CardDescription>
+                              )}
+                            </CardHeader>
                           </div>
-                        </div>
-                        {item.description && (
-                          <CardDescription className="text-sm">{item.description}</CardDescription>
-                        )}
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
+                        </Card>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
 
             {menuItems.length === 0 && (
               <Card>
