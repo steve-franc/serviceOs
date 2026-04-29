@@ -280,7 +280,15 @@ const PublicOrder = () => {
   };
 
   const EXCLUDED_CATEGORIES = ['misc', 'utility', 'miscellaneous'];
-  const groupedItems = menuItems.reduce((acc, item) => {
+  const isSearching = searchQuery.trim().length > 0;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredMenuItems = isSearching
+    ? menuItems.filter((item) => {
+        const haystack = `${item.name} ${item.category || ""} ${item.description || ""}`.toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+    : menuItems;
+  const groupedItems = filteredMenuItems.reduce((acc, item) => {
     const category = item.category || "Other";
     if (EXCLUDED_CATEGORIES.includes(category.toLowerCase())) return acc;
     if (!acc[category]) acc[category] = [];
