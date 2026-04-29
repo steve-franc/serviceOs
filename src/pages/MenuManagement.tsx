@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Share2, Copy, Check, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Share2, Copy, Check, Search, ChevronDown, ChevronRight, Upload, X, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -32,6 +32,7 @@ interface MenuItem {
   currency: string;
   is_inventory_item: boolean;
   stock_qty: number;
+  image_url: string | null;
 }
 const MenuManagement = () => {
   const { restaurantId } = useRestaurantContext();
@@ -40,8 +41,10 @@ const MenuManagement = () => {
   const invalidateMenu = useInvalidateMenuItems();
   const { data: settings } = useRestaurantSettings();
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
@@ -56,6 +59,7 @@ const MenuManagement = () => {
     currency: "TRY",
     is_inventory_item: false,
     stock_qty: "",
+    image_url: "",
   });
 
 
@@ -113,6 +117,7 @@ const MenuManagement = () => {
         currency: validation.data.currency,
         is_inventory_item: formData.is_inventory_item,
         stock_qty: formData.is_inventory_item ? parseInt(formData.stock_qty) || 0 : 0,
+        image_url: formData.image_url || null,
       };
       if (editingItem) {
         const {
@@ -182,6 +187,39 @@ const MenuManagement = () => {
       toast.error("Failed to update visibility");
     }
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${restaurantId || "shared"}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("dish-photos").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("dish-photos").getPublicUrl(path);
+      setFormData((prev) => ({ ...prev, image_url: data.publicUrl }));
+      toast.success("Photo uploaded");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload photo");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = () => setFormData((prev) => ({ ...prev, image_url: "" }));
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
     setFormData({
@@ -194,7 +232,7 @@ const MenuManagement = () => {
       currency: "TRY",
       is_inventory_item: item.is_inventory_item,
       stock_qty: item.stock_qty?.toString() || "",
-      
+      image_url: item.image_url || "",
     });
     setDialogOpen(true);
   };
@@ -209,7 +247,7 @@ const MenuManagement = () => {
       currency: "TRY",
       is_inventory_item: false,
       stock_qty: "",
-      
+      image_url: "",
     });
     setEditingItem(null);
   };
@@ -286,7 +324,11 @@ const MenuManagement = () => {
           setDialogOpen(open);
           if (!open) resetForm();
         }}>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={!restaurantId}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Preview Public Page
+              </Button>
               <Button variant="outline" onClick={() => setShareDialogOpen(true)} disabled={availableItems.length === 0}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Share Menu
@@ -431,6 +473,37 @@ const MenuManagement = () => {
                     maxLength={1000}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Dish Photo (shown on public order page)</Label>
+                  {formData.image_url ? (
+                    <div className="relative w-full h-40 rounded-md overflow-hidden border bg-muted">
+                      <img src={formData.image_url} alt="Dish" className="w-full h-full object-cover" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7"
+                        onClick={removeImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-input rounded-md cursor-pointer hover:bg-muted/50 transition-colors">
+                      <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                      <span className="text-sm text-muted-foreground">
+                        {uploadingImage ? "Uploading..." : "Click to upload (max 5MB)"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={saving} className="flex-1">
                     {saving ? "Saving..." : editingItem ? "Update" : "Add"} Item
@@ -464,6 +537,38 @@ const MenuManagement = () => {
                   {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
                   {copied ? "Copied!" : "Copy to Clipboard"}
                 </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+            <DialogContent className="max-w-5xl h-[85vh] p-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-6 pb-2">
+                <DialogTitle className="flex items-center justify-between gap-2">
+                  <span>Public Order Page Preview</span>
+                  {restaurantId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/order/${restaurantId}`, "_blank")}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-2" />
+                      Open in new tab
+                    </Button>
+                  )}
+                </DialogTitle>
+                <DialogDescription>
+                  This is exactly what customers see when they visit your public ordering link.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-hidden border-t">
+                {restaurantId && (
+                  <iframe
+                    src={`/order/${restaurantId}`}
+                    className="w-full h-full"
+                    title="Public order preview"
+                  />
+                )}
               </div>
             </DialogContent>
           </Dialog>

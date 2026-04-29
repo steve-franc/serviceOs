@@ -190,6 +190,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          image_url: string | null
           inventory_id: string | null
           is_available: boolean
           is_inventory_item: boolean
@@ -209,6 +210,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           inventory_id?: string | null
           is_available?: boolean
           is_inventory_item?: boolean
@@ -228,6 +230,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           inventory_id?: string | null
           is_available?: boolean
           is_inventory_item?: boolean
