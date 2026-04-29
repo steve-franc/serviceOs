@@ -199,7 +199,7 @@ const MenuManagement = () => {
       currency: "TRY",
       is_inventory_item: item.is_inventory_item,
       stock_qty: item.stock_qty?.toString() || "",
-      
+      image_url: item.image_url || "",
     });
     setDialogOpen(true);
   };
