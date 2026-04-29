@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,7 @@ const PublicOrder = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethodConfig[]>([]);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => {
@@ -279,7 +280,15 @@ const PublicOrder = () => {
   };
 
   const EXCLUDED_CATEGORIES = ['misc', 'utility', 'miscellaneous'];
-  const groupedItems = menuItems.reduce((acc, item) => {
+  const isSearching = searchQuery.trim().length > 0;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredMenuItems = isSearching
+    ? menuItems.filter((item) => {
+        const haystack = `${item.name} ${item.category || ""} ${item.description || ""}`.toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+    : menuItems;
+  const groupedItems = filteredMenuItems.reduce((acc, item) => {
     const category = item.category || "Other";
     if (EXCLUDED_CATEGORIES.includes(category.toLowerCase())) return acc;
     if (!acc[category]) acc[category] = [];
@@ -494,10 +503,21 @@ const PublicOrder = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Menu Items */}
           <div className="lg:col-span-2 space-y-6 pb-20 md:pb-0">
+            {menuItems.length > 0 && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search menu items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value.slice(0, 100))}
+                  className="pl-9"
+                />
+              </div>
+            )}
             {Object.entries(groupedItems).map(([category, items]) => {
-              const isOpen = !collapsedCategories.has(category);
+              const isOpen = isSearching || !collapsedCategories.has(category);
               return (
-                <Collapsible key={category} open={isOpen} onOpenChange={() => toggleCategory(category)}>
+                <Collapsible key={category} open={isOpen} onOpenChange={() => !isSearching && toggleCategory(category)}>
                   <CollapsibleTrigger className="flex items-center gap-2 w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors">
                     {isOpen ? (
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -557,6 +577,13 @@ const PublicOrder = () => {
               <Card>
                 <CardContent className="py-12 text-center">
                   <p className="text-muted-foreground">No menu items available</p>
+                </CardContent>
+              </Card>
+            )}
+            {menuItems.length > 0 && Object.keys(groupedItems).length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">No items match "{searchQuery}"</p>
                 </CardContent>
               </Card>
             )}
