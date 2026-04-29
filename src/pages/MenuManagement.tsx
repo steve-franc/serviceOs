@@ -325,7 +325,11 @@ const MenuManagement = () => {
           if (!open) resetForm();
         }}>
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={!restaurantId}>
+              <Button
+                variant="outline"
+                onClick={() => restaurantId && window.open(`/order/${restaurantId}`, "_blank", "noopener,noreferrer")}
+                disabled={!restaurantId}
+              >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Preview Public Page
               </Button>
