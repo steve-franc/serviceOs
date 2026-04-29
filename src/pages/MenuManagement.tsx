@@ -117,6 +117,7 @@ const MenuManagement = () => {
         currency: validation.data.currency,
         is_inventory_item: formData.is_inventory_item,
         stock_qty: formData.is_inventory_item ? parseInt(formData.stock_qty) || 0 : 0,
+        image_url: formData.image_url || null,
       };
       if (editingItem) {
         const {
