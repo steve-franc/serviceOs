@@ -540,6 +540,38 @@ const MenuManagement = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+            <DialogContent className="max-w-5xl h-[85vh] p-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-6 pb-2">
+                <DialogTitle className="flex items-center justify-between gap-2">
+                  <span>Public Order Page Preview</span>
+                  {restaurantId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/order/${restaurantId}`, "_blank")}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-2" />
+                      Open in new tab
+                    </Button>
+                  )}
+                </DialogTitle>
+                <DialogDescription>
+                  This is exactly what customers see when they visit your public ordering link.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-hidden border-t">
+                {restaurantId && (
+                  <iframe
+                    src={`/order/${restaurantId}`}
+                    className="w-full h-full"
+                    title="Public order preview"
+                  />
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {loading && <p className="text-center text-muted-foreground">Loading menu...</p>}
