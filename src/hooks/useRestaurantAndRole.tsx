@@ -26,6 +26,7 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   user: null,
   restaurantId: null,
   restaurantName: null,
+  logoUrl: null,
   role: null,
   authLoading: true,
   loading: true,
@@ -42,6 +43,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [role, setRole] = useState<UserRole>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setRestaurantId(null);
           setRestaurantName(null);
+          setLogoUrl(null);
           setRole(null);
           setLoading(false);
           return;
@@ -125,8 +128,8 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
         setRestaurantId(rid);
 
         if (rid) {
-          // Fetch restaurant name + role in parallel
-          const [restaurantRes, roleRes] = await Promise.all([
+          // Fetch restaurant name + role + logo in parallel
+          const [restaurantRes, roleRes, settingsRes] = await Promise.all([
             supabase.from("restaurants").select("name").eq("id", rid).maybeSingle(),
             supabase
               .from("user_roles")
@@ -136,11 +139,13 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
               .order("created_at", { ascending: false })
               .limit(1)
               .maybeSingle(),
+            supabase.from("restaurant_settings").select("logo_url").eq("restaurant_id", rid).maybeSingle(),
           ]);
 
           if (cancelled) return;
           setRestaurantName(restaurantRes.data?.name ?? null);
           setRole((roleRes.data?.role as UserRole) ?? null);
+          setLogoUrl((settingsRes.data as any)?.logo_url ?? null);
         }
       } catch (err) {
         console.error("Error loading restaurant/role:", err);
@@ -176,6 +181,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     user,
     restaurantId,
     restaurantName,
+    logoUrl,
     role,
     authLoading,
     loading,
@@ -205,6 +211,7 @@ export function useRestaurantContext() {
   return {
     restaurantId: ctx.restaurantId,
     restaurantName: ctx.restaurantName,
+    logoUrl: ctx.logoUrl,
     loading: ctx.loading,
   };
 }
