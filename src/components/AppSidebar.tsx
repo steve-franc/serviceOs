@@ -107,12 +107,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isManager && (
+        {(isManager || isOps) && (
           <SidebarGroup>
             <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {managerItems.map((item) => (
+                {(isManager ? managerItems : opsItems).map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
