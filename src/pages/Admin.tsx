@@ -863,6 +863,62 @@ const Admin = () => {
           </CardHeader>
         </Card>
 
+        {restaurantId && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Restaurant Logo</CardTitle>
+              </div>
+              <CardDescription>
+                Upload a logo to replace the default placeholder across the app and your public order page.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 overflow-hidden border">
+                  {restaurantLogoUrl ? (
+                    <img src={restaurantLogoUrl} alt="Restaurant logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-primary-foreground" />
+                  )}
+                </div>
+                {!readOnly && (
+                  <div className="flex flex-col gap-2">
+                    <label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoUpload}
+                        disabled={uploadingLogo}
+                      />
+                      <Button asChild variant="outline" size="sm" disabled={uploadingLogo}>
+                        <span className="cursor-pointer">
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadingLogo ? "Uploading..." : restaurantLogoUrl ? "Replace logo" : "Upload logo"}
+                        </span>
+                      </Button>
+                    </label>
+                    {restaurantLogoUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={removeLogo}
+                        disabled={uploadingLogo}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">PNG, JPG, or SVG. Max 5MB.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {restaurantId && (
           <Card className="border-accent/20">
