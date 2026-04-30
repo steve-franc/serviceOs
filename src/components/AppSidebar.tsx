@@ -51,7 +51,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { isManager, isInvestor } = useUserRole();
+  const { isManager, isInvestor, isOps } = useUserRole();
   const { restaurantName, logoUrl } = useRestaurantContext();
 
   const handleSignOut = async () => {
