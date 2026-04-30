@@ -783,6 +783,10 @@ export type Database = {
             Args: { _restaurant_id: string; _user_id: string }
             Returns: boolean
           }
+      is_manager_or_ops: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "server" | "ops" | "counter" | "manager" | "investor"

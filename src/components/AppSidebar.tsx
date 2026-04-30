@@ -34,6 +34,11 @@ const managerItems = [
   { title: "Admin", url: "/admin", icon: Shield },
 ];
 
+// Ops can access menu management (no admin/reports/inventory)
+const opsItems = [
+  { title: "Menu", url: "/menu", icon: Menu },
+];
+
 // Observers (DB role: investor) get a strict read-only set:
 // Reports + Admin only — no order taking, no edits.
 const observerItems = [
@@ -46,7 +51,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { isManager, isInvestor } = useUserRole();
+  const { isManager, isInvestor, isOps } = useUserRole();
   const { restaurantName, logoUrl } = useRestaurantContext();
 
   const handleSignOut = async () => {
@@ -102,12 +107,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isManager && (
+        {(isManager || isOps) && (
           <SidebarGroup>
             <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {managerItems.map((item) => (
+                {(isManager ? managerItems : opsItems).map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
