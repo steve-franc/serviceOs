@@ -476,6 +476,7 @@ export type Database = {
           fixed_daily_bills: number
           fixed_monthly_expenses: number
           id: string
+          logo_url: string | null
           monthly_bills: Json | null
           notify_low_margin: boolean
           notify_low_stock: boolean
@@ -495,6 +496,7 @@ export type Database = {
           fixed_daily_bills?: number
           fixed_monthly_expenses?: number
           id?: string
+          logo_url?: string | null
           monthly_bills?: Json | null
           notify_low_margin?: boolean
           notify_low_stock?: boolean
@@ -514,6 +516,7 @@ export type Database = {
           fixed_daily_bills?: number
           fixed_monthly_expenses?: number
           id?: string
+          logo_url?: string | null
           monthly_bills?: Json | null
           notify_low_margin?: boolean
           notify_low_stock?: boolean
