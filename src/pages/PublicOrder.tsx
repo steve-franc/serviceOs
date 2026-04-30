@@ -51,6 +51,7 @@ const PublicOrder = () => {
   const [customerLocation, setCustomerLocation] = useState("");
   const [loading, setLoading] = useState(false);
   const [restaurantName, setRestaurantName] = useState("Restaurant");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [currency, setCurrency] = useState("TRY");
   const [restaurantId, setRestaurantId] = useState<string | null>(urlRestaurantId || null);
   const [publicOrdersDisabled, setPublicOrdersDisabled] = useState(false);
@@ -87,12 +88,13 @@ const PublicOrder = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("restaurant_id, restaurant_name, allow_public_orders, payment_methods")
+      .select("restaurant_id, restaurant_name, allow_public_orders, payment_methods, logo_url")
       .eq("restaurant_id", urlRestaurantId!)
       .maybeSingle();
 
     if (data) {
       setRestaurantName(data.restaurant_name);
+      setLogoUrl((data as any).logo_url ?? null);
       setCurrency("TRY");
       setRestaurantId(data.restaurant_id ?? null);
       const methods = parsePaymentMethods(data.payment_methods);
@@ -245,7 +247,9 @@ const PublicOrder = () => {
 
       const customerInfoLines = [
         `name: ${validatedData.customerName}`,
+        "",
         `phone number: ${validatedData.customerPhone || ""}`,
+        "",
         `location: ${validatedData.customerLocation || ""}`,
       ];
       const composedNotes = [
@@ -490,8 +494,12 @@ const PublicOrder = () => {
       <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <UtensilsCrossed className="h-6 w-6" />
+            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt={restaurantName} className="h-full w-full object-cover" />
+              ) : (
+                <UtensilsCrossed className="h-6 w-6" />
+              )}
             </div>
             <h1 className="text-3xl font-bold">{restaurantName}</h1>
           </div>
