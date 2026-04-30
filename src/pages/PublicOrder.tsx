@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp, ChevronDown, ChevronRight, Search } from "lucide-react";
+import { Plus, Minus, ShoppingCart, UtensilsCrossed, X, Clock, ChevronUp, ChevronDown, ChevronRight, Search, ImageIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
@@ -528,42 +528,42 @@ const PublicOrder = () => {
                     <Badge variant="secondary" className="ml-auto">{items.length}</Badge>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="grid gap-3 sm:grid-cols-2 mt-3">
+                    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 mt-3">
                       {items.map((item) => (
                         <Card
                           key={item.id}
-                          className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
+                          className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden group"
                           onClick={() => addToOrder(item)}
                         >
-                          <div className="flex flex-col sm:flex-row">
-                            {item.image_url && (
-                              <div className="w-full h-40 sm:h-[100px] sm:w-[100px] sm:shrink-0 bg-muted overflow-hidden flex items-center justify-center">
-                                <img
-                                  src={item.image_url}
-                                  alt={item.name}
-                                  loading="lazy"
-                                  className="w-full h-full sm:object-contain object-cover"
-                                />
+                          <div className="relative aspect-square bg-muted overflow-hidden">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                <ImageIcon className="h-10 w-10" />
                               </div>
                             )}
-                            <CardHeader className="pb-3 flex-1">
-                              <div className="flex items-start justify-between">
-                                <CardTitle className="text-base">{item.name}</CardTitle>
-                                <div className="flex flex-col items-end gap-1">
-                                  <Badge variant="secondary">
-                                    {formatPrice(item.base_price, item.currency)}
-                                  </Badge>
-                                  {item.per_unit_price && (
-                                    <Badge variant="outline" className="text-xs">
-                                      +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                              {item.description && (
-                                <CardDescription className="text-sm">{item.description}</CardDescription>
+                            <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full p-1.5 shadow-md opacity-90 group-hover:opacity-100 group-active:scale-90 transition-all">
+                              <Plus className="h-4 w-4" />
+                            </div>
+                          </div>
+                          <div className="p-2.5 space-y-1">
+                            <h4 className="font-medium text-sm leading-tight line-clamp-2">{item.name}</h4>
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className="text-sm font-semibold text-primary">
+                                {formatPrice(item.base_price, item.currency)}
+                              </span>
+                              {item.per_unit_price && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  +{formatPrice(item.per_unit_price, item.currency)}/{item.pricing_unit}
+                                </span>
                               )}
-                            </CardHeader>
+                            </div>
                           </div>
                         </Card>
                       ))}
