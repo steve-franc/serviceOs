@@ -92,6 +92,13 @@ const PublicOrder = () => {
       .eq("restaurant_id", urlRestaurantId!)
       .maybeSingle();
 
+    // Check restaurant status — only 'active' restaurants accept public orders
+    const { data: restaurantRow } = await supabase
+      .from("restaurants")
+      .select("name, status")
+      .eq("id", urlRestaurantId!)
+      .maybeSingle();
+
     if (data) {
       setRestaurantName(data.restaurant_name);
       setLogoUrl((data as any).logo_url ?? null);
@@ -100,19 +107,12 @@ const PublicOrder = () => {
       const methods = parsePaymentMethods(data.payment_methods);
       setAvailablePaymentMethods(methods);
       setPaymentMethod(methods[0]?.name || "Cash");
-      if (!data.allow_public_orders) {
+      if (!data.allow_public_orders || (restaurantRow && (restaurantRow as any).status !== "active")) {
         setPublicOrdersDisabled(true);
       }
-    } else {
-      // Try to get restaurant name directly
-      const { data: restaurant } = await supabase
-        .from("restaurants")
-        .select("name")
-        .eq("id", urlRestaurantId!)
-        .maybeSingle();
-      if (restaurant) {
-        setRestaurantName(restaurant.name);
-      }
+    } else if (restaurantRow) {
+      setRestaurantName(restaurantRow.name);
+      if ((restaurantRow as any).status !== "active") setPublicOrdersDisabled(true);
     }
     setPageLoading(false);
   };
