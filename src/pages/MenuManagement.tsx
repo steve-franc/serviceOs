@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Share2, Copy, Check, Search, ChevronDown, ChevronRight, Upload, X, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Share2, Copy, Check, Search, ChevronDown, ChevronRight, Upload, X, ExternalLink, CalendarClock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +18,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuItems, useInvalidateMenuItems, useRestaurantSettings } from "@/hooks/useQueries";
 import { menuItemSchema, validateInput } from "@/lib/validations";
+import { ServiceFormSection, DEFAULT_SERVICE_FIELDS, AvailabilityWindow, ServiceFields } from "@/components/ServiceFormSection";
+import { isServiceBusiness } from "@/lib/business-types";
 
 interface MenuItem {
   id: string;
@@ -33,6 +35,11 @@ interface MenuItem {
   is_inventory_item: boolean;
   stock_qty: number;
   image_url: string | null;
+  is_service?: boolean;
+  service_duration_minutes?: number | null;
+  slot_capacity?: number;
+  buffer_minutes?: number;
+  advance_booking_days?: number;
 }
 const MenuManagement = () => {
   const { restaurantId } = useRestaurantContext();
