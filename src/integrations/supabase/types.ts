@@ -803,6 +803,7 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      superadmin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       superadmin_get_restaurant: {
         Args: { _restaurant_id: string }
         Returns: Json
