@@ -335,7 +335,7 @@ const Auth = () => {
       case "signup":
         return "Sign Up";
       case "restaurant":
-        return "Register Restaurant";
+        return "Register Business";
     }
   };
   const getDescription = () => {
@@ -343,9 +343,9 @@ const Auth = () => {
       case "signin":
         return "Staff login for order management";
       case "signup":
-        return "Join your restaurant as staff";
+        return "Join your business as staff";
       case "restaurant":
-        return "Create a new restaurant account";
+        return "Create a new business account";
     }
   };
   return <div className="min-h-screen flex items-center justify-center bg-background p-4">
