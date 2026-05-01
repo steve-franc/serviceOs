@@ -18,6 +18,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { publicOrderSchema, validateInput } from "@/lib/validations";
 import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
+import { BookSlotDialog } from "@/components/BookSlotDialog";
+import { format } from "date-fns";
 interface MenuItem {
   id: string;
   name: string;
@@ -28,12 +30,16 @@ interface MenuItem {
   pricing_unit: string;
   currency: string;
   image_url: string | null;
+  is_service?: boolean;
+  service_duration_minutes?: number | null;
+  advance_booking_days?: number | null;
 }
 
 interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
   extraUnits: number;
+  slotAt?: string; // ISO timestamp for service bookings
 }
 
 const PublicOrder = () => {
@@ -60,6 +66,7 @@ const PublicOrder = () => {
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethodConfig[]>([]);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [bookingItem, setBookingItem] = useState<MenuItem | null>(null);
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => {
@@ -136,7 +143,11 @@ const PublicOrder = () => {
   };
 
   const addToOrder = (menuItem: MenuItem) => {
-
+    if (menuItem.is_service) {
+      // Open booking dialog instead of incrementing quantity
+      setBookingItem(menuItem);
+      return;
+    }
     if (isMobile) haptics.tap();
     
     const existing = orderItems.find((item) => item.menuItem.id === menuItem.id);
@@ -149,6 +160,17 @@ const PublicOrder = () => {
     } else {
       setOrderItems([...orderItems, { menuItem, quantity: 1, extraUnits: 0 }]);
     }
+  };
+
+  const handleSlotConfirmed = (slotAt: string) => {
+    if (!bookingItem) return;
+    if (isMobile) haptics.tap();
+    setOrderItems((prev) => [
+      ...prev,
+      { menuItem: bookingItem, quantity: 1, extraUnits: 0, slotAt },
+    ]);
+    setBookingItem(null);
+    toast.success(`${bookingItem.name} booked for ${format(new Date(slotAt), "EEE d MMM, HH:mm")}`);
   };
 
   // Only remove item when both base and per-unit contributions are zero
@@ -243,6 +265,7 @@ const PublicOrder = () => {
         menu_item_id: item.menuItem.id,
         quantity: item.quantity,
         extra_units: item.extraUnits,
+        slot_at: item.slotAt ?? null,
       }));
 
       const customerInfoLines = [
@@ -350,19 +373,27 @@ const PublicOrder = () => {
                 </Button>
                 <div className="flex-1">
                   <p className="font-medium text-sm">{item.menuItem.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
-                  </p>
+                  {item.slotAt ? (
+                    <p className="text-xs text-primary">
+                      {format(new Date(item.slotAt), "EEE d MMM · HH:mm")}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+                {!item.slotAt && (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
               {item.menuItem.per_unit_price && (
                 <div className="flex items-center gap-2 pl-2">
@@ -557,7 +588,7 @@ const PublicOrder = () => {
                               </div>
                             )}
                             <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full p-1.5 shadow-md opacity-90 group-hover:opacity-100 group-active:scale-90 transition-all">
-                              <Plus className="h-4 w-4" />
+                              {item.is_service ? <Clock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                             </div>
                           </div>
                           <div className="p-2.5 space-y-1">
@@ -566,7 +597,11 @@ const PublicOrder = () => {
                               <span className="text-sm font-semibold text-primary">
                                 {formatPrice(item.base_price, item.currency)}
                               </span>
-                              {item.per_unit_price && (
+                              {item.is_service ? (
+                                <span className="text-[10px] text-muted-foreground">
+                                  · {item.service_duration_minutes ?? 60} min
+                                </span>
+                              ) : item.per_unit_price && (
                                 <span className="text-[10px] text-muted-foreground">
                                   +{formatPrice(item.per_unit_price, item.currency)}/{item.pricing_unit}
                                 </span>
@@ -644,6 +679,17 @@ const PublicOrder = () => {
             </div>
           </DrawerContent>
         </Drawer>
+      )}
+      {bookingItem && (
+        <BookSlotDialog
+          open={!!bookingItem}
+          onOpenChange={(o) => !o && setBookingItem(null)}
+          menuItemId={bookingItem.id}
+          menuItemName={bookingItem.name}
+          durationMinutes={bookingItem.service_duration_minutes ?? 60}
+          advanceDays={bookingItem.advance_booking_days ?? 30}
+          onConfirm={handleSlotConfirmed}
+        />
       )}
     </div>
   );

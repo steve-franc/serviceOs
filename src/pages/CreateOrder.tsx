@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp, X, Calculator, Search, Percent, Tag } from "lucide-react";
+import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp, X, Calculator, Search, Percent, Tag, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
@@ -21,6 +21,8 @@ import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuItems, useMenuTags, useRestaurantSettings } from "@/hooks/useQueries";
 import { staffOrderSchema, validateInput } from "@/lib/validations";
 import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
+import { BookSlotDialog } from "@/components/BookSlotDialog";
+import { format } from "date-fns";
 interface MenuItem {
   id: string;
   name: string;
@@ -30,11 +32,15 @@ interface MenuItem {
   description: string | null;
   pricing_unit: string;
   currency: string;
+  is_service?: boolean;
+  service_duration_minutes?: number | null;
+  advance_booking_days?: number | null;
 }
 interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
   extraUnits: number;
+  slotAt?: string;
 }
 const CreateOrder = () => {
   const navigate = useNavigate();
@@ -96,6 +102,7 @@ const CreateOrder = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [amountGiven, setAmountGiven] = useState("");
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [bookingItem, setBookingItem] = useState<MenuItem | null>(null);
 
   // Persist order state to sessionStorage
   useEffect(() => {
@@ -109,6 +116,10 @@ const CreateOrder = () => {
     // Validate currency matches restaurant currency
     if (menuItem.currency !== currency) {
       toast.error(`This item uses ${menuItem.currency} but the restaurant uses ${currency}`);
+      return;
+    }
+    if (menuItem.is_service) {
+      setBookingItem(menuItem);
       return;
     }
     if (isMobile) haptics.tap();
@@ -125,6 +136,16 @@ const CreateOrder = () => {
         extraUnits: 0
       }]);
     }
+  };
+  const handleSlotConfirmed = (slotAt: string) => {
+    if (!bookingItem) return;
+    if (isMobile) haptics.tap();
+    setOrderItems(prev => [
+      ...prev,
+      { menuItem: bookingItem, quantity: 1, extraUnits: 0, slotAt },
+    ]);
+    setBookingItem(null);
+    toast.success(`${bookingItem.name} booked for ${format(new Date(slotAt), "EEE d MMM, HH:mm")}`);
   };
   // Only remove item when both base and per-unit contributions are zero
   const shouldKeepItem = (item: OrderItem) => {
@@ -211,6 +232,7 @@ const CreateOrder = () => {
         menu_item_id: item.menuItem.id,
         quantity: item.quantity,
         extra_units: item.extraUnits,
+        slot_at: item.slotAt ?? null,
       }));
 
       const { data, error } = await (supabase as any).rpc("create_staff_order", {
@@ -312,24 +334,32 @@ const CreateOrder = () => {
                 </Button>
                 <div className="flex-1">
                   <p className="font-medium text-sm">{item.menuItem.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
-                  </p>
+                  {item.slotAt ? (
+                    <p className="text-xs text-primary">
+                      {format(new Date(item.slotAt), "EEE d MMM · HH:mm")}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-8 text-center text-sm font-medium">
-                    {item.quantity}
-                  </span>
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+                {!item.slotAt && (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-8 text-center text-sm font-medium">
+                      {item.quantity}
+                    </span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
               
-              {item.menuItem.per_unit_price && (
+              {!item.slotAt && item.menuItem.per_unit_price && (
                 <div className="flex items-center gap-2 pl-2">
                   <Label className="text-xs text-muted-foreground flex-1">
                     Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
@@ -574,7 +604,12 @@ const CreateOrder = () => {
                                     <Badge variant="secondary">
                                       {formatPrice(item.base_price, item.currency)}
                                     </Badge>
-                                    {item.per_unit_price && (
+                                    {item.is_service ? (
+                                      <Badge variant="outline" className="text-xs">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        {item.service_duration_minutes ?? 60} min
+                                      </Badge>
+                                    ) : item.per_unit_price && (
                                       <Badge variant="outline" className="text-xs">
                                         +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                       </Badge>
@@ -647,6 +682,18 @@ const CreateOrder = () => {
               </div>
             </DrawerContent>
           </Drawer>}
+
+        {bookingItem && (
+          <BookSlotDialog
+            open={!!bookingItem}
+            onOpenChange={(o) => !o && setBookingItem(null)}
+            menuItemId={bookingItem.id}
+            menuItemName={bookingItem.name}
+            durationMinutes={bookingItem.service_duration_minutes ?? 60}
+            advanceDays={bookingItem.advance_booking_days ?? 30}
+            onConfirm={handleSlotConfirmed}
+          />
+        )}
       </div>
     </Layout>;
 };
