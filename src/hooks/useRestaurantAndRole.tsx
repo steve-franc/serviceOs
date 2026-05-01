@@ -2,12 +2,13 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | null;
+export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | "superadmin" | null;
 
 interface RestaurantRoleState {
   user: User | null;
   restaurantId: string | null;
   restaurantName: string | null;
+  restaurantStatus: string | null;
   logoUrl: string | null;
   role: UserRole;
   authLoading: boolean;
@@ -18,6 +19,7 @@ interface RestaurantRoleState {
   isCounter: boolean;
   isServer: boolean;
   isInvestor: boolean;
+  isSuperadmin: boolean;
   /** True when role can view reports/admin (manager OR investor) */
   canViewReports: boolean;
 }
