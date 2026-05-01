@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Pause, Play, Archive, Trash2, Eye, Search, Shield } from "lucide-react";
-import { formatTRY } from "@/lib/currency";
+import { formatPrice } from "@/lib/currency";
 
 type RestaurantRow = {
   id: string;
@@ -131,9 +131,9 @@ const Superadmin = () => {
           <StatCard label="Restaurants" value={overview?.restaurants_total ?? "—"} sub={`${overview?.restaurants_active ?? 0} active`} />
           <StatCard label="On hold / Archived" value={`${overview?.restaurants_on_hold ?? 0} / ${overview?.restaurants_archived ?? 0}`} />
           <StatCard label="Total users" value={overview?.users_total ?? "—"} />
-          <StatCard label="Orders today" value={overview?.orders_today ?? "—"} sub={overview ? formatTRY(overview.revenue_today) : ""} />
+          <StatCard label="Orders today" value={overview?.orders_today ?? "—"} sub={overview ? formatPrice(overview.revenue_today) : ""} />
           <StatCard label="All-time orders" value={overview?.orders_total ?? "—"} />
-          <StatCard label="All-time revenue" value={overview ? formatTRY(overview.revenue_total) : "—"} />
+          <StatCard label="All-time revenue" value={overview ? formatPrice(overview.revenue_total) : "—"} />
         </div>
 
         {/* Restaurants table */}
@@ -176,7 +176,7 @@ const Superadmin = () => {
                         <TableCell>{statusBadge(r.status)}</TableCell>
                         <TableCell className="text-right">{r.staff_count}</TableCell>
                         <TableCell className="text-right">{r.orders_count}</TableCell>
-                        <TableCell className="text-right font-mono">{formatTRY(Number(r.revenue || 0))}</TableCell>
+                        <TableCell className="text-right font-mono">{formatPrice(Number(r.revenue || 0))}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">
                           {r.last_order_at ? new Date(r.last_order_at).toLocaleString() : "—"}
                         </TableCell>
@@ -240,11 +240,11 @@ const Superadmin = () => {
             <div className="space-y-5">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 <Mini label="Orders" value={detail.totals?.orders ?? 0} />
-                <Mini label="Revenue" value={formatTRY(Number(detail.totals?.revenue ?? 0))} />
+                <Mini label="Revenue" value={formatPrice(Number(detail.totals?.revenue ?? 0))} />
                 <Mini label="Menu items" value={detail.totals?.menu_items ?? 0} />
                 <Mini label="Inventory" value={detail.totals?.inventory_items ?? 0} />
                 <Mini label="Open tabs" value={detail.totals?.open_tabs ?? 0} />
-                <Mini label="Unresolved debt" value={formatTRY(Number(detail.totals?.unresolved_debt ?? 0))} />
+                <Mini label="Unresolved debt" value={formatPrice(Number(detail.totals?.unresolved_debt ?? 0))} />
               </div>
 
               <div>
@@ -266,7 +266,7 @@ const Superadmin = () => {
                     <div key={o.id} className="flex items-center justify-between p-2">
                       <span className="font-mono">#{o.order_number}</span>
                       <span className="text-muted-foreground">{new Date(o.created_at).toLocaleString()}</span>
-                      <span className="font-mono">{formatTRY(Number(o.total))}</span>
+                      <span className="font-mono">{formatPrice(Number(o.total))}</span>
                     </div>
                   ))}
                   {(!detail.recent_orders || detail.recent_orders.length === 0) && (
