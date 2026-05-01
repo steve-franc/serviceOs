@@ -51,8 +51,13 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { isManager, isInvestor, isOps } = useUserRole();
+  const { isManager, isInvestor, isOps, isSuperadmin } = useUserRole();
   const { restaurantName, logoUrl } = useRestaurantContext();
+
+  // Superadmin items (God Mode)
+  const superadminItems = [
+    { title: "God Mode", url: "/superadmin", icon: Shield },
+  ];
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -66,8 +71,9 @@ export function AppSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Observers see only their reduced set; everyone else sees staff items.
-  const primaryItems = isInvestor ? observerItems : staffItems;
+  // Superadmin gets only God Mode; observers see their reduced set; everyone else sees staff items.
+  const primaryItems = isSuperadmin ? superadminItems : isInvestor ? observerItems : staffItems;
+  const showManagement = !isSuperadmin && (isManager || isOps);
 
   return (
     <Sidebar collapsible="icon">
@@ -86,7 +92,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isInvestor ? "Observer" : "Navigation"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isSuperadmin ? "Platform" : isInvestor ? "Observer" : "Navigation"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {primaryItems.map((item) => (
@@ -107,7 +113,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {(isManager || isOps) && (
+        {showManagement && (
           <SidebarGroup>
             <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarGroupContent>

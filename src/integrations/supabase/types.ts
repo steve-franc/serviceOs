@@ -545,18 +545,21 @@ export type Database = {
           created_by: string | null
           id: string
           name: string
+          status: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           id?: string
           name: string
+          status?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
           id?: string
           name?: string
+          status?: string
         }
         Relationships: []
       }
@@ -787,9 +790,62 @@ export type Database = {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
       }
+      is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      superadmin_change_role: {
+        Args: { _restaurant_id: string; _role: string; _user_id: string }
+        Returns: undefined
+      }
+      superadmin_get_restaurant: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
+      superadmin_list_restaurants: {
+        Args: never
+        Returns: {
+          created_at: string
+          created_by: string
+          id: string
+          last_order_at: string
+          logo_url: string
+          name: string
+          orders_count: number
+          revenue: number
+          staff_count: number
+          status: string
+        }[]
+      }
+      superadmin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          full_name: string
+          is_superadmin: boolean
+          restaurants: Json
+          user_id: string
+        }[]
+      }
+      superadmin_overview: { Args: never; Returns: Json }
+      superadmin_purge_restaurant: {
+        Args: { _restaurant_id: string }
+        Returns: undefined
+      }
+      superadmin_remove_staff: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: undefined
+      }
+      superadmin_set_restaurant_status: {
+        Args: { _restaurant_id: string; _status: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "server" | "ops" | "counter" | "manager" | "investor"
+      app_role:
+        | "server"
+        | "ops"
+        | "counter"
+        | "manager"
+        | "investor"
+        | "superadmin"
       inventory_status: "available" | "almost_finished" | "finished"
     }
     CompositeTypes: {
@@ -918,7 +974,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["server", "ops", "counter", "manager", "investor"],
+      app_role: [
+        "server",
+        "ops",
+        "counter",
+        "manager",
+        "investor",
+        "superadmin",
+      ],
       inventory_status: ["available", "almost_finished", "finished"],
     },
   },

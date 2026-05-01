@@ -2,12 +2,13 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | null;
+export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | "superadmin" | null;
 
 interface RestaurantRoleState {
   user: User | null;
   restaurantId: string | null;
   restaurantName: string | null;
+  restaurantStatus: string | null;
   logoUrl: string | null;
   role: UserRole;
   authLoading: boolean;
@@ -18,6 +19,7 @@ interface RestaurantRoleState {
   isCounter: boolean;
   isServer: boolean;
   isInvestor: boolean;
+  isSuperadmin: boolean;
   /** True when role can view reports/admin (manager OR investor) */
   canViewReports: boolean;
 }
@@ -26,6 +28,7 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   user: null,
   restaurantId: null,
   restaurantName: null,
+  restaurantStatus: null,
   logoUrl: null,
   role: null,
   authLoading: true,
@@ -36,6 +39,7 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   isCounter: false,
   isServer: false,
   isInvestor: false,
+  isSuperadmin: false,
   canViewReports: false,
 });
 
@@ -43,6 +47,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const [restaurantStatus, setRestaurantStatus] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [role, setRole] = useState<UserRole>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -69,6 +74,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setRestaurantId(null);
           setRestaurantName(null);
+          setRestaurantStatus(null);
           setLogoUrl(null);
           setRole(null);
           setLoading(false);
@@ -76,6 +82,26 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
         }
 
         setLoading(true);
+
+        // 0) Check superadmin first (global, no restaurant)
+        const { data: superRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", currentUser.id)
+          .eq("role", "superadmin")
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (superRow) {
+          setRole("superadmin");
+          setRestaurantId(null);
+          setRestaurantName(null);
+          setRestaurantStatus(null);
+          setLogoUrl(null);
+          setLoading(false);
+          return;
+        }
 
         // 1) Load membership
         let { data: membership } = await supabase
@@ -128,9 +154,8 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
         setRestaurantId(rid);
 
         if (rid) {
-          // Fetch restaurant name + role + logo in parallel
           const [restaurantRes, roleRes, settingsRes] = await Promise.all([
-            supabase.from("restaurants").select("name").eq("id", rid).maybeSingle(),
+            supabase.from("restaurants").select("name, status").eq("id", rid).maybeSingle(),
             supabase
               .from("user_roles")
               .select("role")
@@ -144,6 +169,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
 
           if (cancelled) return;
           setRestaurantName(restaurantRes.data?.name ?? null);
+          setRestaurantStatus((restaurantRes.data as any)?.status ?? null);
           setRole((roleRes.data?.role as UserRole) ?? null);
           setLogoUrl((settingsRes.data as any)?.logo_url ?? null);
         }
@@ -176,11 +202,13 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
 
   const isManager = role === "manager";
   const isInvestor = role === "investor";
+  const isSuperadmin = role === "superadmin";
 
   const value: RestaurantRoleState = {
     user,
     restaurantId,
     restaurantName,
+    restaurantStatus,
     logoUrl,
     role,
     authLoading,
@@ -191,6 +219,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     isCounter: role === "counter",
     isServer: role === "server",
     isInvestor,
+    isSuperadmin,
     canViewReports: isManager || isInvestor,
   };
 
@@ -228,6 +257,7 @@ export function useUserRole() {
     isCounter: ctx.isCounter,
     isServer: ctx.isServer,
     isInvestor: ctx.isInvestor,
+    isSuperadmin: ctx.isSuperadmin,
     canViewReports: ctx.canViewReports,
   };
 }
