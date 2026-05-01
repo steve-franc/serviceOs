@@ -59,7 +59,7 @@ export function AppSidebar() {
   // Superadmin items (God Mode)
   const superadminItems = [
     { title: "Dashboard", url: "/superadmin", icon: LayoutDashboard },
-    { title: "Restaurants", url: "/superadmin/restaurants", icon: Store },
+    { title: "Businesses", url: "/superadmin/restaurants", icon: Store },
     { title: "Users", url: "/superadmin/users", icon: Users },
     { title: "Orders", url: "/superadmin/orders", icon: ShoppingCart },
     { title: "Analytics", url: "/superadmin/analytics", icon: BarChart3 },
