@@ -31,7 +31,7 @@ const features = [
     icon: Users,
     title: "Team Roles",
     description:
-      "Assign managers, servers, and counter staff with scoped access to keep operations tight.",
+      "Assign managers, staff, and counter operators with scoped access to keep operations tight.",
   },
   {
     icon: Zap,
@@ -61,13 +61,13 @@ const screenshots = [
   },
   {
     src: menuPreview,
-    title: "Menu Management",
-    description: "Organize items by category with availability controls",
+    title: "Inventory & Stock",
+    description: "Manage items and availability with full visibility",
   },
   {
     src: ordersPreview,
     title: "Order Creation",
-    description: "Quickly build orders with a visual menu and live cart",
+    description: "Quickly build orders with a visual catalog and live cart",
   },
 ];
 
@@ -111,12 +111,12 @@ const Landing = () => {
             </div>
 
             <h1 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Restaurant operations,{" "}
+              Business operations,{" "}
               <span className="text-primary">simplified</span>
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
-              From orders to reports, manage your entire restaurant workflow in
+              From orders to reports, manage your entire business workflow in
               one place. No clutter, no complexity — just results.
             </p>
 
@@ -182,7 +182,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="mx-auto mb-14 max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Everything you need to run your restaurant
+              Everything you need to run your business
             </h2>
             <p className="mt-3 text-muted-foreground">
               Powerful features designed for teams of any size.
@@ -213,7 +213,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-3xl rounded-2xl border bg-card p-10 text-center shadow-lg md:p-16">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Ready to streamline your restaurant?
+              Ready to streamline your business?
             </h2>
             <p className="mt-3 text-muted-foreground">
               Sign up in under a minute. No credit card required.
