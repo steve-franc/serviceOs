@@ -92,7 +92,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isInvestor ? "Observer" : "Navigation"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isSuperadmin ? "Platform" : isInvestor ? "Observer" : "Navigation"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {primaryItems.map((item) => (
