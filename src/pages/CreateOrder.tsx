@@ -334,21 +334,29 @@ const CreateOrder = () => {
                 </Button>
                 <div className="flex-1">
                   <p className="font-medium text-sm">{item.menuItem.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
-                  </p>
+                  {item.slotAt ? (
+                    <p className="text-xs text-primary">
+                      {format(new Date(item.slotAt), "EEE d MMM · HH:mm")}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity > 0 ? `${formatPrice(item.menuItem.base_price, item.menuItem.currency)} base` : "Only extra units"}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-8 text-center text-sm font-medium">
-                    {item.quantity}
-                  </span>
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+                {!item.slotAt && (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-8 text-center text-sm font-medium">
+                      {item.quantity}
+                    </span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.menuItem.id, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
               
               {item.menuItem.per_unit_price && (
