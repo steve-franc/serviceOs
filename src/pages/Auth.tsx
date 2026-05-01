@@ -289,22 +289,35 @@ const Auth = () => {
         <Input id="restaurant-owner-name" type="text" placeholder="Jane Doe" value={fullName} onChange={e => setFullName(e.target.value.slice(0, 100))} required maxLength={100} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="restaurant-name">Restaurant Name</Label>
-        <Input id="restaurant-name" type="text" placeholder="My Restaurant" value={newRestaurantName} onChange={e => setNewRestaurantName(e.target.value.slice(0, 200))} required maxLength={200} />
+        <Label htmlFor="restaurant-name">Business Name</Label>
+        <Input id="restaurant-name" type="text" placeholder="My Business" value={newRestaurantName} onChange={e => setNewRestaurantName(e.target.value.slice(0, 200))} required maxLength={200} />
+      </div>
+      <div className="space-y-2">
+        <Label>Business Type</Label>
+        <Select value={businessType} onValueChange={setBusinessType}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select business type" />
+          </SelectTrigger>
+          <SelectContent>
+            {BUSINESS_TYPES.map((b) => (
+              <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label htmlFor="restaurant-email">Email</Label>
-        <Input id="restaurant-email" type="email" placeholder="owner@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
+        <Input id="restaurant-email" type="email" placeholder="owner@business.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="restaurant-password">Password</Label>
         <Input id="restaurant-password" type="password" value={password} onChange={e => setPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} />
       </div>
       <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Creating..." : "Create Restaurant"}
+        {loading ? "Creating..." : "Create Business"}
       </Button>
       <p className="text-xs text-center text-muted-foreground">
-        After email verification, you'll be set up as the Manager for this restaurant.
+        After email verification, you'll be set up as the Manager for this business.
       </p>
       <div className="text-sm text-center pt-2 border-t">
         <p className="text-muted-foreground">
