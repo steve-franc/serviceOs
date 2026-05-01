@@ -59,7 +59,7 @@ export default function SuperRestaurantDetail() {
     return <Layout><div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4"><Skeleton className="h-8 w-48" /><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div></div></Layout>;
   }
   if (!data?.restaurant) {
-    return <Layout><div className="max-w-7xl mx-auto p-6"><p className="text-muted-foreground">Restaurant not found.</p></div></Layout>;
+    return <Layout><div className="max-w-7xl mx-auto p-6"><p className="text-muted-foreground">Business not found.</p></div></Layout>;
   }
 
   const r = data.restaurant;
