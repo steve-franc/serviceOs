@@ -1,83 +1,96 @@
 ## Goal
 
-Introduce a **superadmin** ("God mode") role that exists outside the per-restaurant tenancy. A superadmin can view every restaurant in the project, inspect their data (orders, revenue, staff, inventory, debtors, expenses), and perform admin actions: put a restaurant on hold, delete a restaurant, remove staff members, change roles, etc.
+Let service-oriented businesses (salons, clinics, consultants, tutors, etc.) sell **bookable timeslots** alongside or instead of physical products — using the same menu/order foundation we already have.
 
-Critically, a superadmin is **not** a member of any restaurant — they don't show up as staff, don't appear in restaurant rosters, and don't pollute reports.
-
----
-
-## How superadmin differs from existing roles
-
-| | Existing roles (manager/ops/server/counter/investor) | Superadmin |
-|---|---|---|
-| Scoped to one restaurant | Yes (via `restaurant_id`) | No — global |
-| Stored in `user_roles` | Yes, with `restaurant_id` | Yes, with `restaurant_id = NULL` |
-| Shows up as staff | Yes | **No** |
-| Sees all restaurants | No | **Yes** |
-| Can delete restaurants | No | **Yes** |
+A menu item can be marked as a **Service**. Services have a duration, weekly availability, and a slot capacity per timeslot. On the public page, customers tap a "Book" button that opens a calendar to pick a date + time. Staff manage everything from a new **Bookings** page (calendar view).
 
 ---
 
-## What gets built
+## What changes for users
 
-### 1. Database (one migration)
+### Menu Management (manager view)
+- New toggle on each menu item: **"This is a service"**.
+- For new businesses whose `business_type` is service-oriented (salon, spa, clinic, consultancy, tutoring, fitness, etc.), the toggle defaults to **on** for new items. Restaurants/retail stay off by default. Always editable.
+- When "service" is on, the form reveals service-specific fields and hides physical-stock fields:
+  - **Duration** (e.g. 30 / 45 / 60 / 90 / 120 min, or custom)
+  - **Capacity per slot** (default 1 — e.g. 1 chair, or 5 for group classes)
+  - **Weekly availability**: per weekday, an active toggle and a list of time windows (e.g. Mon 09:00–13:00, 14:00–18:00). Defaults to a sensible Mon–Fri 9–5.
+  - **Buffer between bookings** (optional, minutes)
+  - **Advance-booking window** (how many days in advance customers can book — default 30)
+- "Stock" terminology becomes "Slots" wherever a service item is shown.
 
-- Add `'superadmin'` to the `app_role` enum.
-- Add a security-definer function `public.is_superadmin(_user_id uuid) returns boolean` that checks `user_roles` for a row with `role = 'superadmin'` (any/null `restaurant_id`).
-- Add a `restaurants.status` column: `'active' | 'on_hold' | 'archived'` (default `'active'`).
-- Extend RLS on every tenant table (`orders`, `order_items`, `menu_items`, `menu_tags`, `inventory`, `daily_reports`, `daily_expenses`, `debtors`, `tabs`, `tab_items`, `restaurant_settings`, `restaurant_memberships`, `user_roles`, `restaurants`, `profiles`) so `is_superadmin(auth.uid())` grants full SELECT/INSERT/UPDATE/DELETE — without touching existing tenant policies.
-- Add an "on hold" guard: when `restaurants.status = 'on_hold'`, block new order creation in `create_staff_order` and `create_public_order` (raise a clear error). Superadmins are unaffected.
-- Add SECURITY DEFINER admin RPCs callable only by superadmins:
-  - `superadmin_list_restaurants()` → restaurants + aggregated counts (orders, revenue, staff count, status).
-  - `superadmin_get_restaurant_overview(_restaurant_id)` → detailed snapshot.
-  - `superadmin_set_restaurant_status(_restaurant_id, _status)`.
-  - `superadmin_delete_restaurant(_restaurant_id)` → cascades cleanup of all child rows.
-  - `superadmin_remove_staff(_user_id, _restaurant_id)` → removes membership + role rows.
-  - `superadmin_change_role(_user_id, _restaurant_id, _role)`.
-- Bootstrap: the migration does **not** auto-assign superadmin. After the migration runs, you (the project owner) tell me the email/user id and I'll insert one row via the data tool.
+### Public order page (customer view)
+- Service items show a **Book** button instead of the usual `+` quantity stepper.
+- Tapping Book opens a sheet/dialog with:
+  1. A **calendar** (next N days, days fully booked or outside availability are disabled)
+  2. After picking a date, a grid of **available time slots** (greyed out when capacity is full)
+  3. Confirm → adds the service to the cart with its chosen date+time attached
+- The cart shows the service line with its booked slot ("Haircut · Tue 5 May, 14:30"). Multiple services can be booked in one order.
+- Checkout proceeds as today (name, phone, payment method, notes). Order is created in `pending` status as it is now.
 
-### 2. Auth context (`useRestaurantAndRole.tsx`)
+### New Bookings page (staff view)
+- New sidebar entry **"Bookings"** (visible to all staff for the business; managers can edit).
+- Default view: today's agenda — vertical timeline grouped by service, showing customer name, phone, status, payment status.
+- Tabs: **Today**, **Upcoming**, **Past**, plus a **Week** calendar view.
+- Each booking links to its underlying order (the existing Orders page still shows the same record, with an extra "Booked for…" badge).
+- Staff can mark a booking as **Completed**, **No-show**, or **Cancelled**. Cancelling frees the slot.
 
-- Detect superadmin status in parallel with the normal role lookup.
-- Expose `isSuperadmin` on the context. Superadmin users **bypass** the "no membership" empty-state and are routed straight to a new `/superadmin` dashboard.
-- Superadmins do not get a `restaurantId` — UI must use the picker (see below) instead.
-
-### 3. Routing & guards (`App.tsx`)
-
-- New route `/superadmin` (and nested `/superadmin/restaurants/:id`), protected by a new `SuperadminRoute` guard.
-- `ObserverBlockedRoute` and `PublicOnlyRoute` updated so superadmins land on `/superadmin` after login instead of `/order/create`.
-
-### 4. Sidebar (`AppSidebar.tsx`)
-
-- When `isSuperadmin`, replace all groups with a single **God Mode** section: `Overview`, `Restaurants`, `Users`, `Activity`. No staff / manager items shown — keeps the role invisible from the tenant perspective.
-
-### 5. New pages
-
-- **`/superadmin` Overview** — totals across all restaurants: restaurant count, active vs on-hold, today's orders, today's revenue, low-stock alerts, recent signups.
-- **`/superadmin/restaurants`** — searchable table of every restaurant with status badge, staff count, last activity, and inline actions: *View details*, *Put on hold / Resume*, *Delete* (with typed confirmation).
-- **`/superadmin/restaurants/:id`** — drill-down: settings, staff list (with remove + role change), recent orders, revenue chart, inventory, debtors, expenses.
-- **`/superadmin/users`** — global user list across all restaurants with role/restaurant column.
-
-All pages call the new RPCs only — no direct table queries — so RLS stays the source of truth.
-
-### 6. Memory updates
-
-- Update `mem://features/role-definitions-and-permissions` to document superadmin.
-- Add `mem://features/superadmin-god-mode` describing the global scope and that it must never appear in staff lists.
-- Refresh the Core line about roles in `mem://index.md`.
+### Sidebar terminology (cosmetic, business-type aware)
+- For service business types, the **Menu** label becomes **Services** and **Inventory** becomes **Resources** (already-exposed pages, just relabeled). Restaurants stay as "Menu / Inventory".
 
 ---
 
-## Security notes
+## What changes under the hood
 
-- Superadmin checks always run server-side via `is_superadmin()` in RLS / SECURITY DEFINER RPCs — never trusted from the client.
-- Destructive RPCs (`delete_restaurant`, `remove_staff`) re-check `is_superadmin(auth.uid())` at the top and raise on failure.
-- Superadmin rows in `user_roles` use `restaurant_id = NULL`, so they're naturally excluded from any per-restaurant staff query (which all filter by `restaurant_id`).
+### Database (new + altered tables)
+- `menu_items`: add `is_service boolean default false`, `service_duration_minutes int`, `slot_capacity int default 1`, `buffer_minutes int default 0`, `advance_booking_days int default 30`.
+- New table `service_availability` — weekly recurring windows per service:
+  - `menu_item_id`, `weekday` (0–6), `start_time`, `end_time`, `is_active`.
+- New table `service_bookings` — one row per booked slot (a service order item can book exactly one slot):
+  - `order_id` (FK → orders), `order_item_id` (FK → order_items), `menu_item_id`, `restaurant_id`, `start_at timestamptz`, `end_at timestamptz`, `status text` (`booked` / `completed` / `no_show` / `cancelled`).
+  - Indexes on `(restaurant_id, start_at)` and `(menu_item_id, start_at)`.
+- Business-type → defaults: a small frontend constant (no DB change needed) — `['salon','spa','clinic','consultancy','tutoring','fitness','services_other']` flips the default.
+
+### RLS
+- `service_availability`: public read for the same conditions as `menu_items` (so the public order page can render); managers/ops can write.
+- `service_bookings`: restaurant members can read; staff and managers can update status; insert happens through security-definer RPCs (see below).
+
+### RPCs (security definer, mirroring existing patterns)
+- `get_available_slots(_menu_item_id uuid, _from date, _to date) returns table(start_at timestamptz, remaining int)` — combines `service_availability` × duration × buffer × existing bookings to compute free slots. Public-callable for `is_public` services.
+- Extend `create_public_order` and `create_staff_order` to accept an optional `slot_at timestamptz` per item. When the item is a service:
+  - Validate the slot is within an availability window.
+  - Validate `count(active bookings) < slot_capacity` for that exact start (concurrency-safe via row-level lock or unique partial index).
+  - Insert into `service_bookings` after the order item is created.
+- `cancel_service_booking(_booking_id uuid)` — sets status to `cancelled` and frees capacity.
+
+### Frontend
+- New `src/pages/Bookings.tsx` (calendar/agenda) and route in `App.tsx` + `AppSidebar.tsx`.
+- New components: `ServiceFormSection.tsx` (the duration/availability fields in the menu dialog), `BookSlotDialog.tsx` (calendar + timeslot picker), `BookingsCalendar.tsx`.
+- `useQueries.ts` additions: `useBookings()`, `useAvailableSlots(menuItemId, range)`.
+- Update `MenuManagement.tsx` to render the service toggle and conditional fields.
+- Update `PublicOrder.tsx` so service items render a Book button and the cart line stores `slot_at`.
+- Update `CreateOrder.tsx` similarly for staff orders.
+- Update receipts/order detail to show the booked time.
+
+### Auto-suggest by business type
+- A small helper `isServiceBusiness(businessType)` flips the menu-item form's default for `is_service` and relabels sidebar entries. No data migration — only affects new items and labels.
 
 ---
 
-## Open questions before I build
+## Out of scope (for this iteration)
+- Multi-resource scheduling (e.g. specific staff member assigned to a booking).
+- Recurring/subscription bookings.
+- Email/SMS reminders.
+- Customer-facing reschedule link.
 
-1. Bootstrap: after the migration, which email/user should be granted superadmin? (I'll insert that one row for you.)
-2. "On hold" semantics — should it block **only new orders** (my proposal) or also hide the public order page entirely and lock staff out of the dashboard?
-3. Restaurant **delete**: hard delete (rows gone forever) or soft delete (status = `'archived'`, hidden everywhere but recoverable)? I recommend soft archive + a separate "purge" action for true deletion.
+These are good follow-ups but each is meaningful on its own; bundling them in would balloon this change.
+
+---
+
+## Suggested rollout order
+1. DB migration (new columns, new tables, RLS, `get_available_slots` RPC).
+2. Menu Management UI for service fields.
+3. Public booking flow (`BookSlotDialog`) + extended `create_public_order` RPC.
+4. Staff `CreateOrder` parity + `create_staff_order` RPC.
+5. New **Bookings** page (agenda + week calendar).
+6. Business-type-aware defaults and label tweaks.

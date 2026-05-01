@@ -270,7 +270,9 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          advance_booking_days: number
           base_price: number
+          buffer_minutes: number
           category: string | null
           created_at: string
           currency: string
@@ -281,16 +283,21 @@ export type Database = {
           is_available: boolean
           is_inventory_item: boolean
           is_public: boolean
+          is_service: boolean
           name: string
           per_unit_price: number | null
           pricing_unit: string | null
           restaurant_id: string | null
+          service_duration_minutes: number | null
+          slot_capacity: number
           staff_id: string
           stock_qty: number
           updated_at: string
         }
         Insert: {
+          advance_booking_days?: number
           base_price?: number
+          buffer_minutes?: number
           category?: string | null
           created_at?: string
           currency?: string
@@ -301,16 +308,21 @@ export type Database = {
           is_available?: boolean
           is_inventory_item?: boolean
           is_public?: boolean
+          is_service?: boolean
           name: string
           per_unit_price?: number | null
           pricing_unit?: string | null
           restaurant_id?: string | null
+          service_duration_minutes?: number | null
+          slot_capacity?: number
           staff_id: string
           stock_qty?: number
           updated_at?: string
         }
         Update: {
+          advance_booking_days?: number
           base_price?: number
+          buffer_minutes?: number
           category?: string | null
           created_at?: string
           currency?: string
@@ -321,10 +333,13 @@ export type Database = {
           is_available?: boolean
           is_inventory_item?: boolean
           is_public?: boolean
+          is_service?: boolean
           name?: string
           per_unit_price?: number | null
           pricing_unit?: string | null
           restaurant_id?: string | null
+          service_duration_minutes?: number | null
+          slot_capacity?: number
           staff_id?: string
           stock_qty?: number
           updated_at?: string
@@ -652,6 +667,84 @@ export type Database = {
         }
         Relationships: []
       }
+      service_availability: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_active: boolean
+          menu_item_id: string
+          restaurant_id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          menu_item_id: string
+          restaurant_id: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          menu_item_id?: string
+          restaurant_id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: []
+      }
+      service_bookings: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          end_at: string
+          id: string
+          menu_item_id: string
+          order_id: string
+          order_item_id: string
+          restaurant_id: string
+          start_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          end_at: string
+          id?: string
+          menu_item_id: string
+          order_id: string
+          order_item_id: string
+          restaurant_id: string
+          start_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          end_at?: string
+          id?: string
+          menu_item_id?: string
+          order_id?: string
+          order_item_id?: string
+          restaurant_id?: string
+          start_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tab_items: {
         Row: {
           added_at: string
@@ -793,6 +886,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_service_booking: {
+        Args: { _booking_id: string }
+        Returns: undefined
+      }
       close_day_for_restaurant: {
         Args: { _restaurant_id: string }
         Returns: Json
@@ -845,6 +942,14 @@ export type Database = {
       }
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
       get_active_broadcast_for_user: { Args: never; Returns: Json }
+      get_available_slots: {
+        Args: { _from: string; _menu_item_id: string; _to: string }
+        Returns: {
+          end_at: string
+          remaining: number
+          start_at: string
+        }[]
+      }
       get_next_order_number: {
         Args: { _restaurant_id: string }
         Returns: string
