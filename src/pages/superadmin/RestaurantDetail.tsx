@@ -75,7 +75,7 @@ export default function SuperRestaurantDetail() {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">{r.name}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Created {new Date(r.created_at).toLocaleDateString()}</p>
+              <p className="text-sm text-muted-foreground mt-0.5 capitalize">{(r.business_type || "restaurant").replace("_", " ")} · Created {new Date(r.created_at).toLocaleDateString()}</p>
             </div>
             <StatusBadge status={r.status} />
           </div>
