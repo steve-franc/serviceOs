@@ -51,8 +51,13 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { isManager, isInvestor, isOps } = useUserRole();
+  const { isManager, isInvestor, isOps, isSuperadmin } = useUserRole();
   const { restaurantName, logoUrl } = useRestaurantContext();
+
+  // Superadmin items (God Mode)
+  const superadminItems = [
+    { title: "God Mode", url: "/superadmin", icon: Shield },
+  ];
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
