@@ -496,34 +496,44 @@ const MenuManagement = () => {
                     <p className="text-sm text-muted-foreground border rounded-md p-2">₺ Turkish Lira (TRY)</p>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="is_inventory_item" 
-                      checked={formData.is_inventory_item}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_inventory_item: checked === true })}
-                    />
-                    <Label htmlFor="is_inventory_item" className="text-sm font-medium">
-                      Inventory Item
-                    </Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Tracks stock and auto-creates a matching row in <strong>Inventory</strong>. Updating the quantity in Inventory will sync back here.
-                  </p>
-                  {formData.is_inventory_item && (
-                    <div className="space-y-2">
-                      <Label htmlFor="stock_qty">Stock Quantity</Label>
-                      <Input 
-                        id="stock_qty" 
-                        type="number" 
-                        min="0"
-                        value={formData.stock_qty} 
-                        onChange={e => setFormData({ ...formData, stock_qty: e.target.value })}
-                        placeholder="Enter available quantity"
+                <ServiceFormSection
+                  menuItemId={editingItem?.id}
+                  values={serviceFields}
+                  onChange={setServiceFields}
+                  availability={availability}
+                  onAvailabilityChange={setAvailability}
+                />
+
+                {!serviceFields.is_service && (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="is_inventory_item" 
+                        checked={formData.is_inventory_item}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_inventory_item: checked === true })}
                       />
+                      <Label htmlFor="is_inventory_item" className="text-sm font-medium">
+                        Inventory Item
+                      </Label>
                     </div>
-                  )}
-                </div>
+                    <p className="text-xs text-muted-foreground">
+                      Tracks stock and auto-creates a matching row in <strong>Inventory</strong>. Updating the quantity in Inventory will sync back here.
+                    </p>
+                    {formData.is_inventory_item && (
+                      <div className="space-y-2">
+                        <Label htmlFor="stock_qty">Stock Quantity</Label>
+                        <Input 
+                          id="stock_qty" 
+                          type="number" 
+                          min="0"
+                          value={formData.stock_qty} 
+                          onChange={e => setFormData({ ...formData, stock_qty: e.target.value })}
+                          placeholder="Enter available quantity"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea 
@@ -692,9 +702,16 @@ const MenuManagement = () => {
                                   {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
                                       +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                       </Badge>}
-                                  {item.is_inventory_item && <Badge variant={item.stock_qty > 0 ? "outline" : "destructive"} className="text-xs w-fit">
+                                  {item.is_service ? (
+                                    <Badge variant="outline" className="text-xs w-fit">
+                                      <CalendarClock className="h-3 w-3 mr-1" />
+                                      Service · {item.service_duration_minutes ?? 60} min · {item.slot_capacity ?? 1}/slot
+                                    </Badge>
+                                  ) : item.is_inventory_item && (
+                                    <Badge variant={item.stock_qty > 0 ? "outline" : "destructive"} className="text-xs w-fit">
                                       Stock: {item.stock_qty}
-                                    </Badge>}
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
                             </div>
