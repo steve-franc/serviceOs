@@ -33,6 +33,8 @@ const SuperOrders = lazy(() => import("./pages/superadmin/Orders"));
 const SuperAnalytics = lazy(() => import("./pages/superadmin/Analytics"));
 const SuperProducts = lazy(() => import("./pages/superadmin/Products"));
 const SuperUsers = lazy(() => import("./pages/superadmin/Users"));
+const SuperBroadcasts = lazy(() => import("./pages/superadmin/Broadcasts"));
+import { BroadcastPopup } from "./components/BroadcastPopup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -130,7 +132,8 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
-          <NotificationSound />
+            <NotificationSound />
+            <BroadcastPopup />
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>}>
             <Routes>
               <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
@@ -154,6 +157,7 @@ const App = () => {
               <Route path="/superadmin/analytics" element={<SuperadminRoute><SuperAnalytics /></SuperadminRoute>} />
               <Route path="/superadmin/products" element={<SuperadminRoute><SuperProducts /></SuperadminRoute>} />
               <Route path="/superadmin/users" element={<SuperadminRoute><SuperUsers /></SuperadminRoute>} />
+              <Route path="/superadmin/broadcasts" element={<SuperadminRoute><SuperBroadcasts /></SuperadminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown } from "lucide-react";
+import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -64,6 +64,7 @@ export function AppSidebar() {
     { title: "Orders", url: "/superadmin/orders", icon: ShoppingCart },
     { title: "Analytics", url: "/superadmin/analytics", icon: BarChart3 },
     { title: "Products", url: "/superadmin/products", icon: ProductIcon },
+    { title: "Broadcasts", url: "/superadmin/broadcasts", icon: Megaphone },
   ];
 
   const handleSignOut = async () => {

@@ -97,6 +97,19 @@ export default function SuperUsers() {
     refresh();
   };
 
+  const toggleSuperadmin = async (uid: string, currentlySuper: boolean, name: string) => {
+    if (uid === user?.id && currentlySuper) {
+      toast.error("You cannot revoke your own God Mode");
+      return;
+    }
+    const verb = currentlySuper ? "revoke God Mode from" : "grant God Mode to";
+    if (!confirm(`${verb} ${name || "this user"}?`)) return;
+    const { error } = await supabase.rpc("superadmin_set_superadmin", { _user_id: uid, _grant: !currentlySuper });
+    if (error) return toast.error(error.message);
+    toast.success(currentlySuper ? "God Mode revoked" : "God Mode granted");
+    refresh();
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
@@ -156,6 +169,16 @@ export default function SuperUsers() {
                   </div>
 
                   <div className="flex md:flex-col gap-2 md:justify-start">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={u.is_superadmin ? "text-amber-600 border-amber-500/40" : ""}
+                      onClick={() => toggleSuperadmin(u.user_id, u.is_superadmin, u.full_name)}
+                      disabled={u.user_id === user?.id && u.is_superadmin}
+                    >
+                      <Crown className="h-3.5 w-3.5 mr-1.5" />
+                      {u.is_superadmin ? "Revoke God" : "Make God"}
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
