@@ -141,6 +141,7 @@ const App = () => {
               <Route path="/debtors" element={<ObserverBlockedRoute><Debtors /></ObserverBlockedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/superadmin" element={<SuperadminRoute><Superadmin /></SuperadminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
