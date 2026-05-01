@@ -116,7 +116,10 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
 
         if (cancelled) return;
 
-        if (superRow) {
+        const isSuper = !!superRow;
+        setIsSuperadminAccount(isSuper);
+
+        if (isSuper && !godModeDisabled) {
           setRole("superadmin");
           setRestaurantId(null);
           setRestaurantName(null);
@@ -126,7 +129,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // 1) Load membership
+        // 1) Load membership (also for superadmins acting in normal mode)
         let { data: membership } = await supabase
           .from("restaurant_memberships")
           .select("restaurant_id")
