@@ -958,6 +958,7 @@ export type Database = {
       superadmin_list_restaurants: {
         Args: never
         Returns: {
+          business_type: string
           created_at: string
           created_by: string
           id: string
