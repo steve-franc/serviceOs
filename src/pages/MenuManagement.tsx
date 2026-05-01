@@ -281,6 +281,14 @@ const MenuManagement = () => {
       stock_qty: item.stock_qty?.toString() || "",
       image_url: item.image_url || "",
     });
+    setServiceFields({
+      is_service: !!item.is_service,
+      service_duration_minutes: (item.service_duration_minutes ?? 60).toString(),
+      slot_capacity: (item.slot_capacity ?? 1).toString(),
+      buffer_minutes: (item.buffer_minutes ?? 0).toString(),
+      advance_booking_days: (item.advance_booking_days ?? 30).toString(),
+    });
+    setAvailability([]);
     setDialogOpen(true);
   };
   const resetForm = () => {
@@ -296,6 +304,11 @@ const MenuManagement = () => {
       stock_qty: "",
       image_url: "",
     });
+    setServiceFields({
+      ...DEFAULT_SERVICE_FIELDS,
+      is_service: isServiceBusiness(businessType),
+    });
+    setAvailability([]);
     setEditingItem(null);
   };
   const filteredItems = useMemo(() => {
