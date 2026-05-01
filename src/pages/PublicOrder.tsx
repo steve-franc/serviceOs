@@ -18,6 +18,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHaptics } from "@/hooks/use-haptics";
 import { publicOrderSchema, validateInput } from "@/lib/validations";
 import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
+import { BookSlotDialog } from "@/components/BookSlotDialog";
+import { format } from "date-fns";
 interface MenuItem {
   id: string;
   name: string;
@@ -28,12 +30,16 @@ interface MenuItem {
   pricing_unit: string;
   currency: string;
   image_url: string | null;
+  is_service?: boolean;
+  service_duration_minutes?: number | null;
+  advance_booking_days?: number | null;
 }
 
 interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
   extraUnits: number;
+  slotAt?: string; // ISO timestamp for service bookings
 }
 
 const PublicOrder = () => {
