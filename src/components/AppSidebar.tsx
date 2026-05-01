@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3 } from "lucide-react";
+import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,7 +56,11 @@ export function AppSidebar() {
 
   // Superadmin items (God Mode)
   const superadminItems = [
-    { title: "God Mode", url: "/superadmin", icon: Shield },
+    { title: "Dashboard", url: "/superadmin", icon: LayoutDashboard },
+    { title: "Restaurants", url: "/superadmin/restaurants", icon: Store },
+    { title: "Orders", url: "/superadmin/orders", icon: ShoppingCart },
+    { title: "Analytics", url: "/superadmin/analytics", icon: BarChart3 },
+    { title: "Products", url: "/superadmin/products", icon: ProductIcon },
   ];
 
   const handleSignOut = async () => {

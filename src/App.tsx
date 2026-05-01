@@ -26,7 +26,12 @@ const ReportBreakdown = lazy(() => import("./pages/ReportBreakdown"));
 const Debtors = lazy(() => import("./pages/Debtors"));
 const Reports = lazy(() => import("./pages/Reports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Superadmin = lazy(() => import("./pages/Superadmin"));
+const SuperDashboard = lazy(() => import("./pages/superadmin/Dashboard"));
+const SuperRestaurants = lazy(() => import("./pages/superadmin/Restaurants"));
+const SuperRestaurantDetail = lazy(() => import("./pages/superadmin/RestaurantDetail"));
+const SuperOrders = lazy(() => import("./pages/superadmin/Orders"));
+const SuperAnalytics = lazy(() => import("./pages/superadmin/Analytics"));
+const SuperProducts = lazy(() => import("./pages/superadmin/Products"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,7 +146,12 @@ const App = () => {
               <Route path="/debtors" element={<ObserverBlockedRoute><Debtors /></ObserverBlockedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-              <Route path="/superadmin" element={<SuperadminRoute><Superadmin /></SuperadminRoute>} />
+              <Route path="/superadmin" element={<SuperadminRoute><SuperDashboard /></SuperadminRoute>} />
+              <Route path="/superadmin/restaurants" element={<SuperadminRoute><SuperRestaurants /></SuperadminRoute>} />
+              <Route path="/superadmin/restaurants/:id" element={<SuperadminRoute><SuperRestaurantDetail /></SuperadminRoute>} />
+              <Route path="/superadmin/orders" element={<SuperadminRoute><SuperOrders /></SuperadminRoute>} />
+              <Route path="/superadmin/analytics" element={<SuperadminRoute><SuperAnalytics /></SuperadminRoute>} />
+              <Route path="/superadmin/products" element={<SuperadminRoute><SuperProducts /></SuperadminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

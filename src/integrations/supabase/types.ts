@@ -795,9 +795,33 @@ export type Database = {
         Args: { _restaurant_id: string; _role: string; _user_id: string }
         Returns: undefined
       }
+      superadmin_daily_trend: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          total_orders: number
+          total_revenue: number
+        }[]
+      }
       superadmin_get_restaurant: {
         Args: { _restaurant_id: string }
         Returns: Json
+      }
+      superadmin_list_orders: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          customer_name: string
+          id: string
+          is_public_order: boolean
+          order_number: string
+          payment_method: string
+          payment_status: string
+          restaurant_id: string
+          restaurant_name: string
+          status: string
+          total: number
+        }[]
       }
       superadmin_list_restaurants: {
         Args: never
@@ -836,6 +860,14 @@ export type Database = {
       superadmin_set_restaurant_status: {
         Args: { _restaurant_id: string; _status: string }
         Returns: undefined
+      }
+      superadmin_top_products: {
+        Args: { _limit?: number }
+        Returns: {
+          menu_item_name: string
+          revenue: number
+          total_sold: number
+        }[]
       }
     }
     Enums: {
