@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      broadcast_views: {
+        Row: {
+          broadcast_id: string
+          last_dismissed_at: string | null
+          last_seen_at: string
+          shows_count: number
+          user_id: string
+        }
+        Insert: {
+          broadcast_id: string
+          last_dismissed_at?: string | null
+          last_seen_at?: string
+          shows_count?: number
+          user_id: string
+        }
+        Update: {
+          broadcast_id?: string
+          last_dismissed_at?: string | null
+          last_seen_at?: string
+          shows_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_views_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      broadcasts: {
+        Row: {
+          audience: string
+          body: string
+          created_at: string
+          created_by: string
+          cta_label: string | null
+          cta_url: string | null
+          expires_at: string | null
+          frequency_hours: number
+          id: string
+          is_active: boolean
+          max_shows: number
+          restaurant_id: string | null
+          starts_at: string
+          title: string
+          variant: string
+        }
+        Insert: {
+          audience?: string
+          body: string
+          created_at?: string
+          created_by: string
+          cta_label?: string | null
+          cta_url?: string | null
+          expires_at?: string | null
+          frequency_hours?: number
+          id?: string
+          is_active?: boolean
+          max_shows?: number
+          restaurant_id?: string | null
+          starts_at?: string
+          title: string
+          variant?: string
+        }
+        Update: {
+          audience?: string
+          body?: string
+          created_at?: string
+          created_by?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          expires_at?: string | null
+          frequency_hours?: number
+          id?: string
+          is_active?: boolean
+          max_shows?: number
+          restaurant_id?: string | null
+          starts_at?: string
+          title?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       daily_expenses: {
         Row: {
           amount: number
@@ -755,6 +841,7 @@ export type Database = {
         }[]
       }
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
+      get_active_broadcast_for_user: { Args: never; Returns: Json }
       get_next_order_number: {
         Args: { _restaurant_id: string }
         Returns: string
@@ -791,9 +878,28 @@ export type Database = {
         Returns: boolean
       }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      mark_broadcast_seen: {
+        Args: { _broadcast_id: string; _dismissed?: boolean }
+        Returns: undefined
+      }
       superadmin_change_role: {
         Args: { _restaurant_id: string; _role: string; _user_id: string }
         Returns: undefined
+      }
+      superadmin_create_broadcast: {
+        Args: {
+          _audience: string
+          _body: string
+          _cta_label: string
+          _cta_url: string
+          _expires_at: string
+          _frequency_hours: number
+          _max_shows: number
+          _restaurant_id: string
+          _title: string
+          _variant: string
+        }
+        Returns: string
       }
       superadmin_daily_trend: {
         Args: { _days?: number }
@@ -803,10 +909,32 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      superadmin_delete_broadcast: { Args: { _id: string }; Returns: undefined }
       superadmin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       superadmin_get_restaurant: {
         Args: { _restaurant_id: string }
         Returns: Json
+      }
+      superadmin_list_broadcasts: {
+        Args: never
+        Returns: {
+          audience: string
+          body: string
+          created_at: string
+          cta_label: string
+          cta_url: string
+          expires_at: string
+          frequency_hours: number
+          id: string
+          is_active: boolean
+          max_shows: number
+          restaurant_id: string
+          starts_at: string
+          title: string
+          total_dismissed: number
+          total_views: number
+          variant: string
+        }[]
       }
       superadmin_list_orders: {
         Args: { _limit?: number }
@@ -860,6 +988,14 @@ export type Database = {
       }
       superadmin_set_restaurant_status: {
         Args: { _restaurant_id: string; _status: string }
+        Returns: undefined
+      }
+      superadmin_set_superadmin: {
+        Args: { _grant: boolean; _user_id: string }
+        Returns: undefined
+      }
+      superadmin_toggle_broadcast: {
+        Args: { _active: boolean; _id: string }
         Returns: undefined
       }
       superadmin_top_products: {
