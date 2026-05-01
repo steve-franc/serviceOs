@@ -6,17 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { role, loading, isManager } = useUserRole();
+  const { role, loading, isManager, isSuperadmin } = useUserRole();
 
   useEffect(() => {
     if (loading) return;
-
+    if (isSuperadmin) { navigate("/superadmin", { replace: true }); return; }
     // No role assigned yet → show empty state (no redirect)
     if (!role) return;
 
     if (isManager) navigate("/admin", { replace: true });
     else navigate("/order/create", { replace: true });
-  }, [role, loading, isManager, navigate]);
+  }, [role, loading, isManager, isSuperadmin, navigate]);
 
   if (loading) {
     return (
