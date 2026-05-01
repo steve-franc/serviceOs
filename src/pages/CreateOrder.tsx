@@ -232,6 +232,7 @@ const CreateOrder = () => {
         menu_item_id: item.menuItem.id,
         quantity: item.quantity,
         extra_units: item.extraUnits,
+        slot_at: item.slotAt ?? null,
       }));
 
       const { data, error } = await (supabase as any).rpc("create_staff_order", {
