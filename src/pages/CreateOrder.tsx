@@ -359,7 +359,7 @@ const CreateOrder = () => {
                 )}
               </div>
               
-              {item.menuItem.per_unit_price && (
+              {!item.slotAt && item.menuItem.per_unit_price && (
                 <div className="flex items-center gap-2 pl-2">
                   <Label className="text-xs text-muted-foreground flex-1">
                     Extra {item.menuItem.pricing_unit}s (+{formatPrice(item.menuItem.per_unit_price, item.menuItem.currency)})
@@ -604,7 +604,12 @@ const CreateOrder = () => {
                                     <Badge variant="secondary">
                                       {formatPrice(item.base_price, item.currency)}
                                     </Badge>
-                                    {item.per_unit_price && (
+                                    {item.is_service ? (
+                                      <Badge variant="outline" className="text-xs">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        {item.service_duration_minutes ?? 60} min
+                                      </Badge>
+                                    ) : item.per_unit_price && (
                                       <Badge variant="outline" className="text-xs">
                                         +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                       </Badge>
