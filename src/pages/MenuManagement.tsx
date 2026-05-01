@@ -130,7 +130,7 @@ const MenuManagement = () => {
         return;
       }
       
-      const itemData = {
+      const itemData: any = {
         name: validation.data.name,
         category: validation.data.category,
         base_price: validation.data.base_price,
@@ -138,28 +138,52 @@ const MenuManagement = () => {
         description: validation.data.description,
         pricing_unit: validation.data.pricing_unit,
         currency: validation.data.currency,
-        is_inventory_item: formData.is_inventory_item,
-        stock_qty: formData.is_inventory_item ? parseInt(formData.stock_qty) || 0 : 0,
+        is_inventory_item: serviceFields.is_service ? false : formData.is_inventory_item,
+        stock_qty: serviceFields.is_service ? 0 : (formData.is_inventory_item ? parseInt(formData.stock_qty) || 0 : 0),
         image_url: formData.image_url || null,
+        is_service: serviceFields.is_service,
+        service_duration_minutes: serviceFields.is_service ? Math.max(parseInt(serviceFields.service_duration_minutes) || 60, 5) : null,
+        slot_capacity: serviceFields.is_service ? Math.max(parseInt(serviceFields.slot_capacity) || 1, 1) : 1,
+        buffer_minutes: serviceFields.is_service ? Math.max(parseInt(serviceFields.buffer_minutes) || 0, 0) : 0,
+        advance_booking_days: serviceFields.is_service ? Math.max(parseInt(serviceFields.advance_booking_days) || 30, 1) : 30,
       };
+
+      let savedItemId: string | null = null;
       if (editingItem) {
-        const {
-          error
-        } = await supabase.from("menu_items").update(itemData).eq("id", editingItem.id);
+        const { error } = await supabase.from("menu_items").update(itemData).eq("id", editingItem.id);
         if (error) throw error;
+        savedItemId = editingItem.id;
         toast.success("Menu item updated!");
       } else {
         if (!restaurantId) throw new Error("Restaurant not selected");
-        const {
-          error
-        } = await supabase.from("menu_items").insert([{
+        const { data: inserted, error } = await supabase.from("menu_items").insert([{
           ...itemData,
           staff_id: user.id,
           restaurant_id: restaurantId
-        }]);
+        }]).select("id").single();
         if (error) throw error;
+        savedItemId = (inserted as any)?.id ?? null;
         toast.success("Menu item added!");
       }
+
+      // Sync service availability windows (replace strategy)
+      if (serviceFields.is_service && savedItemId && restaurantId) {
+        await supabase.from("service_availability").delete().eq("menu_item_id", savedItemId);
+        const rows = availability
+          .filter((w) => w.start_time && w.end_time && w.start_time < w.end_time)
+          .map((w) => ({
+            menu_item_id: savedItemId,
+            restaurant_id: restaurantId,
+            weekday: w.weekday,
+            start_time: w.start_time,
+            end_time: w.end_time,
+            is_active: w.is_active !== false,
+          }));
+        if (rows.length > 0) {
+          await (supabase as any).from("service_availability").insert(rows);
+        }
+      }
+
       setDialogOpen(false);
       resetForm();
       invalidateMenu();
