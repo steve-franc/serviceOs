@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp, X, Calculator, Search, Percent, Tag } from "lucide-react";
+import { Plus, Minus, ShoppingCart, ChevronDown, ChevronRight, Store, ChevronUp, X, Calculator, Search, Percent, Tag, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/currency";
@@ -21,6 +21,8 @@ import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuItems, useMenuTags, useRestaurantSettings } from "@/hooks/useQueries";
 import { staffOrderSchema, validateInput } from "@/lib/validations";
 import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
+import { BookSlotDialog } from "@/components/BookSlotDialog";
+import { format } from "date-fns";
 interface MenuItem {
   id: string;
   name: string;
@@ -30,11 +32,15 @@ interface MenuItem {
   description: string | null;
   pricing_unit: string;
   currency: string;
+  is_service?: boolean;
+  service_duration_minutes?: number | null;
+  advance_booking_days?: number | null;
 }
 interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
   extraUnits: number;
+  slotAt?: string;
 }
 const CreateOrder = () => {
   const navigate = useNavigate();
@@ -96,6 +102,7 @@ const CreateOrder = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [amountGiven, setAmountGiven] = useState("");
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [bookingItem, setBookingItem] = useState<MenuItem | null>(null);
 
   // Persist order state to sessionStorage
   useEffect(() => {
@@ -109,6 +116,10 @@ const CreateOrder = () => {
     // Validate currency matches restaurant currency
     if (menuItem.currency !== currency) {
       toast.error(`This item uses ${menuItem.currency} but the restaurant uses ${currency}`);
+      return;
+    }
+    if (menuItem.is_service) {
+      setBookingItem(menuItem);
       return;
     }
     if (isMobile) haptics.tap();
@@ -125,6 +136,16 @@ const CreateOrder = () => {
         extraUnits: 0
       }]);
     }
+  };
+  const handleSlotConfirmed = (slotAt: string) => {
+    if (!bookingItem) return;
+    if (isMobile) haptics.tap();
+    setOrderItems(prev => [
+      ...prev,
+      { menuItem: bookingItem, quantity: 1, extraUnits: 0, slotAt },
+    ]);
+    setBookingItem(null);
+    toast.success(`${bookingItem.name} booked for ${format(new Date(slotAt), "EEE d MMM, HH:mm")}`);
   };
   // Only remove item when both base and per-unit contributions are zero
   const shouldKeepItem = (item: OrderItem) => {
