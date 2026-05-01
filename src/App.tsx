@@ -32,6 +32,7 @@ const SuperRestaurantDetail = lazy(() => import("./pages/superadmin/RestaurantDe
 const SuperOrders = lazy(() => import("./pages/superadmin/Orders"));
 const SuperAnalytics = lazy(() => import("./pages/superadmin/Analytics"));
 const SuperProducts = lazy(() => import("./pages/superadmin/Products"));
+const SuperUsers = lazy(() => import("./pages/superadmin/Users"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
