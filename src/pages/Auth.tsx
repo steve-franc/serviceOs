@@ -237,7 +237,7 @@ const Auth = () => {
         <p className="text-muted-foreground">
           I want to{" "}
           <button type="button" onClick={() => setMode("restaurant")} className="font-semibold text-foreground hover:underline">
-            Sign Up as a Restaurant
+            Sign Up as a Business
           </button>
         </p>
       </div>
