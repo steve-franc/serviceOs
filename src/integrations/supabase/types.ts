@@ -627,6 +627,7 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          business_type: string
           created_at: string
           created_by: string | null
           id: string
@@ -634,6 +635,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          business_type?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -641,6 +643,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          business_type?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -955,6 +958,7 @@ export type Database = {
       superadmin_list_restaurants: {
         Args: never
         Returns: {
+          business_type: string
           created_at: string
           created_by: string
           id: string

@@ -153,9 +153,10 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
 
           if (onboardingMode === "create" && meta.create_restaurant_name) {
             const name = String(meta.create_restaurant_name);
+            const businessType = meta.business_type ? String(meta.business_type) : "restaurant";
             const { data: created } = await supabase
               .from("restaurants")
-              .insert({ name, created_by: currentUser.id })
+              .insert({ name, created_by: currentUser.id, business_type: businessType } as any)
               .select("id, name")
               .single();
             if (created) {

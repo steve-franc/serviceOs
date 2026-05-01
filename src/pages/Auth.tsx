@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { UtensilsCrossed } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { signInSchema, signUpSchema, registerRestaurantSchema, passwordResetSchema, validateInput } from "@/lib/validations";
+import { signInSchema, signUpSchema, registerRestaurantSchema, passwordResetSchema, validateInput, BUSINESS_TYPES } from "@/lib/validations";
 type Restaurant = {
   id: string;
   name: string;
@@ -23,6 +23,7 @@ const Auth = () => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [joinRestaurantId, setJoinRestaurantId] = useState<string>("");
   const [newRestaurantName, setNewRestaurantName] = useState<string>("");
+  const [businessType, setBusinessType] = useState<string>("restaurant");
   const [mode, setMode] = useState<AuthMode>("signin");
   const [resetEmail, setResetEmail] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -132,7 +133,8 @@ const Auth = () => {
       fullName,
       email,
       password,
-      restaurantName: newRestaurantName
+      restaurantName: newRestaurantName,
+      businessType,
     });
     if (!validation.success) {
       toast.error(validation.error);
@@ -150,14 +152,15 @@ const Auth = () => {
           data: {
             full_name: validation.data.fullName,
             onboarding_mode: "create",
-            create_restaurant_name: validation.data.restaurantName
+            create_restaurant_name: validation.data.restaurantName,
+            business_type: validation.data.businessType,
           }
         }
       });
       if (error) throw error;
       toast.success("Account created! Please check your email to verify your account.");
     } catch (error: any) {
-      toast.error(error.message || "Failed to register restaurant");
+      toast.error(error.message || "Failed to register business");
     } finally {
       setLoading(false);
     }
@@ -234,7 +237,7 @@ const Auth = () => {
         <p className="text-muted-foreground">
           I want to{" "}
           <button type="button" onClick={() => setMode("restaurant")} className="font-semibold text-foreground hover:underline">
-            Sign Up as a Restaurant
+            Sign Up as a Business
           </button>
         </p>
       </div>
@@ -249,10 +252,10 @@ const Auth = () => {
         <Input id="signup-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
       </div>
       <div className="space-y-2">
-        <Label>Restaurant</Label>
+        <Label>Business</Label>
         <Select value={joinRestaurantId} onValueChange={setJoinRestaurantId}>
           <SelectTrigger>
-            <SelectValue placeholder="Select your restaurant" />
+            <SelectValue placeholder="Select your business" />
           </SelectTrigger>
           <SelectContent>
             {restaurants.map(r => <SelectItem key={r.id} value={r.id}>
@@ -269,7 +272,7 @@ const Auth = () => {
         {loading ? "Creating account..." : "Sign Up"}
       </Button>
       <p className="text-xs text-center text-muted-foreground">
-        You'll receive a verification email after signing up. Your restaurant manager will assign your role.
+        You'll receive a verification email after signing up. Your business manager will assign your role.
       </p>
       <div className="text-sm text-center pt-2 border-t">
         <p className="text-muted-foreground">
@@ -286,22 +289,35 @@ const Auth = () => {
         <Input id="restaurant-owner-name" type="text" placeholder="Jane Doe" value={fullName} onChange={e => setFullName(e.target.value.slice(0, 100))} required maxLength={100} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="restaurant-name">Restaurant Name</Label>
-        <Input id="restaurant-name" type="text" placeholder="My Restaurant" value={newRestaurantName} onChange={e => setNewRestaurantName(e.target.value.slice(0, 200))} required maxLength={200} />
+        <Label htmlFor="restaurant-name">Business Name</Label>
+        <Input id="restaurant-name" type="text" placeholder="My Business" value={newRestaurantName} onChange={e => setNewRestaurantName(e.target.value.slice(0, 200))} required maxLength={200} />
+      </div>
+      <div className="space-y-2">
+        <Label>Business Type</Label>
+        <Select value={businessType} onValueChange={setBusinessType}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select business type" />
+          </SelectTrigger>
+          <SelectContent>
+            {BUSINESS_TYPES.map((b) => (
+              <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label htmlFor="restaurant-email">Email</Label>
-        <Input id="restaurant-email" type="email" placeholder="owner@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
+        <Input id="restaurant-email" type="email" placeholder="owner@business.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="restaurant-password">Password</Label>
         <Input id="restaurant-password" type="password" value={password} onChange={e => setPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} />
       </div>
       <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Creating..." : "Create Restaurant"}
+        {loading ? "Creating..." : "Create Business"}
       </Button>
       <p className="text-xs text-center text-muted-foreground">
-        After email verification, you'll be set up as the Manager for this restaurant.
+        After email verification, you'll be set up as the Manager for this business.
       </p>
       <div className="text-sm text-center pt-2 border-t">
         <p className="text-muted-foreground">
@@ -319,7 +335,7 @@ const Auth = () => {
       case "signup":
         return "Sign Up";
       case "restaurant":
-        return "Register Restaurant";
+        return "Register Business";
     }
   };
   const getDescription = () => {
@@ -327,9 +343,9 @@ const Auth = () => {
       case "signin":
         return "Staff login for order management";
       case "signup":
-        return "Join your restaurant as staff";
+        return "Join your business as staff";
       case "restaurant":
-        return "Create a new restaurant account";
+        return "Create a new business account";
     }
   };
   return <div className="min-h-screen flex items-center justify-center bg-background p-4">

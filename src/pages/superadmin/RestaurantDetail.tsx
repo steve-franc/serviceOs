@@ -59,7 +59,7 @@ export default function SuperRestaurantDetail() {
     return <Layout><div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4"><Skeleton className="h-8 w-48" /><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div></div></Layout>;
   }
   if (!data?.restaurant) {
-    return <Layout><div className="max-w-7xl mx-auto p-6"><p className="text-muted-foreground">Restaurant not found.</p></div></Layout>;
+    return <Layout><div className="max-w-7xl mx-auto p-6"><p className="text-muted-foreground">Business not found.</p></div></Layout>;
   }
 
   const r = data.restaurant;
@@ -70,12 +70,12 @@ export default function SuperRestaurantDetail() {
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div>
           <Link to="/superadmin/restaurants" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Back to Restaurants
+            <ArrowLeft className="h-4 w-4" /> Back to Businesses
           </Link>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">{r.name}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Created {new Date(r.created_at).toLocaleDateString()}</p>
+              <p className="text-sm text-muted-foreground mt-0.5 capitalize">{(r.business_type || "restaurant").replace("_", " ")} · Created {new Date(r.created_at).toLocaleDateString()}</p>
             </div>
             <StatusBadge status={r.status} />
           </div>

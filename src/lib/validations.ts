@@ -13,11 +13,26 @@ export const signInSchema = z.object({
   password: z.string().min(1, "Password is required").max(128, "Password must be less than 128 characters"),
 });
 
+export const BUSINESS_TYPES = [
+  { value: "restaurant", label: "Restaurant" },
+  { value: "cafe", label: "Café" },
+  { value: "bar", label: "Bar" },
+  { value: "bakery", label: "Bakery" },
+  { value: "retail", label: "Retail / Shop" },
+  { value: "salon", label: "Salon / Spa" },
+  { value: "gym", label: "Gym / Fitness" },
+  { value: "services", label: "Services" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const BUSINESS_TYPE_VALUES = BUSINESS_TYPES.map((b) => b.value) as [string, ...string[]];
+
 export const registerRestaurantSchema = z.object({
   fullName: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   password: z.string().min(6, "Password must be at least 6 characters").max(128, "Password must be less than 128 characters"),
-  restaurantName: z.string().trim().min(1, "Restaurant name is required").max(200, "Restaurant name must be less than 200 characters"),
+  restaurantName: z.string().trim().min(1, "Business name is required").max(200, "Business name must be less than 200 characters"),
+  businessType: z.enum(BUSINESS_TYPE_VALUES, { errorMap: () => ({ message: "Please select a business type" }) }),
 });
 
 export const passwordResetSchema = z.object({
