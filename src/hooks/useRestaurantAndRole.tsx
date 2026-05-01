@@ -4,6 +4,8 @@ import type { User } from "@supabase/supabase-js";
 
 export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | "superadmin" | null;
 
+const GOD_MODE_OFF_KEY = "god_mode_off";
+
 interface RestaurantRoleState {
   user: User | null;
   restaurantId: string | null;
@@ -20,6 +22,11 @@ interface RestaurantRoleState {
   isServer: boolean;
   isInvestor: boolean;
   isSuperadmin: boolean;
+  /** True when the signed-in user is globally a superadmin (regardless of mode toggle) */
+  isSuperadminAccount: boolean;
+  /** When true, superadmin is acting as their assigned restaurant role */
+  godModeDisabled: boolean;
+  setGodModeDisabled: (off: boolean) => void;
   /** True when role can view reports/admin (manager OR investor) */
   canViewReports: boolean;
 }
@@ -40,6 +47,9 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   isServer: false,
   isInvestor: false,
   isSuperadmin: false,
+  isSuperadminAccount: false,
+  godModeDisabled: false,
+  setGodModeDisabled: () => {},
   canViewReports: false,
 });
 
