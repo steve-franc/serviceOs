@@ -272,7 +272,7 @@ const Auth = () => {
         {loading ? "Creating account..." : "Sign Up"}
       </Button>
       <p className="text-xs text-center text-muted-foreground">
-        You'll receive a verification email after signing up. Your restaurant manager will assign your role.
+        You'll receive a verification email after signing up. Your business manager will assign your role.
       </p>
       <div className="text-sm text-center pt-2 border-t">
         <p className="text-muted-foreground">
