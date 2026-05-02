@@ -3,7 +3,7 @@ import Layout from "@/components/Layout";
 import { StatCard } from "@/components/superadmin/StatCard";
 import { StatusBadge } from "@/components/superadmin/StatusBadge";
 import { useSuperRestaurantDetail } from "@/hooks/useSuperadminData";
-import { ArrowLeft, ShoppingCart, DollarSign, Users, Package, Trash2 } from "lucide-react";
+import { ArrowLeft, ShoppingCart, DollarSign, Users, Package, Trash2, Menu as MenuIcon, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/currency";
@@ -77,7 +77,12 @@ export default function SuperRestaurantDetail() {
               <h1 className="text-2xl font-semibold tracking-tight">{r.name}</h1>
               <p className="text-sm text-muted-foreground mt-0.5 capitalize">{(r.business_type || "restaurant").replace("_", " ")} · Created {new Date(r.created_at).toLocaleDateString()}</p>
             </div>
-            <StatusBadge status={r.status} />
+            <div className="flex items-center gap-2">
+              <Link to={`/superadmin/restaurants/${r.id}/menu`}>
+                <Button size="sm" variant="outline" className="gap-1.5"><MenuIcon className="h-4 w-4" /> View Menu</Button>
+              </Link>
+              <StatusBadge status={r.status} />
+            </div>
           </div>
         </div>
 
@@ -113,7 +118,7 @@ export default function SuperRestaurantDetail() {
             </div>
             <div className="divide-y divide-border">
               {(data.recent_orders || []).slice(0, 10).map((o: any) => (
-                <div key={o.id} className="flex items-center justify-between px-5 py-3 hover:bg-accent/50 transition-colors">
+                <Link key={o.id} to={`/receipt/${o.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-accent/50 transition-colors">
                   <div>
                     <p className="text-sm font-medium font-mono">#{o.order_number}</p>
                     <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString()}</p>
@@ -121,8 +126,9 @@ export default function SuperRestaurantDetail() {
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium font-mono">{formatPrice(Number(o.total))}</span>
                     <StatusBadge status={o.status} />
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
-                </div>
+                </Link>
               ))}
               {(!data.recent_orders || data.recent_orders.length === 0) && <div className="px-5 py-8 text-center text-sm text-muted-foreground">No orders yet</div>}
             </div>
