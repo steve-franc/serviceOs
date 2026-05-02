@@ -68,6 +68,18 @@ export function useSuperRestaurantDetail(id: string | undefined) {
   });
 }
 
+export function useSuperMenu(restaurantId: string | undefined) {
+  return useQuery({
+    queryKey: ["super", "menu", restaurantId],
+    enabled: !!restaurantId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("superadmin_get_menu", { _restaurant_id: restaurantId });
+      if (error) throw error;
+      return data as any;
+    },
+  });
+}
+
 export function useSuperUsers() {
   return useQuery({
     queryKey: ["super", "users"],
