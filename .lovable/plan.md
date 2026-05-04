@@ -1,96 +1,84 @@
-## Goal
+## DodoPayments — Platform Subscriptions for ServiceOS
 
-Let service-oriented businesses (salons, clinics, consultants, tutors, etc.) sell **bookable timeslots** alongside or instead of physical products — using the same menu/order foundation we already have.
+Restaurants subscribe to a paid tier (Pro, Business, etc.) via DodoPayments. When their subscription lapses, they are automatically downgraded to the **Free** tier (with feature restrictions) instead of being locked out. The Superadmin manages plans and views all subscriptions; managers see and manage their own restaurant's plan.
 
-A menu item can be marked as a **Service**. Services have a duration, weekly availability, and a slot capacity per timeslot. On the public page, customers tap a "Book" button that opens a calendar to pick a date + time. Staff manage everything from a new **Bookings** page (calendar view).
+### What gets built
 
----
+**1. Subscription tiers (Superadmin-managed)**
+- Free, Pro, Business (names/limits editable later by superadmin).
+- Each tier has: name, monthly price (TRY), DodoPayments product/price ID, and a JSON `features` blob (e.g. `{ max_menu_items: 20, public_ordering: false, bookings: false, reports: false }`).
+- The **Free tier** is a real tier with hard feature gates so a downgrade has teeth.
 
-## What changes for users
+**2. Restaurant ↔ subscription state**
+- Every restaurant has a current `tier_id`, `subscription_status` (`free`, `active`, `past_due`, `cancelled`), `current_period_end`, and a `dodo_subscription_id`.
+- New restaurants start on **Free**.
 
-### Menu Management (manager view)
-- New toggle on each menu item: **"This is a service"**.
-- For new businesses whose `business_type` is service-oriented (salon, spa, clinic, consultancy, tutoring, fitness, etc.), the toggle defaults to **on** for new items. Restaurants/retail stay off by default. Always editable.
-- When "service" is on, the form reveals service-specific fields and hides physical-stock fields:
-  - **Duration** (e.g. 30 / 45 / 60 / 90 / 120 min, or custom)
-  - **Capacity per slot** (default 1 — e.g. 1 chair, or 5 for group classes)
-  - **Weekly availability**: per weekday, an active toggle and a list of time windows (e.g. Mon 09:00–13:00, 14:00–18:00). Defaults to a sensible Mon–Fri 9–5.
-  - **Buffer between bookings** (optional, minutes)
-  - **Advance-booking window** (how many days in advance customers can book — default 30)
-- "Stock" terminology becomes "Slots" wherever a service item is shown.
+**3. Manager checkout flow** (`/billing` page)
+- Shows current plan, next renewal date, and the tier comparison.
+- "Upgrade" button calls a `dodo-create-checkout` edge function → returns a DodoPayments hosted checkout URL → redirects the manager.
+- After payment, DodoPayments redirects back to `/billing?status=success`. The webhook (below) is the source of truth — the page just polls for the new status.
 
-### Public order page (customer view)
-- Service items show a **Book** button instead of the usual `+` quantity stepper.
-- Tapping Book opens a sheet/dialog with:
-  1. A **calendar** (next N days, days fully booked or outside availability are disabled)
-  2. After picking a date, a grid of **available time slots** (greyed out when capacity is full)
-  3. Confirm → adds the service to the cart with its chosen date+time attached
-- The cart shows the service line with its booked slot ("Haircut · Tue 5 May, 14:30"). Multiple services can be booked in one order.
-- Checkout proceeds as today (name, phone, payment method, notes). Order is created in `pending` status as it is now.
+**4. DodoPayments webhook** (`dodo-webhook` edge function, `verify_jwt = false`)
+- Receives `subscription.active`, `subscription.renewed`, `subscription.failed`, `subscription.cancelled` events.
+- Verifies the webhook signature using DodoPayments' signing secret.
+- Updates the restaurant's `subscription_status`, `current_period_end`, and `tier_id` accordingly.
+- On `failed` or `cancelled` past expiry → downgrade to Free tier.
 
-### New Bookings page (staff view)
-- New sidebar entry **"Bookings"** (visible to all staff for the business; managers can edit).
-- Default view: today's agenda — vertical timeline grouped by service, showing customer name, phone, status, payment status.
-- Tabs: **Today**, **Upcoming**, **Past**, plus a **Week** calendar view.
-- Each booking links to its underlying order (the existing Orders page still shows the same record, with an extra "Booked for…" badge).
-- Staff can mark a booking as **Completed**, **No-show**, or **Cancelled**. Cancelling frees the slot.
+**5. Auto-downgrade job**
+- Extend the existing `auto-close-day` pattern: a daily `pg_cron` job calls a `subscription-sweep` edge function that finds restaurants where `current_period_end < now()` and `subscription_status != 'free'`, downgrades them to Free, and writes a broadcast notification ("Your Pro plan ended, you're now on Free").
 
-### Sidebar terminology (cosmetic, business-type aware)
-- For service business types, the **Menu** label becomes **Services** and **Inventory** becomes **Resources** (already-exposed pages, just relabeled). Restaurants stay as "Menu / Inventory".
+**6. Feature gating**
+- A new `useTierFeatures()` hook reads the restaurant's tier features from the existing restaurant context.
+- Apply gates in the most visible places: public ordering toggle (Free = off), max menu items (Free = capped), reports/analytics pages (Free = locked screen with "Upgrade" CTA), bookings page (Free = locked).
+- Gates are enforced **in the database too** via RLS / triggers for menu-item count, so the limit can't be bypassed via API.
 
----
+**7. Test/Live mode toggle (Superadmin only)**
+- Stored in `platform_settings` table (singleton).
+- Superadmin → Billing settings page picks `test` or `live`. The edge functions read this setting and pick the matching DodoPayments API key (`DODO_TEST_API_KEY` vs `DODO_LIVE_API_KEY`) and webhook secret.
 
-## What changes under the hood
+**8. Superadmin Billing dashboard** (`/superadmin/billing`)
+- Tier CRUD (create/edit/delete tiers, set DodoPayments price IDs, edit feature limits).
+- Subscriptions list: every restaurant with its tier, status, next renewal, lifetime revenue.
+- Mode toggle (Test / Live) + button to test the webhook signature.
 
-### Database (new + altered tables)
-- `menu_items`: add `is_service boolean default false`, `service_duration_minutes int`, `slot_capacity int default 1`, `buffer_minutes int default 0`, `advance_booking_days int default 30`.
-- New table `service_availability` — weekly recurring windows per service:
-  - `menu_item_id`, `weekday` (0–6), `start_time`, `end_time`, `is_active`.
-- New table `service_bookings` — one row per booked slot (a service order item can book exactly one slot):
-  - `order_id` (FK → orders), `order_item_id` (FK → order_items), `menu_item_id`, `restaurant_id`, `start_at timestamptz`, `end_at timestamptz`, `status text` (`booked` / `completed` / `no_show` / `cancelled`).
-  - Indexes on `(restaurant_id, start_at)` and `(menu_item_id, start_at)`.
-- Business-type → defaults: a small frontend constant (no DB change needed) — `['salon','spa','clinic','consultancy','tutoring','fitness','services_other']` flips the default.
+### Free tier feature restrictions (proposal — editable later)
 
-### RLS
-- `service_availability`: public read for the same conditions as `menu_items` (so the public order page can render); managers/ops can write.
-- `service_bookings`: restaurant members can read; staff and managers can update status; insert happens through security-definer RPCs (see below).
+| Feature | Free | Pro | Business |
+|---|---|---|---|
+| Menu items | up to 15 | unlimited | unlimited |
+| Public ordering page | off | on | on |
+| Service bookings | off | on | on |
+| Reports & analytics | last 7 days | full | full + exports |
+| Staff seats | 2 | 10 | unlimited |
+| Superadmin broadcasts to me | yes | yes | yes |
 
-### RPCs (security definer, mirroring existing patterns)
-- `get_available_slots(_menu_item_id uuid, _from date, _to date) returns table(start_at timestamptz, remaining int)` — combines `service_availability` × duration × buffer × existing bookings to compute free slots. Public-callable for `is_public` services.
-- Extend `create_public_order` and `create_staff_order` to accept an optional `slot_at timestamptz` per item. When the item is a service:
-  - Validate the slot is within an availability window.
-  - Validate `count(active bookings) < slot_capacity` for that exact start (concurrency-safe via row-level lock or unique partial index).
-  - Insert into `service_bookings` after the order item is created.
-- `cancel_service_booking(_booking_id uuid)` — sets status to `cancelled` and frees capacity.
+### Secrets needed (you'll add when prompted during build)
 
-### Frontend
-- New `src/pages/Bookings.tsx` (calendar/agenda) and route in `App.tsx` + `AppSidebar.tsx`.
-- New components: `ServiceFormSection.tsx` (the duration/availability fields in the menu dialog), `BookSlotDialog.tsx` (calendar + timeslot picker), `BookingsCalendar.tsx`.
-- `useQueries.ts` additions: `useBookings()`, `useAvailableSlots(menuItemId, range)`.
-- Update `MenuManagement.tsx` to render the service toggle and conditional fields.
-- Update `PublicOrder.tsx` so service items render a Book button and the cart line stores `slot_at`.
-- Update `CreateOrder.tsx` similarly for staff orders.
-- Update receipts/order detail to show the booked time.
+- `DODO_TEST_API_KEY`
+- `DODO_LIVE_API_KEY`
+- `DODO_TEST_WEBHOOK_SECRET`
+- `DODO_LIVE_WEBHOOK_SECRET`
 
-### Auto-suggest by business type
-- A small helper `isServiceBusiness(businessType)` flips the menu-item form's default for `is_service` and relabels sidebar entries. No data migration — only affects new items and labels.
+### Things to know before approving
 
----
+- **DodoPayments is not a built-in Lovable payments integration.** Lovable's built-in providers are Paddle, Stripe, and Shopify, all of which Lovable can fully manage (test/live, hosted checkout, MoR/tax). DodoPayments will be a custom integration — you provide the API keys, you handle the DodoPayments dashboard, and we wire up checkout + webhooks ourselves. If you want zero account setup or automatic tax handling, **Paddle** would be a better fit; happy to switch.
+- **Webhook URL.** After enabling, you'll need to paste the webhook URL we generate (`https://<project>.supabase.co/functions/v1/dodo-webhook`) into your DodoPayments dashboard, twice — once for the test environment and once for live.
+- **Currency.** DodoPayments supports TRY in most regions but verify your DodoPayments account is approved for TRY before going live.
 
-## Out of scope (for this iteration)
-- Multi-resource scheduling (e.g. specific staff member assigned to a booking).
-- Recurring/subscription bookings.
-- Email/SMS reminders.
-- Customer-facing reschedule link.
+### Technical sketch
 
-These are good follow-ups but each is meaningful on its own; bundling them in would balloon this change.
+```text
+restaurants ──▶ subscription_tier_id ──▶ subscription_tiers (id, name, price_try, dodo_price_id, features jsonb)
+            └── subscription_status, current_period_end, dodo_subscription_id, dodo_customer_id
 
----
+edge functions:
+  dodo-create-checkout   (auth: manager) → returns hosted checkout URL
+  dodo-webhook           (no auth, signature verified)        → updates restaurant subscription
+  subscription-sweep     (cron, daily 03:00 Europe/Istanbul) → downgrade expired to Free
 
-## Suggested rollout order
-1. DB migration (new columns, new tables, RLS, `get_available_slots` RPC).
-2. Menu Management UI for service fields.
-3. Public booking flow (`BookSlotDialog`) + extended `create_public_order` RPC.
-4. Staff `CreateOrder` parity + `create_staff_order` RPC.
-5. New **Bookings** page (agenda + week calendar).
-6. Business-type-aware defaults and label tweaks.
+frontend:
+  /billing               (manager)        — current plan, upgrade, history
+  /superadmin/billing    (superadmin)     — tiers CRUD, mode toggle, subscriptions list
+  useTierFeatures()      hook             — gates UI by tier.features
+  <PaywallGate feature="reports">         — wraps locked pages with upgrade CTA
+```

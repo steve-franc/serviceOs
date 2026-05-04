@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_events: {
+        Row: {
+          amount_try: number | null
+          created_at: string
+          dodo_event_id: string | null
+          dodo_subscription_id: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          restaurant_id: string | null
+        }
+        Insert: {
+          amount_try?: number | null
+          created_at?: string
+          dodo_event_id?: string | null
+          dodo_subscription_id?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          restaurant_id?: string | null
+        }
+        Update: {
+          amount_try?: number | null
+          created_at?: string
+          dodo_event_id?: string | null
+          dodo_subscription_id?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          restaurant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcast_views: {
         Row: {
           broadcast_id: string
@@ -525,6 +566,24 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          id: boolean
+          payment_mode: string
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          payment_mode?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          payment_mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -645,27 +704,50 @@ export type Database = {
           business_type: string
           created_at: string
           created_by: string | null
+          current_period_end: string | null
+          dodo_customer_id: string | null
+          dodo_subscription_id: string | null
           id: string
           name: string
           status: string
+          subscription_status: string
+          tier_id: string | null
         }
         Insert: {
           business_type?: string
           created_at?: string
           created_by?: string | null
+          current_period_end?: string | null
+          dodo_customer_id?: string | null
+          dodo_subscription_id?: string | null
           id?: string
           name: string
           status?: string
+          subscription_status?: string
+          tier_id?: string | null
         }
         Update: {
           business_type?: string
           created_at?: string
           created_by?: string | null
+          current_period_end?: string | null
+          dodo_customer_id?: string | null
+          dodo_subscription_id?: string | null
           id?: string
           name?: string
           status?: string
+          subscription_status?: string
+          tier_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_availability: {
         Row: {
@@ -741,6 +823,51 @@ export type Database = {
           restaurant_id?: string
           start_at?: string
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_tiers: {
+        Row: {
+          created_at: string
+          display_order: number
+          dodo_price_id_live: string | null
+          dodo_price_id_test: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          is_free: boolean
+          name: string
+          price_try: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          dodo_price_id_live?: string | null
+          dodo_price_id_test?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name: string
+          price_try?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          dodo_price_id_live?: string | null
+          dodo_price_id_test?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name?: string
+          price_try?: number
+          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -941,6 +1068,20 @@ export type Database = {
         }[]
       }
       current_restaurant_id: { Args: { _user_id: string }; Returns: string }
+      dodo_handle_subscription_event: {
+        Args: {
+          _amount_try: number
+          _current_period_end: string
+          _dodo_customer_id: string
+          _dodo_event_id: string
+          _dodo_subscription_id: string
+          _event_type: string
+          _payload: Json
+          _restaurant_id: string
+          _tier_id: string
+        }
+        Returns: undefined
+      }
       get_active_broadcast_for_user: { Args: never; Returns: Json }
       get_available_slots: {
         Args: { _from: string; _menu_item_id: string; _to: string }
@@ -950,11 +1091,16 @@ export type Database = {
           start_at: string
         }[]
       }
+      get_my_subscription: { Args: { _restaurant_id: string }; Returns: Json }
       get_next_order_number: {
         Args: { _restaurant_id: string }
         Returns: string
       }
       get_public_receipt: { Args: { _order_id: string }; Returns: Json }
+      get_restaurant_features: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
       has_role:
         | {
             Args: {
@@ -990,6 +1136,7 @@ export type Database = {
         Args: { _broadcast_id: string; _dismissed?: boolean }
         Returns: undefined
       }
+      subscription_sweep_expired: { Args: never; Returns: Json }
       superadmin_change_role: {
         Args: { _restaurant_id: string; _role: string; _user_id: string }
         Returns: undefined
@@ -1018,6 +1165,7 @@ export type Database = {
         }[]
       }
       superadmin_delete_broadcast: { Args: { _id: string }; Returns: undefined }
+      superadmin_delete_tier: { Args: { _id: string }; Returns: undefined }
       superadmin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       superadmin_get_menu: { Args: { _restaurant_id: string }; Returns: Json }
       superadmin_get_restaurant: {
@@ -1077,6 +1225,22 @@ export type Database = {
           status: string
         }[]
       }
+      superadmin_list_subscriptions: {
+        Args: never
+        Returns: {
+          created_at: string
+          current_period_end: string
+          dodo_subscription_id: string
+          lifetime_paid_try: number
+          restaurant_id: string
+          restaurant_name: string
+          subscription_status: string
+          tier_id: string
+          tier_name: string
+          tier_price_try: number
+          tier_slug: string
+        }[]
+      }
       superadmin_list_users: {
         Args: never
         Returns: {
@@ -1094,6 +1258,10 @@ export type Database = {
       }
       superadmin_remove_staff: {
         Args: { _restaurant_id: string; _user_id: string }
+        Returns: undefined
+      }
+      superadmin_set_platform_mode: {
+        Args: { _mode: string }
         Returns: undefined
       }
       superadmin_set_restaurant_status: {
@@ -1115,6 +1283,21 @@ export type Database = {
           revenue: number
           total_sold: number
         }[]
+      }
+      superadmin_upsert_tier: {
+        Args: {
+          _display_order: number
+          _dodo_price_id_live: string
+          _dodo_price_id_test: string
+          _features: Json
+          _id: string
+          _is_active: boolean
+          _is_free: boolean
+          _name: string
+          _price_try: number
+          _slug: string
+        }
+        Returns: string
       }
     }
     Enums: {
