@@ -178,6 +178,32 @@ export function useExpenses() {
   });
 }
 
+// Distinct historical expense sources (last 60 days), for "source of funds" autocomplete
+export function useHistoricalExpenseSources() {
+  const { restaurantId } = useRestaurantContext();
+  return useQuery({
+    queryKey: ["expense-sources", restaurantId],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("daily_expenses")
+        .select("source, created_at")
+        .eq("restaurant_id", restaurantId!)
+        .gte("created_at", since)
+        .not("source", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      const seen = new Map<string, string>(); // source -> ISO date of most recent use
+      (data || []).forEach((row: any) => {
+        if (row.source && !seen.has(row.source)) seen.set(row.source, row.created_at);
+      });
+      return Array.from(seen.entries()).map(([source, lastUsed]) => ({ source, lastUsed }));
+    },
+    enabled: !!restaurantId,
+  });
+}
+
 export function useInvalidateExpenses() {
   const qc = useQueryClient();
   const { restaurantId } = useRestaurantContext();
