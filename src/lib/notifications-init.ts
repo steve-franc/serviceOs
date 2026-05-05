@@ -18,11 +18,12 @@ function extractTitleAndDesc(args: unknown[]): { title: string; description?: st
   return { title, description };
 }
 
-function wrap(method: NotificationType, original: (...args: any[]) => any) {
+function wrap(method: NotificationType, _original: (...args: any[]) => any) {
   return (...args: any[]) => {
     const { title, description } = extractTitleAndDesc(args);
     if (title) notificationsStore.push(method, title, description);
-    return original(...args);
+    // Toasts are silenced — everything routes to the notification center.
+    return "" as any;
   };
 }
 
