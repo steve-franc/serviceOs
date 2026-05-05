@@ -104,7 +104,7 @@ const ReportBreakdown = () => {
           .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
           .order("created_at", { ascending: false }),
         supabase.from("daily_expenses").select("*").eq("restaurant_id", report.restaurant_id)
-          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .or(`and(applies_to_report_id.is.null,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()}),applies_to_report_id.eq.${id}`)
           .order("created_at", { ascending: false }),
         supabase.from("menu_tags").select("*").eq("restaurant_id", report.restaurant_id),
         supabase.from("menu_items").select("name, category").eq("restaurant_id", report.restaurant_id),
