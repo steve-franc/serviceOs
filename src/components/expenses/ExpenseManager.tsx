@@ -111,13 +111,17 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
         amount: amount,
         category: formData.category || null,
         source: source,
+        applies_to_report_id: formData.appliesToReportId === "today" ? null : formData.appliesToReportId,
       }]);
 
       if (error) throw error;
       
-      toast.success("Expense added");
+      const targetReport = pastReports.find((r: any) => r.id === formData.appliesToReportId);
+      toast.success(targetReport
+        ? `Expense added to ${formatDateShort(targetReport.created_at)}`
+        : "Expense added");
       setDialogOpen(false);
-      setFormData({ description: "", amount: "", category: "", source: "", customSource: "" });
+      setFormData({ description: "", amount: "", category: "", source: "", customSource: "", appliesToReportId: "today" });
       invalidate();
     } catch (error: any) {
       toast.error(error.message || "Failed to add expense");
