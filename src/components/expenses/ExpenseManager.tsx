@@ -41,6 +41,7 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
   const { restaurantId } = useRestaurantContext();
   const { data: expenses = [], isLoading: loading } = useExpenses();
   const { data: menuTags = [] } = useMenuTags();
+  const { data: historicalSources = [] } = useHistoricalExpenseSources();
   const invalidate = useInvalidateExpenses();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,10 +52,13 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
     customSource: "",
   });
 
-  // Source dropdown options: tag names + sources used in past expenses
-  const tagNames = [...new Set((menuTags as any[]).map((t: any) => t.name))];
-  const historicalSources = [...new Set((expenses as Expense[]).map((e) => e.source).filter(Boolean) as string[])];
-  const sourceOptions = [...new Set([...tagNames, ...historicalSources])].sort();
+  // Source dropdown options: combine menu tags + sources used in past expenses (last 60 days)
+  const tagNames = [...new Set((menuTags as any[]).map((t: any) => t.name as string))];
+  const historicalNames = (historicalSources as { source: string; lastUsed: string }[]).map((s) => s.source);
+  const lastUsedMap = new Map(
+    (historicalSources as { source: string; lastUsed: string }[]).map((s) => [s.source, s.lastUsed])
+  );
+  const sourceOptions = [...new Set([...tagNames, ...historicalNames])].sort();
 
   // Notify parent of total
   const totalExpenses = expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
