@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useExpenses, useInvalidateExpenses, useMenuTags, useHistoricalExpenseSources } from "@/hooks/useQueries";
 import { Badge } from "@/components/ui/badge";
-import { formatDateFull } from "@/lib/date-format";
+import { formatDateFull, formatDateShort } from "@/lib/date-format";
 
 interface Expense {
   id: string;
@@ -196,9 +196,23 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tagNames.map((tag) => (
-                        <SelectItem key={tag} value={tag}>{tag} (Tag)</SelectItem>
-                      ))}
+                      {sourceOptions.map((src) => {
+                        const isTag = tagNames.includes(src);
+                        const lastUsed = lastUsedMap.get(src);
+                        const suffix = isTag
+                          ? "Tag"
+                          : lastUsed
+                            ? `Used ${formatDateShort(lastUsed)}`
+                            : "Previous";
+                        return (
+                          <SelectItem key={src} value={src}>
+                            <span className="flex items-center justify-between gap-3 w-full">
+                              <span>{src}</span>
+                              <span className="text-xs text-muted-foreground">{suffix}</span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
                       <SelectItem value="__custom__">Custom source...</SelectItem>
                     </SelectContent>
                   </Select>
