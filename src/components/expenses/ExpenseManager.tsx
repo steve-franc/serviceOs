@@ -51,8 +51,10 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
     customSource: "",
   });
 
-  // Get unique tag names for source dropdown
-  const tagNames = [...new Set((menuTags as any[]).map((t: any) => t.name))].sort();
+  // Source dropdown options: tag names + sources used in past expenses
+  const tagNames = [...new Set((menuTags as any[]).map((t: any) => t.name))];
+  const historicalSources = [...new Set((expenses as Expense[]).map((e) => e.source).filter(Boolean) as string[])];
+  const sourceOptions = [...new Set([...tagNames, ...historicalSources])].sort();
 
   // Notify parent of total
   const totalExpenses = expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
