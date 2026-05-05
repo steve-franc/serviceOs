@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+// Toast UIs removed — all notifications route to the notification center
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -130,8 +129,7 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <RestaurantRoleProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
+        {/* Toasts disabled — all notifications go to the bell/notification center */}
         <BrowserRouter>
           <ScrollToTop />
             <NotificationSound />
