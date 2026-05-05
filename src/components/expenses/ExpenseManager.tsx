@@ -10,7 +10,7 @@ import { formatPrice } from "@/lib/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
-import { useExpenses, useInvalidateExpenses, useMenuTags, useHistoricalExpenseSources } from "@/hooks/useQueries";
+import { useExpenses, useInvalidateExpenses, useMenuTags, useHistoricalExpenseSources, usePastReports } from "@/hooks/useQueries";
 import { Badge } from "@/components/ui/badge";
 import { formatDateFull, formatDateShort } from "@/lib/date-format";
 
