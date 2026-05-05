@@ -10,9 +10,9 @@ import { formatPrice } from "@/lib/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
-import { useExpenses, useInvalidateExpenses, useMenuTags } from "@/hooks/useQueries";
+import { useExpenses, useInvalidateExpenses, useMenuTags, useHistoricalExpenseSources } from "@/hooks/useQueries";
 import { Badge } from "@/components/ui/badge";
-import { formatDateFull } from "@/lib/date-format";
+import { formatDateFull, formatDateShort } from "@/lib/date-format";
 
 interface Expense {
   id: string;
@@ -41,6 +41,7 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
   const { restaurantId } = useRestaurantContext();
   const { data: expenses = [], isLoading: loading } = useExpenses();
   const { data: menuTags = [] } = useMenuTags();
+  const { data: historicalSources = [] } = useHistoricalExpenseSources();
   const invalidate = useInvalidateExpenses();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,8 +52,13 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
     customSource: "",
   });
 
-  // Get unique tag names for source dropdown
-  const tagNames = [...new Set((menuTags as any[]).map((t: any) => t.name))].sort();
+  // Source dropdown options: combine menu tags + sources used in past expenses (last 60 days)
+  const tagNames = [...new Set((menuTags as any[]).map((t: any) => t.name as string))];
+  const historicalNames = (historicalSources as { source: string; lastUsed: string }[]).map((s) => s.source);
+  const lastUsedMap = new Map(
+    (historicalSources as { source: string; lastUsed: string }[]).map((s) => [s.source, s.lastUsed])
+  );
+  const sourceOptions = [...new Set([...tagNames, ...historicalNames])].sort();
 
   // Notify parent of total
   const totalExpenses = expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
@@ -190,9 +196,23 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tagNames.map((tag) => (
-                        <SelectItem key={tag} value={tag}>{tag} (Tag)</SelectItem>
-                      ))}
+                      {sourceOptions.map((src) => {
+                        const isTag = tagNames.includes(src);
+                        const lastUsed = lastUsedMap.get(src);
+                        const suffix = isTag
+                          ? "Tag"
+                          : lastUsed
+                            ? `Used ${formatDateShort(lastUsed)}`
+                            : "Previous";
+                        return (
+                          <SelectItem key={src} value={src}>
+                            <span className="flex items-center justify-between gap-3 w-full">
+                              <span>{src}</span>
+                              <span className="text-xs text-muted-foreground">{suffix}</span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
                       <SelectItem value="__custom__">Custom source...</SelectItem>
                     </SelectContent>
                   </Select>
