@@ -247,6 +247,30 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Apply to day</Label>
+                  <Select
+                    value={formData.appliesToReportId}
+                    onValueChange={(value) => setFormData({ ...formData, appliesToReportId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Today (current day)</SelectItem>
+                      {(pastReports as any[]).map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {formatDateShort(r.created_at)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.appliesToReportId !== "today" && formData.source && formData.source !== "__custom__" && (
+                    <p className="text-xs text-muted-foreground">
+                      Will deduct from "{formData.source}" total on the selected day's report.
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" className="flex-1">Add Expense</Button>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
