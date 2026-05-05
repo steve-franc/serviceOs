@@ -144,6 +144,7 @@ export type Database = {
       daily_expenses: {
         Row: {
           amount: number
+          applies_to_report_id: string | null
           category: string | null
           created_at: string
           description: string
@@ -154,6 +155,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          applies_to_report_id?: string | null
           category?: string | null
           created_at?: string
           description: string
@@ -164,6 +166,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          applies_to_report_id?: string | null
           category?: string | null
           created_at?: string
           description?: string
@@ -173,6 +176,13 @@ export type Database = {
           staff_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "daily_expenses_applies_to_report_id_fkey"
+            columns: ["applies_to_report_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reports"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "daily_expenses_restaurant_id_fkey"
             columns: ["restaurant_id"]

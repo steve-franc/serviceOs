@@ -169,8 +169,28 @@ export function useExpenses() {
         .from("daily_expenses")
         .select("*")
         .eq("restaurant_id", restaurantId!)
+        .is("applies_to_report_id", null)
         .gte("created_at", cutoffDate.toISOString())
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!restaurantId,
+  });
+}
+
+// Past closed daily reports — for backdating expenses to a previous day
+export function usePastReports() {
+  const { restaurantId } = useRestaurantContext();
+  return useQuery({
+    queryKey: ["past-reports", restaurantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_reports")
+        .select("id, report_date, created_at, total_revenue")
+        .eq("restaurant_id", restaurantId!)
+        .order("created_at", { ascending: false })
+        .limit(30);
       if (error) throw error;
       return data || [];
     },
