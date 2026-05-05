@@ -42,6 +42,7 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
   const { data: expenses = [], isLoading: loading } = useExpenses();
   const { data: menuTags = [] } = useMenuTags();
   const { data: historicalSources = [] } = useHistoricalExpenseSources();
+  const { data: pastReports = [] } = usePastReports();
   const invalidate = useInvalidateExpenses();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -50,6 +51,7 @@ const ExpenseManager = ({ onExpensesChange }: ExpenseManagerProps) => {
     category: "",
     source: "",
     customSource: "",
+    appliesToReportId: "today",
   });
 
   // Source dropdown options: combine menu tags + sources used in past expenses (last 60 days)
