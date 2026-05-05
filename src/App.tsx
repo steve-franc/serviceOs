@@ -130,8 +130,7 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <RestaurantRoleProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
+        {/* Toasts disabled — all notifications go to the bell/notification center */}
         <BrowserRouter>
           <ScrollToTop />
             <NotificationSound />
