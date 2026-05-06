@@ -503,9 +503,19 @@ const OrderHistory = () => {
   };
   return <Layout>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold">Order History</h2>
-          <p className="text-muted-foreground">Manage and track all orders. The day closes automatically at 11:59 PM.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">Order History</h2>
+            <p className="text-muted-foreground">Manage and track all orders. The day closes automatically at 11:59 PM.</p>
+          </div>
+          <Button
+            onClick={previewEndDay}
+            disabled={loadingPreview || generatingReport}
+            className="gap-2 sm:shrink-0"
+          >
+            <Receipt className="h-4 w-4" />
+            {loadingPreview ? "Checking…" : "End Day Manually"}
+          </Button>
         </div>
 
         {/* Today's Revenue Card */}

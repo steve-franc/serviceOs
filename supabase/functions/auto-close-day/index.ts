@@ -4,7 +4,10 @@
 // the closing window (23:59 -> 00:09 local) and no report exists for the
 // local date yet, it calls the `close_day_for_restaurant` SQL function.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+type RestaurantSetting = {
+  restaurant_id: string;
+  timezone: string | null;
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,7 +38,11 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const apiHeaders = {
+    apikey: serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
+    "Content-Type": "application/json",
+  };
 
   const now = new Date();
   const results: Array<Record<string, unknown>> = [];
@@ -51,15 +58,19 @@ Deno.serve(async (req) => {
     /* ignore */
   }
 
-  const { data: settings, error } = await supabase
-    .from("restaurant_settings")
-    .select("restaurant_id, timezone");
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  const settingsResponse = await fetch(
+    `${supabaseUrl}/rest/v1/restaurant_settings?select=restaurant_id,timezone`,
+    { headers: apiHeaders },
+  );
+
+  if (!settingsResponse.ok) {
+    return new Response(JSON.stringify({ error: await settingsResponse.text() }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const settings = (await settingsResponse.json()) as RestaurantSetting[];
 
   for (const row of settings ?? []) {
     const tz = row.timezone || "Europe/Istanbul";
@@ -72,16 +83,21 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    const { data, error: rpcError } = await supabase.rpc("close_day_for_restaurant", {
-      _restaurant_id: row.restaurant_id,
+    const rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/close_day_for_restaurant`, {
+      method: "POST",
+      headers: apiHeaders,
+      body: JSON.stringify({
+        _restaurant_id: row.restaurant_id,
+      }),
     });
+    const rpcBody = await rpcResponse.json().catch(() => null);
 
     results.push({
       restaurant_id: row.restaurant_id,
       tz,
       local_time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
-      result: data ?? null,
-      error: rpcError?.message ?? null,
+      result: rpcResponse.ok ? rpcBody : null,
+      error: rpcResponse.ok ? null : rpcBody?.message ?? JSON.stringify(rpcBody),
     });
   }
 
