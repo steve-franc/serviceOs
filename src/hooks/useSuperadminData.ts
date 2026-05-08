@@ -90,3 +90,77 @@ export function useSuperUsers() {
     },
   });
 }
+
+export function useSubscriptionTiers() {
+  return useQuery({
+    queryKey: ["super", "tiers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subscription_tiers")
+        .select("*")
+        .order("display_order", { ascending: true })
+        .order("price_try", { ascending: true });
+      if (error) throw error;
+      return (data as any[]) ?? [];
+    },
+  });
+}
+
+export function useUpsertTier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string | null;
+      slug: string;
+      name: string;
+      price_try: number;
+      dodo_price_id_test?: string | null;
+      dodo_price_id_live?: string | null;
+      features: Record<string, any>;
+      display_order: number;
+      is_active: boolean;
+      is_free: boolean;
+    }) => {
+      const { data, error } = await supabase.rpc("superadmin_upsert_tier", {
+        _id: input.id,
+        _slug: input.slug,
+        _name: input.name,
+        _price_try: input.price_try,
+        _dodo_price_id_test: input.dodo_price_id_test ?? "",
+        _dodo_price_id_live: input.dodo_price_id_live ?? "",
+        _features: input.features as any,
+        _display_order: input.display_order,
+        _is_active: input.is_active,
+        _is_free: input.is_free,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["super"] }),
+  });
+}
+
+export function useDeleteTier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("superadmin_delete_tier", { _id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["super"] }),
+  });
+}
+
+export function useAssignRestaurantTier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { restaurant_id: string; tier_id: string }) => {
+      const { error } = await supabase.rpc("superadmin_assign_tier", {
+        _restaurant_id: input.restaurant_id,
+        _tier_id: input.tier_id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["super"] }),
+  });
+}
