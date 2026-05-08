@@ -861,6 +861,13 @@ const MenuManagement = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <ManageUnitsDialog
+          open={unitsDialogOpen}
+          onOpenChange={setUnitsDialogOpen}
+          restaurantId={restaurantId}
+          units={pricingUnits}
+        />
       </div>
     </Layout>;
 };
