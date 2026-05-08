@@ -14,15 +14,9 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-const PRESET_LABELS: Record<string, string> = {
-  max_menu_items: "Max menu items",
-  staff_seats: "Staff seats",
-  max_orders_per_month: "Max orders / month",
-  public_ordering: "Public ordering",
-  analytics: "Analytics",
-  investor_role: "Investor role",
-  custom_branding: "Custom branding",
-};
+import { FEATURE_LABELS } from "@/lib/feature-catalog";
+
+const PRESET_LABELS = FEATURE_LABELS;
 
 function renderFeatureValue(v: any) {
   if (v === null || v === undefined || v === "") {

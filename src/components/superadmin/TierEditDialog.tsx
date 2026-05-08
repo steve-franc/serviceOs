@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useUpsertTier } from "@/hooks/useSuperadminData";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
-
-type FeatureKind = "number-or-unlimited" | "boolean" | "text";
+import { FEATURE_CATALOG, type FeatureKind } from "@/lib/feature-catalog";
 
 interface FeatureRow {
   key: string;
@@ -20,15 +19,7 @@ interface FeatureRow {
   text: string;
 }
 
-const PRESET_KEYS: { key: string; kind: FeatureKind; label: string }[] = [
-  { key: "max_menu_items", kind: "number-or-unlimited", label: "Max menu items" },
-  { key: "staff_seats", kind: "number-or-unlimited", label: "Staff seats" },
-  { key: "max_orders_per_month", kind: "number-or-unlimited", label: "Max orders / month" },
-  { key: "public_ordering", kind: "boolean", label: "Public ordering" },
-  { key: "analytics", kind: "boolean", label: "Analytics" },
-  { key: "investor_role", kind: "boolean", label: "Investor role" },
-  { key: "custom_branding", kind: "boolean", label: "Custom branding" },
-];
+const PRESET_KEYS = FEATURE_CATALOG.map((f) => ({ key: f.key, kind: f.kind, label: f.label, group: f.group }));
 
 function inferKind(v: any): FeatureKind {
   if (typeof v === "boolean") return "boolean";
@@ -109,10 +100,33 @@ export function TierEditDialog({ open, onOpenChange, tier }: Props) {
     setRows(toRows(tier?.features ?? {}));
   }, [open, tier]);
 
-  const presetCandidates = useMemo(
-    () => PRESET_KEYS.filter((p) => !rows.some((r) => r.key === p.key)),
-    [rows]
-  );
+  const presetCandidatesByGroup = useMemo(() => {
+    const used = new Set(rows.map((r) => r.key));
+    const groups = new Map<string, typeof PRESET_KEYS>();
+    for (const p of PRESET_KEYS) {
+      if (used.has(p.key)) continue;
+      const arr = groups.get(p.group) ?? [];
+      arr.push(p);
+      groups.set(p.group, arr);
+    }
+    return Array.from(groups.entries());
+  }, [rows]);
+
+  const addAllRemaining = () => {
+    setRows((prev) => {
+      const used = new Set(prev.map((r) => r.key));
+      const additions: FeatureRow[] = PRESET_KEYS
+        .filter((p) => !used.has(p.key))
+        .map((p) => ({
+          key: p.key,
+          kind: p.kind,
+          num: p.kind === "number-or-unlimited" ? null : null,
+          bool: p.kind === "boolean" ? true : false,
+          text: "",
+        }));
+      return [...prev, ...additions];
+    });
+  };
 
   const addRow = (preset?: { key: string; kind: FeatureKind }) => {
     setRows((prev) => [
@@ -268,14 +282,37 @@ export function TierEditDialog({ open, onOpenChange, tier }: Props) {
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              {presetCandidates.map((p) => (
-                <Button key={p.key} size="sm" variant="outline" className="h-7 text-xs" onClick={() => addRow(p)}>
-                  <Plus className="h-3 w-3 mr-1" /> {p.label}
-                </Button>
-              ))}
+            {presetCandidatesByGroup.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Add features to this tier:</p>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={addAllRemaining}>
+                    Add all remaining
+                  </Button>
+                </div>
+                {presetCandidatesByGroup.map(([group, items]) => (
+                  <div key={group} className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{group}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {items.map((p) => (
+                        <Button
+                          key={p.key}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => addRow(p)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> {p.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="pt-2">
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addRow()}>
-                <Plus className="h-3 w-3 mr-1" /> Custom
+                <Plus className="h-3 w-3 mr-1" /> Custom feature key
               </Button>
             </div>
           </div>

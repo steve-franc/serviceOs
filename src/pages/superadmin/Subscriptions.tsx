@@ -10,15 +10,9 @@ import { TierEditDialog } from "@/components/superadmin/TierEditDialog";
 import { formatPrice } from "@/lib/currency";
 import { toast } from "sonner";
 
-const PRESET_LABELS: Record<string, string> = {
-  max_menu_items: "Max menu items",
-  staff_seats: "Staff seats",
-  max_orders_per_month: "Max orders / month",
-  public_ordering: "Public ordering",
-  analytics: "Analytics",
-  investor_role: "Investor role",
-  custom_branding: "Custom branding",
-};
+import { FEATURE_LABELS } from "@/lib/feature-catalog";
+
+const PRESET_LABELS = FEATURE_LABELS;
 
 function renderValue(v: any) {
   if (v === null || v === undefined || v === "") {
