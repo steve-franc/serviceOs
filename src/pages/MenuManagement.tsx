@@ -113,18 +113,25 @@ const MenuManagement = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
       
-      // Validate menu item data
-      const basePrice = parseFloat(formData.base_price);
+      // Validate menu item data — allow zero base for per-unit-only items
+      const basePriceRaw = (formData.base_price || "").trim();
+      const basePrice = basePriceRaw === "" ? 0 : parseFloat(basePriceRaw);
       const perUnitPrice = formData.per_unit_price ? parseFloat(formData.per_unit_price) : null;
-      
-      if (isNaN(basePrice) || basePrice <= 0) {
-        toast.error("Base price must be a positive number");
+
+      if (isNaN(basePrice) || basePrice < 0) {
+        toast.error("Base price must be zero or a positive number");
         setSaving(false);
         return;
       }
-      
+
       if (perUnitPrice !== null && (isNaN(perUnitPrice) || perUnitPrice <= 0)) {
         toast.error("Per unit price must be a positive number");
+        setSaving(false);
+        return;
+      }
+
+      if (basePrice === 0 && (perUnitPrice == null || perUnitPrice <= 0)) {
+        toast.error("Set either a base price or a per-unit price (or both)");
         setSaving(false);
         return;
       }
