@@ -773,11 +773,13 @@ const MenuManagement = () => {
                               <div className="flex-1">
                                 <CardTitle className="text-lg">{item.name}</CardTitle>
                                 <div className="flex flex-col gap-2 mt-1">
-                                  <Badge variant="secondary" className="font-bold w-fit">
-                                    {formatPrice(item.base_price, item.currency)}
-                                  </Badge>
-                                  {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
-                                      +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
+                                  {item.base_price > 0 && (
+                                    <Badge variant="secondary" className="font-bold w-fit">
+                                      {formatPrice(item.base_price, item.currency)}
+                                    </Badge>
+                                  )}
+                                  {item.per_unit_price && <Badge variant={item.base_price > 0 ? "outline" : "secondary"} className={item.base_price > 0 ? "text-xs w-fit" : "font-bold w-fit"}>
+                                      {item.base_price > 0 ? "+" : ""}{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                       </Badge>}
                                   {item.is_service ? (
                                     <Badge variant="outline" className="text-xs w-fit">
