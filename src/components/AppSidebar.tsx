@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone, CalendarClock } from "lucide-react";
+import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone, CalendarClock, CreditCard } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
