@@ -396,11 +396,11 @@ const MenuManagement = () => {
   }, {} as Record<string, MenuItem[]>);
 
   const toggleCategory = (cat: string) => {
-    setCollapsedCategories(prev => {
+    setCollapsedCategoriesArr(prev => {
       const next = new Set(prev);
       if (next.has(cat)) next.delete(cat);
       else next.add(cat);
-      return next;
+      return Array.from(next);
     });
   };
 
