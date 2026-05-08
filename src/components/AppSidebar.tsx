@@ -66,6 +66,7 @@ export function AppSidebar() {
     { title: "Analytics", url: "/superadmin/analytics", icon: BarChart3 },
     { title: "Products", url: "/superadmin/products", icon: ProductIcon },
     { title: "Broadcasts", url: "/superadmin/broadcasts", icon: Megaphone },
+    { title: "Subscriptions", url: "/superadmin/subscriptions", icon: CreditCard },
   ];
 
   const handleSignOut = async () => {
