@@ -72,6 +72,61 @@ function StaffRow({ staff, restaurantId, onChange }: { staff: any; restaurantId:
   );
 }
 
+function SubscriptionCard({ restaurant, onChanged }: { restaurant: any; onChanged: () => void }) {
+  const { data: tiers } = useSubscriptionTiers();
+  const assign = useAssignRestaurantTier();
+  const currentTier = (tiers ?? []).find((t: any) => t.id === restaurant.tier_id);
+  const features = (currentTier?.features ?? {}) as Record<string, any>;
+  const entries = Object.entries(features);
+
+  const onChange = async (tierId: string) => {
+    try {
+      await assign.mutateAsync({ restaurant_id: restaurant.id, tier_id: tierId });
+      toast.success("Subscription updated");
+      onChanged();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to change tier");
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Subscription</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Tier:</span>
+          <Select value={restaurant.tier_id ?? ""} onValueChange={onChange} disabled={assign.isPending}>
+            <SelectTrigger className="w-44 h-8">
+              <SelectValue placeholder="Select tier" />
+            </SelectTrigger>
+            <SelectContent>
+              {(tiers ?? []).map((t: any) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name} {t.is_free ? "· Free" : `· ${formatPrice(Number(t.price_try ?? 0))}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="px-5 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+        {entries.length === 0 && (
+          <p className="text-xs text-muted-foreground italic col-span-full">No limits — fully unlimited.</p>
+        )}
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground truncate">{PRESET_LABELS[k] ?? k}</span>
+            <span className="font-mono text-xs">{renderFeatureValue(v)}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function SuperRestaurantDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, refetch } = useSuperRestaurantDetail(id);
