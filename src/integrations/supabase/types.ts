@@ -1147,6 +1147,10 @@ export type Database = {
         Returns: undefined
       }
       subscription_sweep_expired: { Args: never; Returns: Json }
+      superadmin_assign_tier: {
+        Args: { _restaurant_id: string; _tier_id: string }
+        Returns: undefined
+      }
       superadmin_change_role: {
         Args: { _restaurant_id: string; _role: string; _user_id: string }
         Returns: undefined
