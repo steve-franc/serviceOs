@@ -64,6 +64,7 @@ const ReportBreakdown = () => {
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [menuItemCategories, setMenuItemCategories] = useState<Record<string, string>>({});
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [workdayNotes, setWorkdayNotes] = useState<Array<{ id: string; body: string; created_at: string; staff_name?: string }>>([]);
   const [fixedMonthlyExpenses, setFixedMonthlyExpenses] = useState(0);
 
   useEffect(() => {
