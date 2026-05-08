@@ -20,6 +20,17 @@ import { useMenuItems, useInvalidateMenuItems, useRestaurantSettings } from "@/h
 import { menuItemSchema, validateInput } from "@/lib/validations";
 import { ServiceFormSection, DEFAULT_SERVICE_FIELDS, AvailabilityWindow, ServiceFields } from "@/components/ServiceFormSection";
 import { isServiceBusiness } from "@/lib/business-types";
+import { usePersistentState } from "@/hooks/usePersistentState";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface MenuItem {
   id: string;
@@ -53,9 +64,13 @@ const MenuManagement = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = usePersistentState<string>("menu:search", "");
+  const [collapsedCategoriesArr, setCollapsedCategoriesArr] = usePersistentState<string[]>("menu:collapsed", []);
+  const collapsedCategories = useMemo(() => new Set(collapsedCategoriesArr), [collapsedCategoriesArr]);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
+  const [deleteRefCount, setDeleteRefCount] = useState<number>(0);
+  const [checkingRefs, setCheckingRefs] = useState(false);
   const [businessType, setBusinessType] = useState<string | null>(null);
   const [serviceFields, setServiceFields] = useState<ServiceFields>(DEFAULT_SERVICE_FIELDS);
   const [availability, setAvailability] = useState<AvailabilityWindow[]>([]);
@@ -193,17 +208,59 @@ const MenuManagement = () => {
       setSaving(false);
     }
   };
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+  const requestDelete = async (item: MenuItem) => {
+    setDeleteTarget(item);
+    setDeleteRefCount(0);
+    setCheckingRefs(true);
     try {
-      const {
-        error
-      } = await supabase.from("menu_items").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Item deleted");
+      const [orderItemsRes, tabItemsRes, bookingsRes] = await Promise.all([
+        supabase.from("order_items").select("id", { count: "exact", head: true }).eq("menu_item_id", item.id),
+        supabase.from("tab_items").select("id", { count: "exact", head: true }).eq("menu_item_id", item.id),
+        supabase.from("service_bookings").select("id", { count: "exact", head: true }).eq("menu_item_id", item.id),
+      ]);
+      const total = (orderItemsRes.count ?? 0) + (tabItemsRes.count ?? 0) + (bookingsRes.count ?? 0);
+      setDeleteRefCount(total);
+    } catch {
+      setDeleteRefCount(0);
+    } finally {
+      setCheckingRefs(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const item = deleteTarget;
+    try {
+      if (deleteRefCount > 0) {
+        // Archive to preserve historical references
+        const { error, data } = await supabase
+          .from("menu_items")
+          .update({ is_available: false, is_public: false })
+          .eq("id", item.id)
+          .select("id");
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error("You don't have permission to modify this item");
+        }
+        toast.success(`${item.name} archived (used in ${deleteRefCount} historical record${deleteRefCount === 1 ? "" : "s"})`);
+      } else {
+        const { error, data } = await supabase
+          .from("menu_items")
+          .delete()
+          .eq("id", item.id)
+          .select("id");
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error("You don't have permission to delete this item");
+        }
+        toast.success("Item deleted");
+      }
       invalidateMenu();
     } catch (error: any) {
-      toast.error("Failed to delete item");
+      console.error("Delete menu item failed", error);
+      toast.error(error?.message || "Failed to delete item");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -339,11 +396,11 @@ const MenuManagement = () => {
   }, {} as Record<string, MenuItem[]>);
 
   const toggleCategory = (cat: string) => {
-    setCollapsedCategories(prev => {
+    setCollapsedCategoriesArr(prev => {
       const next = new Set(prev);
       if (next.has(cat)) next.delete(cat);
       else next.add(cat);
-      return next;
+      return Array.from(next);
     });
   };
 
@@ -743,7 +800,7 @@ const MenuManagement = () => {
                                 <Pencil className="h-3 w-3 mr-1" />
                                 Edit
                               </Button>
-                              <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
+                              <Button variant="outline" size="sm" onClick={() => requestDelete(item)} className="text-destructive hover:text-destructive">
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
@@ -759,6 +816,29 @@ const MenuManagement = () => {
         {!loading && filteredItems.length === 0 && menuItems.length > 0 && (
           <p className="text-center text-muted-foreground py-8">No items match your search</p>
         )}
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {deleteRefCount > 0 ? `Archive "${deleteTarget?.name}"?` : `Delete "${deleteTarget?.name}"?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {checkingRefs
+                  ? "Checking for related records..."
+                  : deleteRefCount > 0
+                  ? `This item appears in ${deleteRefCount} historical order/tab/booking record${deleteRefCount === 1 ? "" : "s"}. To preserve those records, the item will be archived (hidden from menus) instead of deleted.`
+                  : "This will permanently delete the item. This cannot be undone."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} disabled={checkingRefs}>
+                {deleteRefCount > 0 ? "Archive" : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>;
 };
