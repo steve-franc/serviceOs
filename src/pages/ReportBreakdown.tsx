@@ -421,7 +421,29 @@ const ReportBreakdown = () => {
           </CardContent>
         </Card>
 
-        {/* Tag Revenue with Deductions */}
+        {/* Workday Notes timeline */}
+        {workdayNotes.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Workday Notes</CardTitle>
+              <CardDescription>Events recorded by staff during this workday.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {workdayNotes.map((n) => (
+                  <div key={n.id} className="rounded-md border bg-muted/20 p-3">
+                    <p className="whitespace-pre-wrap text-sm">{n.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {format(new Date(n.created_at), "h:mm a")}
+                      {n.staff_name ? ` · ${n.staff_name}` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {Object.keys(tagDeductions).length > 0 && (
           <>
             <Separator />
