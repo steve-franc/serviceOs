@@ -100,10 +100,33 @@ export function TierEditDialog({ open, onOpenChange, tier }: Props) {
     setRows(toRows(tier?.features ?? {}));
   }, [open, tier]);
 
-  const presetCandidates = useMemo(
-    () => PRESET_KEYS.filter((p) => !rows.some((r) => r.key === p.key)),
-    [rows]
-  );
+  const presetCandidatesByGroup = useMemo(() => {
+    const used = new Set(rows.map((r) => r.key));
+    const groups = new Map<string, typeof PRESET_KEYS>();
+    for (const p of PRESET_KEYS) {
+      if (used.has(p.key)) continue;
+      const arr = groups.get(p.group) ?? [];
+      arr.push(p);
+      groups.set(p.group, arr);
+    }
+    return Array.from(groups.entries());
+  }, [rows]);
+
+  const addAllRemaining = () => {
+    setRows((prev) => {
+      const used = new Set(prev.map((r) => r.key));
+      const additions: FeatureRow[] = PRESET_KEYS
+        .filter((p) => !used.has(p.key))
+        .map((p) => ({
+          key: p.key,
+          kind: p.kind,
+          num: p.kind === "number-or-unlimited" ? null : null,
+          bool: p.kind === "boolean" ? true : false,
+          text: "",
+        }));
+      return [...prev, ...additions];
+    });
+  };
 
   const addRow = (preset?: { key: string; kind: FeatureKind }) => {
     setRows((prev) => [
