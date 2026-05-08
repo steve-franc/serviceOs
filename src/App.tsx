@@ -35,6 +35,7 @@ const SuperAnalytics = lazy(() => import("./pages/superadmin/Analytics"));
 const SuperProducts = lazy(() => import("./pages/superadmin/Products"));
 const SuperUsers = lazy(() => import("./pages/superadmin/Users"));
 const SuperBroadcasts = lazy(() => import("./pages/superadmin/Broadcasts"));
+const SuperSubscriptions = lazy(() => import("./pages/superadmin/Subscriptions"));
 import { BroadcastPopup } from "./components/BroadcastPopup";
 
 const queryClient = new QueryClient({
