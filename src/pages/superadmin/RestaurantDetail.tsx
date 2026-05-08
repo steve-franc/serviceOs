@@ -2,8 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { StatCard } from "@/components/superadmin/StatCard";
 import { StatusBadge } from "@/components/superadmin/StatusBadge";
-import { useSuperRestaurantDetail } from "@/hooks/useSuperadminData";
-import { ArrowLeft, ShoppingCart, DollarSign, Users, Package, Trash2, Menu as MenuIcon, ExternalLink } from "lucide-react";
+import { useSuperRestaurantDetail, useSubscriptionTiers, useAssignRestaurantTier } from "@/hooks/useSuperadminData";
+import { ArrowLeft, ShoppingCart, DollarSign, Users, Package, Trash2, Menu as MenuIcon, ExternalLink, CreditCard, Infinity as InfinityIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/currency";
@@ -13,6 +13,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+const PRESET_LABELS: Record<string, string> = {
+  max_menu_items: "Max menu items",
+  staff_seats: "Staff seats",
+  max_orders_per_month: "Max orders / month",
+  public_ordering: "Public ordering",
+  analytics: "Analytics",
+  investor_role: "Investor role",
+  custom_branding: "Custom branding",
+};
+
+function renderFeatureValue(v: any) {
+  if (v === null || v === undefined || v === "") {
+    return (
+      <span className="inline-flex items-center gap-1 text-primary font-medium">
+        <InfinityIcon className="h-3.5 w-3.5" /> Unlimited
+      </span>
+    );
+  }
+  if (typeof v === "boolean") return v ? "On" : "Off";
+  return String(v);
+}
 
 const ROLES = ["manager", "ops", "counter", "server", "investor"] as const;
 
@@ -47,6 +69,61 @@ function StaffRow({ staff, restaurantId, onChange }: { staff: any; restaurantId:
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+function SubscriptionCard({ restaurant, onChanged }: { restaurant: any; onChanged: () => void }) {
+  const { data: tiers } = useSubscriptionTiers();
+  const assign = useAssignRestaurantTier();
+  const currentTier = (tiers ?? []).find((t: any) => t.id === restaurant.tier_id);
+  const features = (currentTier?.features ?? {}) as Record<string, any>;
+  const entries = Object.entries(features);
+
+  const onChange = async (tierId: string) => {
+    try {
+      await assign.mutateAsync({ restaurant_id: restaurant.id, tier_id: tierId });
+      toast.success("Subscription updated");
+      onChanged();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to change tier");
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Subscription</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Tier:</span>
+          <Select value={restaurant.tier_id ?? ""} onValueChange={onChange} disabled={assign.isPending}>
+            <SelectTrigger className="w-44 h-8">
+              <SelectValue placeholder="Select tier" />
+            </SelectTrigger>
+            <SelectContent>
+              {(tiers ?? []).map((t: any) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name} {t.is_free ? "· Free" : `· ${formatPrice(Number(t.price_try ?? 0))}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="px-5 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+        {entries.length === 0 && (
+          <p className="text-xs text-muted-foreground italic col-span-full">No limits — fully unlimited.</p>
+        )}
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground truncate">{PRESET_LABELS[k] ?? k}</span>
+            <span className="font-mono text-xs">{renderFeatureValue(v)}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 
@@ -98,6 +175,8 @@ export default function SuperRestaurantDetail() {
           <StatCard label="Unresolved Debt" value={formatPrice(Number(t.unresolved_debt ?? 0))} />
           <StatCard label="Staff Count" value={String(data.staff?.length ?? 0)} />
         </div>
+
+        <SubscriptionCard restaurant={r} onChanged={() => { refetch(); qc.invalidateQueries({ queryKey: ["super"] }); }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
