@@ -44,11 +44,14 @@ export const menuItemSchema = z.object({
   name: z.string().trim().min(1, "Item name is required").max(200, "Item name must be less than 200 characters"),
   category: z.string().max(100, "Category must be less than 100 characters").optional().nullable(),
   description: z.string().max(1000, "Description must be less than 1000 characters").optional().nullable(),
-  base_price: z.number().positive("Base price must be positive").max(999999.99, "Price too high"),
+  base_price: z.number().min(0, "Base price cannot be negative").max(999999.99, "Price too high"),
   per_unit_price: z.number().positive("Per unit price must be positive").max(999999.99, "Price too high").optional().nullable(),
   pricing_unit: z.string().min(1).max(50, "Pricing unit must be less than 50 characters"),
   currency: z.literal("TRY"),
-});
+}).refine(
+  (d) => d.base_price > 0 || (d.per_unit_price != null && d.per_unit_price > 0),
+  { message: "Set either a base price or a per-unit price (or both)", path: ["base_price"] }
+);
 
 // Default payment methods (used as fallback)
 export const DEFAULT_PAYMENT_METHODS = ["Cash", "Card"] as const;
