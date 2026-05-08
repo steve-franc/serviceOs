@@ -20,6 +20,7 @@ import { publicOrderSchema, validateInput } from "@/lib/validations";
 import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
 import { BookSlotDialog } from "@/components/BookSlotDialog";
 import { format } from "date-fns";
+import { usePersistentState } from "@/hooks/usePersistentState";
 interface MenuItem {
   id: string;
   name: string;
@@ -64,16 +65,23 @@ const PublicOrder = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethodConfig[]>([]);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
+  const [collapsedCategoriesArr, setCollapsedCategoriesArr] = usePersistentState<string[]>(
+    `public-order:collapsed:${urlRestaurantId ?? ""}`,
+    []
+  );
+  const collapsedCategories = new Set(collapsedCategoriesArr);
+  const [searchQuery, setSearchQuery] = usePersistentState<string>(
+    `public-order:search:${urlRestaurantId ?? ""}`,
+    ""
+  );
   const [bookingItem, setBookingItem] = useState<MenuItem | null>(null);
 
   const toggleCategory = (category: string) => {
-    setCollapsedCategories((prev) => {
+    setCollapsedCategoriesArr((prev) => {
       const next = new Set(prev);
       if (next.has(category)) next.delete(category);
       else next.add(category);
-      return next;
+      return Array.from(next);
     });
   };
 
