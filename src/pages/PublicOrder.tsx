@@ -303,7 +303,7 @@ const PublicOrder = () => {
       }
 
       const payloadItems = orderItems.map((item) => {
-        const base: Record<string, unknown> = {
+        const base: any = {
           menu_item_id: item.menuItem.id,
           quantity: item.quantity,
           extra_units: item.extraUnits,
