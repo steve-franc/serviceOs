@@ -121,6 +121,8 @@ export default function SuperRestaurantDetail() {
           <StatCard label="Staff Count" value={String(data.staff?.length ?? 0)} />
         </div>
 
+        <SubscriptionCard restaurant={r} onChanged={() => { refetch(); qc.invalidateQueries({ queryKey: ["super"] }); }} />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
