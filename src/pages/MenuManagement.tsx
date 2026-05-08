@@ -504,7 +504,7 @@ const MenuManagement = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="base_price">Base Price *</Label>
+                    <Label htmlFor="base_price">Base Price</Label>
                     <Input 
                       id="base_price" 
                       type="number" 
@@ -516,7 +516,7 @@ const MenuManagement = () => {
                         ...formData,
                         base_price: e.target.value
                       })} 
-                      required 
+                      placeholder="0 = per-unit only"
                     />
                   </div>
                   <div className="space-y-2">
@@ -536,9 +536,17 @@ const MenuManagement = () => {
                     />
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Leave Base Price as 0 to charge by units only (e.g. per kg, per hour).
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pricing_unit">Pricing Unit *</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pricing_unit">Pricing Unit *</Label>
+                      <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setUnitsDialogOpen(true)}>
+                        Manage
+                      </Button>
+                    </div>
                     <Select value={formData.pricing_unit} onValueChange={value => setFormData({
                     ...formData,
                     pricing_unit: value
@@ -547,10 +555,9 @@ const MenuManagement = () => {
                         <SelectValue placeholder="Select unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="per piece">Per Piece</SelectItem>
-                        <SelectItem value="per scoop">Per Scoop</SelectItem>
-                        <SelectItem value="per serving">Per Serving</SelectItem>
-                        <SelectItem value="per bowl">Per Bowl</SelectItem>
+                        {pricingUnits.map((u) => (
+                          <SelectItem key={u} value={u}>{u}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
