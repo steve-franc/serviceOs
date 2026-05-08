@@ -58,6 +58,11 @@ const MenuManagement = () => {
   const menuItems = menuItemsData as MenuItem[];
   const invalidateMenu = useInvalidateMenuItems();
   const { data: settings } = useRestaurantSettings();
+  const pricingUnits = useMemo<string[]>(() => {
+    const raw = (settings as any)?.pricing_units;
+    if (Array.isArray(raw) && raw.length) return raw.map((u: any) => String(u)).filter(Boolean);
+    return ["per piece", "per scoop", "per serving", "per bowl"];
+  }, [settings]);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
