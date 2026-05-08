@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ManageUnitsDialog } from "@/components/ManageUnitsDialog";
 
 interface MenuItem {
   id: string;
