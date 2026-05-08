@@ -243,8 +243,24 @@ const PublicOrder = () => {
   };
 
   const handleSubmitOrder = async () => {
+    if (!restaurantId) {
+      toast.error("Restaurant is still loading. Please try again in a moment.");
+      return;
+    }
     if (orderItems.length === 0) {
       toast.error("Please add items to the order");
+      return;
+    }
+
+    // Pre-flight: every item must have a positive contribution
+    const emptyItem = orderItems.find((it) => {
+      if (it.slotAt) return false; // booking is valid by itself
+      const baseQty = it.quantity > 0;
+      const extras = it.extraUnits > 0 && (it.menuItem.per_unit_price ?? 0) > 0;
+      return !baseQty && !extras;
+    });
+    if (emptyItem) {
+      toast.error(`"${emptyItem.menuItem.name}" needs a quantity before checkout.`);
       return;
     }
 
@@ -267,14 +283,34 @@ const PublicOrder = () => {
 
     setLoading(true);
     try {
-      if (!restaurantId) throw new Error("Restaurant not configured");
+      // Re-fetch latest menu state to catch items deleted/disabled mid-session
+      const ids = Array.from(new Set(orderItems.map((i) => i.menuItem.id)));
+      const { data: latestItems, error: latestErr } = await supabase
+        .from("menu_items")
+        .select("id, name, is_available, is_public")
+        .in("id", ids)
+        .eq("restaurant_id", restaurantId);
+      if (latestErr) throw latestErr;
+      const lookup = new Map((latestItems ?? []).map((m: any) => [m.id, m]));
+      const stale = orderItems.find((it) => {
+        const m = lookup.get(it.menuItem.id);
+        return !m || !m.is_available || !m.is_public;
+      });
+      if (stale) {
+        toast.error(`"${stale.menuItem.name}" is no longer available. Please remove it and try again.`);
+        setLoading(false);
+        return;
+      }
 
-      const payloadItems = orderItems.map((item) => ({
-        menu_item_id: item.menuItem.id,
-        quantity: item.quantity,
-        extra_units: item.extraUnits,
-        slot_at: item.slotAt ?? null,
-      }));
+      const payloadItems = orderItems.map((item) => {
+        const base: Record<string, unknown> = {
+          menu_item_id: item.menuItem.id,
+          quantity: item.quantity,
+          extra_units: item.extraUnits,
+        };
+        if (item.slotAt) base.slot_at = item.slotAt;
+        return base;
+      });
 
       const customerInfoLines = [
         `name: ${validatedData.customerName}`,
@@ -288,7 +324,7 @@ const PublicOrder = () => {
         ...(validatedData.notes ? ["", validatedData.notes] : []),
       ].join("\n");
 
-      const { data: order, error: orderError } = await supabase.rpc("create_public_order", {
+      const rpcArgs = {
         _restaurant_id: restaurantId,
         _customer_name: validatedData.customerName,
         _customer_email: validatedData.customerEmail || null,
@@ -297,18 +333,38 @@ const PublicOrder = () => {
         _payment_method: validatedData.paymentMethod,
         _notes: composedNotes,
         _items: payloadItems,
-      });
+      };
 
-      if (orderError) throw orderError;
+      // Try once, retry once on transient network failure.
+      let attempt = 0;
+      let lastErr: any = null;
+      let order: any = null;
+      while (attempt < 2) {
+        const result = await supabase.rpc("create_public_order", rpcArgs);
+        if (!result.error) {
+          order = result.data;
+          lastErr = null;
+          break;
+        }
+        lastErr = result.error;
+        // Retry only on network-ish errors, not validation errors
+        const msg = (lastErr?.message || "").toLowerCase();
+        const transient = msg.includes("network") || msg.includes("fetch") || msg.includes("timeout");
+        if (!transient) break;
+        attempt += 1;
+        await new Promise((r) => setTimeout(r, 600));
+      }
+      if (lastErr) throw lastErr;
 
       const createdOrder = Array.isArray(order) ? order[0] : order;
-      if (!createdOrder?.id) throw new Error("Failed to create order");
+      if (!createdOrder?.id) throw new Error("Order could not be created. Please try again.");
 
       toast.success(`Order #${createdOrder.order_number} placed successfully!`);
       resetOrderState();
       navigate(`/receipt/${createdOrder.id}?pending=true`);
     } catch (error: any) {
-      toast.error(error.message || "Failed to place order");
+      console.error("create_public_order failed", error);
+      toast.error(error?.message || "Failed to place order. Your cart was kept — please try again.");
     } finally {
       setLoading(false);
     }
