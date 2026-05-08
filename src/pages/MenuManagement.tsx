@@ -800,7 +800,7 @@ const MenuManagement = () => {
                                 <Pencil className="h-3 w-3 mr-1" />
                                 Edit
                               </Button>
-                              <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
+                              <Button variant="outline" size="sm" onClick={() => requestDelete(item)} className="text-destructive hover:text-destructive">
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
@@ -816,6 +816,29 @@ const MenuManagement = () => {
         {!loading && filteredItems.length === 0 && menuItems.length > 0 && (
           <p className="text-center text-muted-foreground py-8">No items match your search</p>
         )}
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {deleteRefCount > 0 ? `Archive "${deleteTarget?.name}"?` : `Delete "${deleteTarget?.name}"?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {checkingRefs
+                  ? "Checking for related records..."
+                  : deleteRefCount > 0
+                  ? `This item appears in ${deleteRefCount} historical order/tab/booking record${deleteRefCount === 1 ? "" : "s"}. To preserve those records, the item will be archived (hidden from menus) instead of deleted.`
+                  : "This will permanently delete the item. This cannot be undone."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} disabled={checkingRefs}>
+                {deleteRefCount > 0 ? "Archive" : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>;
 };
