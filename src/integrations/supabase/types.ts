@@ -652,6 +652,7 @@ export type Database = {
           notify_low_stock: boolean
           notify_new_order: boolean
           payment_methods: Json
+          pricing_units: Json
           profit_margin_threshold: number
           restaurant_id: string | null
           restaurant_name: string
@@ -672,6 +673,7 @@ export type Database = {
           notify_low_stock?: boolean
           notify_new_order?: boolean
           payment_methods?: Json
+          pricing_units?: Json
           profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
@@ -692,6 +694,7 @@ export type Database = {
           notify_low_stock?: boolean
           notify_new_order?: boolean
           payment_methods?: Json
+          pricing_units?: Json
           profit_margin_threshold?: number
           restaurant_id?: string | null
           restaurant_name?: string
@@ -1017,6 +1020,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workday_notes: {
+        Row: {
+          applies_to_report_id: string | null
+          body: string
+          created_at: string
+          id: string
+          restaurant_id: string
+          staff_id: string
+        }
+        Insert: {
+          applies_to_report_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          restaurant_id: string
+          staff_id: string
+        }
+        Update: {
+          applies_to_report_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          restaurant_id?: string
+          staff_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
