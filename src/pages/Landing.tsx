@@ -126,14 +126,6 @@ const Landing = () => {
                   Start Free <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="px-8 text-base"
-                asChild
-              >
-                <Link to="/order">Place a Public Order</Link>
-              </Button>
             </div>
           </div>
         </div>
