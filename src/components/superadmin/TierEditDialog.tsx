@@ -282,14 +282,37 @@ export function TierEditDialog({ open, onOpenChange, tier }: Props) {
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              {presetCandidates.map((p) => (
-                <Button key={p.key} size="sm" variant="outline" className="h-7 text-xs" onClick={() => addRow(p)}>
-                  <Plus className="h-3 w-3 mr-1" /> {p.label}
-                </Button>
-              ))}
+            {presetCandidatesByGroup.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Add features to this tier:</p>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={addAllRemaining}>
+                    Add all remaining
+                  </Button>
+                </div>
+                {presetCandidatesByGroup.map(([group, items]) => (
+                  <div key={group} className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{group}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {items.map((p) => (
+                        <Button
+                          key={p.key}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => addRow(p)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> {p.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="pt-2">
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addRow()}>
-                <Plus className="h-3 w-3 mr-1" /> Custom
+                <Plus className="h-3 w-3 mr-1" /> Custom feature key
               </Button>
             </div>
           </div>
