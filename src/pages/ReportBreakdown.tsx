@@ -64,6 +64,7 @@ const ReportBreakdown = () => {
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [menuItemCategories, setMenuItemCategories] = useState<Record<string, string>>({});
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [workdayNotes, setWorkdayNotes] = useState<Array<{ id: string; body: string; created_at: string; staff_name?: string }>>([]);
   const [fixedMonthlyExpenses, setFixedMonthlyExpenses] = useState(0);
 
   useEffect(() => {
@@ -98,8 +99,8 @@ const ReportBreakdown = () => {
       const prevCutoff = prevReport ? new Date(prevReport.created_at) : new Date(0);
       const reportTimestamp = new Date(report.created_at);
 
-      // Fetch orders, expenses, tags, menu items, settings in parallel
-      const [ordersResult, expensesResult, tagsResult, menuResult, settingsResult] = await Promise.all([
+      // Fetch orders, expenses, tags, menu items, settings, workday notes in parallel
+      const [ordersResult, expensesResult, tagsResult, menuResult, settingsResult, notesResult] = await Promise.all([
         supabase.from("orders").select("*").eq("restaurant_id", report.restaurant_id)
           .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
           .order("created_at", { ascending: false }),
@@ -109,6 +110,9 @@ const ReportBreakdown = () => {
         supabase.from("menu_tags").select("*").eq("restaurant_id", report.restaurant_id),
         supabase.from("menu_items").select("name, category").eq("restaurant_id", report.restaurant_id),
         supabase.from("restaurant_settings").select("fixed_monthly_expenses").eq("restaurant_id", report.restaurant_id).maybeSingle(),
+        supabase.from("workday_notes").select("id, body, staff_id, created_at").eq("restaurant_id", report.restaurant_id)
+          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .order("created_at", { ascending: true }),
       ]);
 
       if (expensesResult.data) setExpenses(expensesResult.data as Expense[]);
@@ -120,6 +124,22 @@ const ReportBreakdown = () => {
           if (item.category) catMap[item.name] = item.category;
         });
         setMenuItemCategories(catMap);
+      }
+
+      if (notesResult.data && notesResult.data.length > 0) {
+        const ids = [...new Set(notesResult.data.map((n: any) => n.staff_id))];
+        const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+        const map = new Map(profs?.map((p: any) => [p.id, p.full_name]) || []);
+        setWorkdayNotes(
+          notesResult.data.map((n: any) => ({
+            id: n.id,
+            body: n.body,
+            created_at: n.created_at,
+            staff_name: map.get(n.staff_id) || "",
+          }))
+        );
+      } else {
+        setWorkdayNotes([]);
       }
 
       if (ordersResult.data && ordersResult.data.length > 0) {
@@ -401,7 +421,29 @@ const ReportBreakdown = () => {
           </CardContent>
         </Card>
 
-        {/* Tag Revenue with Deductions */}
+        {/* Workday Notes timeline */}
+        {workdayNotes.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Workday Notes</CardTitle>
+              <CardDescription>Events recorded by staff during this workday.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {workdayNotes.map((n) => (
+                  <div key={n.id} className="rounded-md border bg-muted/20 p-3">
+                    <p className="whitespace-pre-wrap text-sm">{n.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {format(new Date(n.created_at), "h:mm a")}
+                      {n.staff_name ? ` · ${n.staff_name}` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {Object.keys(tagDeductions).length > 0 && (
           <>
             <Separator />

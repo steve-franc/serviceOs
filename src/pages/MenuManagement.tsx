@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ManageUnitsDialog } from "@/components/ManageUnitsDialog";
 
 interface MenuItem {
   id: string;
@@ -58,11 +59,17 @@ const MenuManagement = () => {
   const menuItems = menuItemsData as MenuItem[];
   const invalidateMenu = useInvalidateMenuItems();
   const { data: settings } = useRestaurantSettings();
+  const pricingUnits = useMemo<string[]>(() => {
+    const raw = (settings as any)?.pricing_units;
+    if (Array.isArray(raw) && raw.length) return raw.map((u: any) => String(u)).filter(Boolean);
+    return ["per piece", "per scoop", "per serving", "per bowl"];
+  }, [settings]);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [unitsDialogOpen, setUnitsDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = usePersistentState<string>("menu:search", "");
   const [collapsedCategoriesArr, setCollapsedCategoriesArr] = usePersistentState<string[]>("menu:collapsed", []);
@@ -113,18 +120,25 @@ const MenuManagement = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
       
-      // Validate menu item data
-      const basePrice = parseFloat(formData.base_price);
+      // Validate menu item data — allow zero base for per-unit-only items
+      const basePriceRaw = (formData.base_price || "").trim();
+      const basePrice = basePriceRaw === "" ? 0 : parseFloat(basePriceRaw);
       const perUnitPrice = formData.per_unit_price ? parseFloat(formData.per_unit_price) : null;
-      
-      if (isNaN(basePrice) || basePrice <= 0) {
-        toast.error("Base price must be a positive number");
+
+      if (isNaN(basePrice) || basePrice < 0) {
+        toast.error("Base price must be zero or a positive number");
         setSaving(false);
         return;
       }
-      
+
       if (perUnitPrice !== null && (isNaN(perUnitPrice) || perUnitPrice <= 0)) {
         toast.error("Per unit price must be a positive number");
+        setSaving(false);
+        return;
+      }
+
+      if (basePrice === 0 && (perUnitPrice == null || perUnitPrice <= 0)) {
+        toast.error("Set either a base price or a per-unit price (or both)");
         setSaving(false);
         return;
       }
@@ -497,7 +511,7 @@ const MenuManagement = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="base_price">Base Price *</Label>
+                    <Label htmlFor="base_price">Base Price</Label>
                     <Input 
                       id="base_price" 
                       type="number" 
@@ -509,7 +523,7 @@ const MenuManagement = () => {
                         ...formData,
                         base_price: e.target.value
                       })} 
-                      required 
+                      placeholder="0 = per-unit only"
                     />
                   </div>
                   <div className="space-y-2">
@@ -529,9 +543,17 @@ const MenuManagement = () => {
                     />
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Leave Base Price as 0 to charge by units only (e.g. per kg, per hour).
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pricing_unit">Pricing Unit *</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pricing_unit">Pricing Unit *</Label>
+                      <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setUnitsDialogOpen(true)}>
+                        Manage
+                      </Button>
+                    </div>
                     <Select value={formData.pricing_unit} onValueChange={value => setFormData({
                     ...formData,
                     pricing_unit: value
@@ -540,10 +562,9 @@ const MenuManagement = () => {
                         <SelectValue placeholder="Select unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="per piece">Per Piece</SelectItem>
-                        <SelectItem value="per scoop">Per Scoop</SelectItem>
-                        <SelectItem value="per serving">Per Serving</SelectItem>
-                        <SelectItem value="per bowl">Per Bowl</SelectItem>
+                        {pricingUnits.map((u) => (
+                          <SelectItem key={u} value={u}>{u}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -753,11 +774,13 @@ const MenuManagement = () => {
                               <div className="flex-1">
                                 <CardTitle className="text-lg">{item.name}</CardTitle>
                                 <div className="flex flex-col gap-2 mt-1">
-                                  <Badge variant="secondary" className="font-bold w-fit">
-                                    {formatPrice(item.base_price, item.currency)}
-                                  </Badge>
-                                  {item.per_unit_price && <Badge variant="outline" className="text-xs w-fit">
-                                      +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
+                                  {item.base_price > 0 && (
+                                    <Badge variant="secondary" className="font-bold w-fit">
+                                      {formatPrice(item.base_price, item.currency)}
+                                    </Badge>
+                                  )}
+                                  {item.per_unit_price && <Badge variant={item.base_price > 0 ? "outline" : "secondary"} className={item.base_price > 0 ? "text-xs w-fit" : "font-bold w-fit"}>
+                                      {item.base_price > 0 ? "+" : ""}{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
                                       </Badge>}
                                   {item.is_service ? (
                                     <Badge variant="outline" className="text-xs w-fit">
@@ -839,6 +862,13 @@ const MenuManagement = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <ManageUnitsDialog
+          open={unitsDialogOpen}
+          onOpenChange={setUnitsDialogOpen}
+          restaurantId={restaurantId}
+          units={pricingUnits}
+        />
       </div>
     </Layout>;
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
+import { WorkdayNotes } from "@/components/WorkdayNotes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -734,7 +735,10 @@ const Admin = () => {
           })()}
         </Card>
 
-        {/* Fixed Monthly Expenses */}
+        {/* Workday Notes — appears in tonight's report */}
+        <WorkdayNotes restaurantId={restaurantId} />
+
+
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
