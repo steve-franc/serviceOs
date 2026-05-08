@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useUpsertTier } from "@/hooks/useSuperadminData";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
-
-type FeatureKind = "number-or-unlimited" | "boolean" | "text";
+import { FEATURE_CATALOG, type FeatureKind } from "@/lib/feature-catalog";
 
 interface FeatureRow {
   key: string;
@@ -20,15 +19,7 @@ interface FeatureRow {
   text: string;
 }
 
-const PRESET_KEYS: { key: string; kind: FeatureKind; label: string }[] = [
-  { key: "max_menu_items", kind: "number-or-unlimited", label: "Max menu items" },
-  { key: "staff_seats", kind: "number-or-unlimited", label: "Staff seats" },
-  { key: "max_orders_per_month", kind: "number-or-unlimited", label: "Max orders / month" },
-  { key: "public_ordering", kind: "boolean", label: "Public ordering" },
-  { key: "analytics", kind: "boolean", label: "Analytics" },
-  { key: "investor_role", kind: "boolean", label: "Investor role" },
-  { key: "custom_branding", kind: "boolean", label: "Custom branding" },
-];
+const PRESET_KEYS = FEATURE_CATALOG.map((f) => ({ key: f.key, kind: f.kind, label: f.label, group: f.group }));
 
 function inferKind(v: any): FeatureKind {
   if (typeof v === "boolean") return "boolean";
