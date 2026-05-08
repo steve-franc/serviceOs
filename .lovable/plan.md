@@ -1,116 +1,53 @@
-Below is a complete inventory of every feature currently shipping in the app, grouped by area. Mark each one as **Free**, **Paid**, or **Limit** (capped on Free, unlimited on Paid). I'll then turn your choices into the actual tier `features` JSON and add the necessary enforcement triggers in the database.
+## 1. Persist filters + scroll position across in-app navigation
 
-For each feature I note how it would be enforced — most are toggles or numeric caps, identical in shape to the existing `max_menu_items` / `staff_seats` keys.
+Today the back button works, but every page remounts fresh — search queries, collapsed categories, tab filters, and scroll positions are lost.
 
-## Core ordering
+**Add a small route-keyed state cache** (`src/lib/nav-cache.ts`) backed by `sessionStorage`:
+- `saveState(routeKey, payload)` / `loadState(routeKey)`
+- One `useScrollRestoration(key)` hook that captures `window.scrollY` (and the main scroll container) on unmount and restores on mount.
+- One `usePersistentState(key, initial)` hook (drop-in `useState` replacement that round-trips through sessionStorage).
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 1 | Take staff orders (Create Order page) | `staff_orders` | Toggle |
-| 2 | Public/QR ordering page (`/order/...`) | `public_ordering` | Toggle |
-| 3 | Running tabs with partial payment | `tabs` | Toggle |
-| 4 | Service bookings (calendar slots) | `service_bookings` | Toggle |
-| 5 | Custom payment methods (beyond Cash/Card) | `custom_payment_methods` | Toggle |
-| 6 | Multiple currencies / conversion rates | `multi_currency` | Toggle |
-| 7 | Discounts on orders | `order_discounts` | Toggle |
-| 8 | Edit orders after creation | `edit_orders` | Toggle |
+**Wire it into the dashboard pages** that have meaningful filter/scroll state:
+- `OrderHistory`, `MenuManagement`, `Inventory`, `Tabs`, `Debtors`, `Bookings`, `Reports`, `CreateOrder`
+- Persist: `searchQuery`, `collapsedCategories`, active tab, date range, status filter, and scroll position.
+- Cache is keyed on the route path, so navigating away and coming back via the existing `SmartBackButton` restores everything. Cleared on full sign-out.
 
-## Menu & inventory
+`ScrollToTop.tsx` is updated so it does **not** clobber restoration when navigating "back" (only scrolls to top on forward navigation — detected via `useNavigationType() === 'POP'`).
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 9 | Menu items count | `max_menu_items` | Limit (already exists) |
-| 10 | Inventory items count | `max_inventory_items` | Limit |
-| 11 | Inventory module at all | `inventory_module` | Toggle |
-| 12 | Menu item images | `menu_images` | Toggle |
-| 13 | Menu categories / tags | `menu_tags` | Toggle |
-| 14 | Public vs internal item toggle | `internal_menu_items` | Toggle |
-| 15 | Auto stock decrement on order | `stock_automation` | Toggle |
-| 16 | Menu sharing (text export / WhatsApp) | `menu_sharing` | Toggle |
+## 2. Remove "Place a Public Order" from the landing page
 
-## Team & roles
+Drop the second hero button in `src/pages/Landing.tsx` so only "Start Free" remains. No other content changes.
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 17 | Staff seats | `staff_seats` | Limit (already exists) |
-| 18 | Manager role | always free | — |
-| 19 | Server role | `role_server` | Toggle |
-| 20 | Ops role (menu editor) | `role_ops` | Toggle |
-| 21 | Counter role | `role_counter` | Toggle |
-| 22 | Investor (read-only) role | `role_investor` | Toggle |
+## 3. Menu item delete — investigation + fix
 
-## Reports & analytics
+Schema shows no FK constraints on `order_items`, `tab_items`, or `service_bookings` referencing `menu_items`, so the delete should succeed at the DB level. The current code (`MenuManagement.tsx` `handleDelete`) shows a generic "Failed to delete item" toast that swallows the real Postgres error.
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 23 | Daily reports | `daily_reports` | Toggle |
-| 24 | Historical report breakdown | `historical_reports` | Toggle |
-| 25 | Report history retention | `report_history_days` | Limit (e.g. 30 / 365 / unlimited) |
-| 26 | Net profit / margin analytics | `profit_analytics` | Toggle |
-| 27 | Customer analytics | `customer_analytics` | Toggle |
-| 28 | Category-based revenue tagging | `category_tagging` | Toggle |
-| 29 | Expense tracking | `expense_tracking` | Toggle |
-| 30 | Debtor management | `debtor_management` | Toggle |
-| 31 | Daily bills / fixed expenses | `fixed_expenses` | Toggle |
+Steps:
+- Surface the real error: `toast.error(error.message ?? "Failed to delete item")` and log to console for diagnostics.
+- Verify the delete actually returns rows (`.delete().eq(...).select()`) — if RLS silently blocks (current `is_manager_or_ops` policy + `current_restaurant_id` mismatch), report a clear "You don't have permission" message instead of a misleading success/failure.
+- Add a short pre-delete check: count linked `order_items` / `tab_items` / `service_bookings`. If linked, show a confirmation explaining the item will be hidden from the menu but historical references stay intact, and switch to an "archive" path: set `is_available=false`, `is_public=false` instead of deleting. (Pure deletes still allowed when nothing references the item.)
+- Replace the native `confirm()` with the existing `AlertDialog` for a consistent UX.
 
-## Automation & alerts
+## 4. Public order creation — make it bulletproof
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 32 | Auto end-of-day close (cron) | `auto_end_day` | Toggle |
-| 33 | Manual end-of-day close | always free | — |
-| 34 | Low-stock notifications | `alert_low_stock` | Toggle |
-| 35 | Low-margin notifications | `alert_low_margin` | Toggle |
-| 36 | New order notifications (sound + toast) | `alert_new_order` | Toggle |
-| 37 | WhatsApp customer notifications | `whatsapp_notifications` | Toggle |
+`PublicOrder.handleSubmitOrder` calls `create_public_order` RPC. Failures today bubble up as a single toast and reset nothing, so the user can't tell what went wrong.
 
-## Branding & customization
+Hardening:
+- Pre-flight: ensure at least one item has `quantity > 0` OR a valid `slot_at` (today an item with only `extra_units` and no `per_unit_price` would fail server-side with a cryptic message).
+- Strip `slot_at: null` keys for non-service items so the payload is minimal/clean.
+- On RPC error, show the server's `error.message` directly (it's already user-friendly: "Online ordering is currently unavailable", "One or more menu items are unavailable", etc.) and keep the cart populated so the user can retry.
+- Add a single retry on transient network failure (one `setTimeout` retry), then fail.
+- If `restaurantId` resolution from URL → settings hasn't completed, disable the submit button (currently the button can be clicked during `pageLoading`/missing settings race).
+- Re-fetch `menu_items` right before submitting to catch items that became unavailable or were deleted between page load and checkout — surface a friendly "X is no longer available, please remove it" message identifying the offending item by name (today the RPC just says "One or more menu items are unavailable").
+- Add basic phone/location length guards already present in `publicOrderSchema`; ensure schema requires non-empty trimmed values matching the asterisks shown in the form.
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 38 | Custom restaurant logo | `custom_logo` | Toggle |
-| 39 | Custom restaurant name on receipts | always free | — |
-| 40 | Profit margin threshold config | `custom_thresholds` | Toggle |
-| 41 | Custom timezone | `custom_timezone` | Toggle |
+## Files touched
 
-## Data & history
+- new `src/lib/nav-cache.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/usePersistentState.ts`
+- edit `src/components/ScrollToTop.tsx`
+- edit `src/pages/Landing.tsx` (remove CTA)
+- edit `src/pages/MenuManagement.tsx` (delete fix + AlertDialog + persist filters)
+- edit `src/pages/PublicOrder.tsx` (submit hardening)
+- edit `src/pages/OrderHistory.tsx`, `Inventory.tsx`, `Tabs.tsx`, `Debtors.tsx`, `Bookings.tsx`, `Reports.tsx`, `CreateOrder.tsx` to use the persistence hooks
 
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 42 | Order history retention | `order_history_days` | Limit |
-| 43 | Receipt printing | `receipt_print` | Toggle |
-| 44 | Receipt re-print from history | `receipt_reprint` | Toggle |
-
-## Volume caps (revenue protection)
-
-| # | Feature | Suggested key | Type |
-|---|---|---|---|
-| 45 | Orders per month | `max_orders_per_month` | Limit |
-| 46 | Public orders per month | `max_public_orders_per_month` | Limit |
-| 47 | Open tabs at once | `max_open_tabs` | Limit |
-| 48 | Active bookings | `max_active_bookings` | Limit |
-
-## Common SaaS suggestions (typical free vs paid splits)
-
-If you'd like a starting point instead of going row-by-row, here are three opinionated presets you can pick from and tweak:
-
-- **Starter (lean free)** — Free gets: 15 menu items, 2 staff seats, staff orders, manual end-of-day, basic daily reports (7-day history), Cash/Card only, 100 orders/month. Paid unlocks everything else.
-- **Growth (generous free)** — Free gets: 30 menu items, 3 staff seats, public ordering, tabs, 30-day history, low-stock alerts. Paid unlocks: bookings, investor role, WhatsApp, custom payment methods, profit analytics, auto end-of-day, unlimited history.
-- **Pro-only analytics** — Free is unlimited on operations (menu, staff, orders) but Paid is required for: profit analytics, customer analytics, historical breakdown, expense tracking, debtor management, investor role, WhatsApp.
-
-## How to respond
-
-Reply in any of these ways and I'll execute:
-
-1. **"Use Starter / Growth / Pro-only preset"** — I'll wire it up directly.
-2. **A list** like `Free: 1, 2, 3, 9 (cap 15), 17 (cap 2), 23, 33; Paid: everything else` — I'll match it exactly.
-3. **A custom mix** with your own caps for any limit row.
-
-## What I'll build once you decide
-
-1. Database migration: add the new feature keys to the Free/Pro/Enterprise tiers' `features` JSON, plus enforcement triggers (BEFORE INSERT or RPC checks) for each new toggle/limit — same pattern as `enforce_menu_item_limit`.
-2. A small `useFeature(key)` hook that reads `get_restaurant_features` and returns a boolean / number, so the frontend can hide locked UI and show "Upgrade" prompts instead of letting users hit a server error.
-3. Lock UI on the affected pages (Bookings, Tabs, Reports, Debtors, Expenses, etc.) with a shared `<FeatureLocked />` component that links managers to a future upgrade page.
-4. Update the superadmin Subscriptions editor to surface the new preset keys in friendly labels (already extensible — I just add them to `PRESET_KEYS`).
-
-No payment processor work is included — that's a separate step we can do once you tell me Stripe vs Paddle and which tiers should map to which prices.
+No DB migrations required.
