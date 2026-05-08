@@ -63,6 +63,7 @@ const MenuManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [unitsDialogOpen, setUnitsDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = usePersistentState<string>("menu:search", "");
   const [collapsedCategoriesArr, setCollapsedCategoriesArr] = usePersistentState<string[]>("menu:collapsed", []);
