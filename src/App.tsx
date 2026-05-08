@@ -161,6 +161,7 @@ const App = () => {
               <Route path="/superadmin/products" element={<SuperadminRoute><SuperProducts /></SuperadminRoute>} />
               <Route path="/superadmin/users" element={<SuperadminRoute><SuperUsers /></SuperadminRoute>} />
               <Route path="/superadmin/broadcasts" element={<SuperadminRoute><SuperBroadcasts /></SuperadminRoute>} />
+              <Route path="/superadmin/subscriptions" element={<SuperadminRoute><SuperSubscriptions /></SuperadminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
