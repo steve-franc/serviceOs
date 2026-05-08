@@ -2,8 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { StatCard } from "@/components/superadmin/StatCard";
 import { StatusBadge } from "@/components/superadmin/StatusBadge";
-import { useSuperRestaurantDetail } from "@/hooks/useSuperadminData";
-import { ArrowLeft, ShoppingCart, DollarSign, Users, Package, Trash2, Menu as MenuIcon, ExternalLink } from "lucide-react";
+import { useSuperRestaurantDetail, useSubscriptionTiers, useAssignRestaurantTier } from "@/hooks/useSuperadminData";
+import { ArrowLeft, ShoppingCart, DollarSign, Users, Package, Trash2, Menu as MenuIcon, ExternalLink, CreditCard, Infinity as InfinityIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/currency";
@@ -13,6 +13,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+const PRESET_LABELS: Record<string, string> = {
+  max_menu_items: "Max menu items",
+  staff_seats: "Staff seats",
+  max_orders_per_month: "Max orders / month",
+  public_ordering: "Public ordering",
+  analytics: "Analytics",
+  investor_role: "Investor role",
+  custom_branding: "Custom branding",
+};
+
+function renderFeatureValue(v: any) {
+  if (v === null || v === undefined || v === "") {
+    return (
+      <span className="inline-flex items-center gap-1 text-primary font-medium">
+        <InfinityIcon className="h-3.5 w-3.5" /> Unlimited
+      </span>
+    );
+  }
+  if (typeof v === "boolean") return v ? "On" : "Off";
+  return String(v);
+}
 
 const ROLES = ["manager", "ops", "counter", "server", "investor"] as const;
 
