@@ -32,6 +32,8 @@ interface OrderWithItems {
   status?: string | null;
   notes: string | null;
   created_at: string;
+  paid_at?: string | null;
+  paid_via_debtor_id?: string | null;
   customer_name: string | null;
   items: OrderItem[];
 }
@@ -101,8 +103,13 @@ const ReportBreakdown = () => {
 
       // Fetch orders, expenses, tags, menu items, settings, workday notes in parallel
       const [ordersResult, expensesResult, tagsResult, menuResult, settingsResult, notesResult] = await Promise.all([
+        // Orders that count for this report = paid orders whose paid_at falls in window
+        // OR unpaid/other orders created in window. This way late-paid orders surface here.
         supabase.from("orders").select("*").eq("restaurant_id", report.restaurant_id)
-          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .or(
+            `and(payment_status.eq.paid,paid_at.gte.${prevCutoff.toISOString()},paid_at.lt.${reportTimestamp.toISOString()}),` +
+            `and(payment_status.neq.paid,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()})`
+          )
           .order("created_at", { ascending: false }),
         supabase.from("daily_expenses").select("*").eq("restaurant_id", report.restaurant_id)
           .or(`and(applies_to_report_id.is.null,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()}),applies_to_report_id.eq.${id}`)
