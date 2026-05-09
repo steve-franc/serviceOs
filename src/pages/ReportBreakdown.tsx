@@ -666,7 +666,8 @@ const ReportBreakdown = () => {
                       )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </>
