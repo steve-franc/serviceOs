@@ -75,8 +75,14 @@ export function useOrders() {
 
       const recent: typeof allOrders = [];
       const archived: typeof allOrders = [];
-      allOrders?.forEach((order) => {
-        if (new Date(order.created_at) >= cutoffDate) {
+      allOrders?.forEach((order: any) => {
+        // For paid orders, bucket by when they were actually paid (paid_at).
+        // This way an old unpaid order that gets settled today shows up in today's pool.
+        const isPaid = (order.payment_status ?? "paid") === "paid";
+        const bucketTs = isPaid && order.paid_at
+          ? new Date(order.paid_at)
+          : new Date(order.created_at);
+        if (bucketTs >= cutoffDate) {
           recent.push(order);
         } else {
           archived.push(order);
