@@ -26,6 +26,7 @@ interface Debtor {
   is_resolved: boolean;
   resolved_at: string | null;
   created_at: string;
+  source_order_id?: string | null;
 }
 
 const Debtors = () => {
@@ -130,7 +131,29 @@ const Debtors = () => {
       toast.error("Failed to update");
       return;
     }
-    toast.success(newResolved ? "Marked as paid" : "Marked as unpaid");
+
+    // If this debt came from an unpaid order, flip the order's payment status
+    // accordingly so it counts toward today's pool (when paid) or back to unpaid.
+    if (debtor.source_order_id) {
+      const { error: orderErr } = await supabase
+        .from("orders")
+        .update({
+          payment_status: newResolved ? "paid" : "unpaid",
+          paid_via_debtor_id: newResolved ? debtor.id : null,
+        } as any)
+        .eq("id", debtor.source_order_id);
+      if (orderErr) {
+        toast.error("Debt updated but order status sync failed");
+      }
+    }
+
+    toast.success(
+      newResolved
+        ? debtor.source_order_id
+          ? "Marked as paid — added to today's pool"
+          : "Marked as paid"
+        : "Marked as unpaid"
+    );
     fetchDebtors();
   };
 

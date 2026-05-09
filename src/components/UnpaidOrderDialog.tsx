@@ -80,7 +80,8 @@ export function UnpaidOrderDialog({ open, onOpenChange, order, restaurantId, onC
             amount_owed: newAmount,
             notes: newNotes || null,
             customer_name: trimmed,
-          })
+            source_order_id: order.id,
+          } as any)
           .eq("id", existing.id);
         if (error) throw error;
         toast.success(`Added ${formatPrice(amount)} to ${trimmed}'s balance`);
@@ -91,7 +92,8 @@ export function UnpaidOrderDialog({ open, onOpenChange, order, restaurantId, onC
           customer_name: trimmed,
           amount_owed: amount,
           notes: notes.trim() || null,
-        });
+          source_order_id: order.id,
+        } as any);
         if (error) throw error;
         toast.success(`${trimmed} added to debtors (${formatPrice(amount)})`);
       }

@@ -32,6 +32,8 @@ interface OrderWithItems {
   status?: string | null;
   notes: string | null;
   created_at: string;
+  paid_at?: string | null;
+  paid_via_debtor_id?: string | null;
   customer_name: string | null;
   items: OrderItem[];
 }
@@ -101,8 +103,13 @@ const ReportBreakdown = () => {
 
       // Fetch orders, expenses, tags, menu items, settings, workday notes in parallel
       const [ordersResult, expensesResult, tagsResult, menuResult, settingsResult, notesResult] = await Promise.all([
+        // Orders that count for this report = paid orders whose paid_at falls in window
+        // OR unpaid/other orders created in window. This way late-paid orders surface here.
         supabase.from("orders").select("*").eq("restaurant_id", report.restaurant_id)
-          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .or(
+            `and(payment_status.eq.paid,paid_at.gte.${prevCutoff.toISOString()},paid_at.lt.${reportTimestamp.toISOString()}),` +
+            `and(payment_status.neq.paid,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()})`
+          )
           .order("created_at", { ascending: false }),
         supabase.from("daily_expenses").select("*").eq("restaurant_id", report.restaurant_id)
           .or(`and(applies_to_report_id.is.null,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()}),applies_to_report_id.eq.${id}`)
@@ -603,14 +610,33 @@ const ReportBreakdown = () => {
             <div>
               <h3 className="font-semibold mb-4 text-lg">All Receipts</h3>
               <div className="space-y-4">
-                {orders.map(order => (
-                  <Card key={order.id}>
+                {orders.map(order => {
+                  const isLatePayment =
+                    !!order.paid_via_debtor_id ||
+                    (order.paid_at &&
+                      Math.abs(new Date(order.paid_at).getTime() - new Date(order.created_at).getTime()) > 60_000);
+                  return (
+                  <Card
+                    key={order.id}
+                    className={isLatePayment ? "border-amber-500/60 bg-amber-500/5" : undefined}
+                  >
                     <CardHeader className="space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
-                        <Badge variant="outline">{order.payment_method}</Badge>
+                        <div className="flex items-center gap-2">
+                          {isLatePayment && (
+                            <Badge className="bg-amber-500 hover:bg-amber-500 text-white">
+                              Paid from {format(new Date(order.created_at), "do MMM, yyyy")}
+                            </Badge>
+                          )}
+                          <Badge variant="outline">{order.payment_method}</Badge>
+                        </div>
                       </div>
-                      <CardDescription>{format(new Date(order.created_at), "PPp")}</CardDescription>
+                      <CardDescription>
+                        {isLatePayment && order.paid_at
+                          ? `Paid ${format(new Date(order.paid_at), "PPp")}`
+                          : format(new Date(order.created_at), "PPp")}
+                      </CardDescription>
                       {order.customer_name && (
                         <CardDescription>Customer: {order.customer_name}</CardDescription>
                       )}
@@ -640,7 +666,8 @@ const ReportBreakdown = () => {
                       )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </>
