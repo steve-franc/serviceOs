@@ -610,14 +610,33 @@ const ReportBreakdown = () => {
             <div>
               <h3 className="font-semibold mb-4 text-lg">All Receipts</h3>
               <div className="space-y-4">
-                {orders.map(order => (
-                  <Card key={order.id}>
+                {orders.map(order => {
+                  const isLatePayment =
+                    !!order.paid_via_debtor_id ||
+                    (order.paid_at &&
+                      Math.abs(new Date(order.paid_at).getTime() - new Date(order.created_at).getTime()) > 60_000);
+                  return (
+                  <Card
+                    key={order.id}
+                    className={isLatePayment ? "border-amber-500/60 bg-amber-500/5" : undefined}
+                  >
                     <CardHeader className="space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
-                        <Badge variant="outline">{order.payment_method}</Badge>
+                        <div className="flex items-center gap-2">
+                          {isLatePayment && (
+                            <Badge className="bg-amber-500 hover:bg-amber-500 text-white">
+                              Paid from {format(new Date(order.created_at), "do MMM, yyyy")}
+                            </Badge>
+                          )}
+                          <Badge variant="outline">{order.payment_method}</Badge>
+                        </div>
                       </div>
-                      <CardDescription>{format(new Date(order.created_at), "PPp")}</CardDescription>
+                      <CardDescription>
+                        {isLatePayment && order.paid_at
+                          ? `Paid ${format(new Date(order.paid_at), "PPp")}`
+                          : format(new Date(order.created_at), "PPp")}
+                      </CardDescription>
                       {order.customer_name && (
                         <CardDescription>Customer: {order.customer_name}</CardDescription>
                       )}
