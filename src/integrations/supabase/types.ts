@@ -244,6 +244,7 @@ export type Database = {
           notes: string | null
           resolved_at: string | null
           restaurant_id: string
+          source_order_id: string | null
           staff_id: string
           updated_at: string
         }
@@ -257,6 +258,7 @@ export type Database = {
           notes?: string | null
           resolved_at?: string | null
           restaurant_id: string
+          source_order_id?: string | null
           staff_id: string
           updated_at?: string
         }
@@ -270,6 +272,7 @@ export type Database = {
           notes?: string | null
           resolved_at?: string | null
           restaurant_id?: string
+          source_order_id?: string | null
           staff_id?: string
           updated_at?: string
         }
@@ -519,6 +522,8 @@ export type Database = {
           is_public_order: boolean
           notes: string | null
           order_number: string
+          paid_at: string | null
+          paid_via_debtor_id: string | null
           payment_method: string
           payment_status: string
           restaurant_id: string | null
@@ -539,6 +544,8 @@ export type Database = {
           is_public_order?: boolean
           notes?: string | null
           order_number?: string
+          paid_at?: string | null
+          paid_via_debtor_id?: string | null
           payment_method: string
           payment_status?: string
           restaurant_id?: string | null
@@ -559,6 +566,8 @@ export type Database = {
           is_public_order?: boolean
           notes?: string | null
           order_number?: string
+          paid_at?: string | null
+          paid_via_debtor_id?: string | null
           payment_method?: string
           payment_status?: string
           restaurant_id?: string | null
