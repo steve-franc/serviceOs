@@ -286,10 +286,20 @@ const Admin = () => {
 
   const savePaymentMethods = async (updated: PaymentMethodConfig[]) => {
     if (!restaurantId) return false;
-    const { error } = await supabase
+    // Check if a settings row exists; new restaurants may not have one yet.
+    const { data: existing } = await supabase
       .from("restaurant_settings")
-      .update({ payment_methods: updated as any })
-      .eq("restaurant_id", restaurantId);
+      .select("id")
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
+    const { error } = existing
+      ? await supabase
+          .from("restaurant_settings")
+          .update({ payment_methods: updated as any })
+          .eq("restaurant_id", restaurantId)
+      : await supabase
+          .from("restaurant_settings")
+          .insert({ restaurant_id: restaurantId, payment_methods: updated as any });
     if (error) { toast.error("Failed to save payment methods"); return false; }
     setConfiguredPaymentMethods(updated);
     return true;
@@ -310,8 +320,16 @@ const Admin = () => {
     }
   };
 
+  const PROTECTED_METHODS = ["cash", "card", "credit card"];
+  const isProtectedMethod = (name: string) =>
+    PROTECTED_METHODS.includes(name.trim().toLowerCase());
+
   const removePaymentMethod = async (methodName: string) => {
     if (!restaurantId) return;
+    if (isProtectedMethod(methodName)) {
+      toast.error(`"${methodName}" is a default method and can't be removed`);
+      return;
+    }
     const updated = configuredPaymentMethods.filter(m => m.name !== methodName);
     if (updated.length === 0) {
       toast.error("Must have at least one payment method");
@@ -1002,9 +1020,11 @@ const Admin = () => {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMethod(method)}>
                           <Settings className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => removePaymentMethod(method.name)}>
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
+                        {!isProtectedMethod(method.name) && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => removePaymentMethod(method.name)}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
