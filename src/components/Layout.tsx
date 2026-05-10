@@ -41,7 +41,7 @@ const Layout = ({ children }: LayoutProps) => {
         </header>
         <main className="container mx-auto px-4 py-8">
           {onHoldBanner}
-          {children}
+          {content}
         </main>
       </div>
     );
@@ -58,7 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
           </header>
           <main className="flex-1 p-6 overflow-auto">
             {onHoldBanner}
-            {children}
+            {content}
           </main>
         </div>
       </div>
