@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -513,7 +512,7 @@ const CreateOrder = () => {
       </div>
     </div>
   );
-  return <Layout>
+  return <>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
@@ -695,6 +694,6 @@ const CreateOrder = () => {
           />
         )}
       </div>
-    </Layout>;
+    </>;
 };
 export default CreateOrder;

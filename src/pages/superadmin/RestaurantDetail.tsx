@@ -1,5 +1,4 @@
 import { Link, useParams } from "react-router-dom";
-import Layout from "@/components/Layout";
 import { StatCard } from "@/components/superadmin/StatCard";
 import { StatusBadge } from "@/components/superadmin/StatusBadge";
 import { useSuperRestaurantDetail, useSubscriptionTiers, useAssignRestaurantTier } from "@/hooks/useSuperadminData";
@@ -127,17 +126,17 @@ export default function SuperRestaurantDetail() {
   const qc = useQueryClient();
 
   if (isLoading) {
-    return <Layout><div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4"><Skeleton className="h-8 w-48" /><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div></div></Layout>;
+    return <><div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4"><Skeleton className="h-8 w-48" /><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div></div></>;
   }
   if (!data?.restaurant) {
-    return <Layout><div className="max-w-7xl mx-auto p-6"><p className="text-muted-foreground">Business not found.</p></div></Layout>;
+    return <><div className="max-w-7xl mx-auto p-6"><p className="text-muted-foreground">Business not found.</p></div></>;
   }
 
   const r = data.restaurant;
   const t = data.totals || {};
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div>
           <Link to="/superadmin/restaurants" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors">
@@ -208,6 +207,6 @@ export default function SuperRestaurantDetail() {
           </motion.div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

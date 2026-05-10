@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -444,7 +443,7 @@ const MenuManagement = () => {
     toast.success("Menu copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
-  return <Layout>
+  return <>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="py-[10px]">
@@ -870,6 +869,6 @@ const MenuManagement = () => {
           units={pricingUnits}
         />
       </div>
-    </Layout>;
+    </>;
 };
 export default MenuManagement;

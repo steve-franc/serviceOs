@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
-import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Dashboard = () => {
@@ -28,7 +27,7 @@ const Dashboard = () => {
 
   if (!role) {
     return (
-      <Layout>
+      <>
         <div className="max-w-xl mx-auto">
           <Card>
             <CardHeader>
@@ -39,7 +38,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-      </Layout>
+      </>
     );
   }
 

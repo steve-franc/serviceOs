@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import Layout from "@/components/Layout";
 import { StatusBadge } from "@/components/superadmin/StatusBadge";
 import { useSuperOrders } from "@/hooks/useSuperadminData";
 import { motion } from "framer-motion";
@@ -14,7 +13,7 @@ export default function SuperOrders() {
   const { data: orders, isLoading } = useSuperOrders(500);
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">All Orders</h1>
@@ -49,6 +48,6 @@ export default function SuperOrders() {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
