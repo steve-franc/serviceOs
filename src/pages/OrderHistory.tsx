@@ -80,6 +80,7 @@ const OrderHistory = () => {
         { event: '*', schema: 'public', table: 'orders' },
         () => {
           invalidateOrders();
+          queryClient.invalidateQueries({ queryKey: ["booking-order-ids", restaurantId] });
         }
       )
       .subscribe();
