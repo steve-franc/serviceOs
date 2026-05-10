@@ -320,8 +320,16 @@ const Admin = () => {
     }
   };
 
+  const PROTECTED_METHODS = ["cash", "card", "credit card"];
+  const isProtectedMethod = (name: string) =>
+    PROTECTED_METHODS.includes(name.trim().toLowerCase());
+
   const removePaymentMethod = async (methodName: string) => {
     if (!restaurantId) return;
+    if (isProtectedMethod(methodName)) {
+      toast.error(`"${methodName}" is a default method and can't be removed`);
+      return;
+    }
     const updated = configuredPaymentMethods.filter(m => m.name !== methodName);
     if (updated.length === 0) {
       toast.error("Must have at least one payment method");
