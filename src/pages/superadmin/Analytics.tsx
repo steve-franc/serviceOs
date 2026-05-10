@@ -1,4 +1,3 @@
-import Layout from "@/components/Layout";
 import { StatCard } from "@/components/superadmin/StatCard";
 import { useSuperOverview, useSuperRestaurants, useSuperDailyTrend, useSuperOrders } from "@/hooks/useSuperadminData";
 import { BarChart3, TrendingUp, ShoppingCart, DollarSign } from "lucide-react";
@@ -40,7 +39,7 @@ export default function SuperAnalytics() {
   const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 } as const;
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
@@ -120,6 +119,6 @@ export default function SuperAnalytics() {
           </ResponsiveContainer>
         </motion.div>
       </div>
-    </Layout>
+    </>
   );
 }

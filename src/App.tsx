@@ -8,6 +8,8 @@ import { NotificationSound } from "./components/NotificationSound";
 import ScrollToTop from "./components/ScrollToTop";
 import { useTimeBasedTheme } from "./hooks/useTimeBasedTheme";
 import { useAutoEndDay } from "./hooks/useAutoEndDay";
+import Layout from "./components/Layout";
+import { PageSkeleton } from "./components/PageSkeleton";
 
 // Lazy-load all pages for faster initial load
 const Auth = lazy(() => import("./pages/Auth"));
@@ -56,9 +58,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
 
@@ -77,9 +77,7 @@ const ObserverBlockedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (authLoading || roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
@@ -93,9 +91,7 @@ const SuperadminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isSuperadmin, loading: roleLoading } = useUserRole();
   if (authLoading || roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
@@ -109,9 +105,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (authLoading || roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
 
@@ -135,33 +129,36 @@ const App = () => {
           <ScrollToTop />
             <NotificationSound />
             <BroadcastPopup />
-          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>}>
+          <Suspense fallback={<PageSkeleton />}>
             <Routes>
               <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
               <Route path="/auth" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
               <Route path="/order/:restaurantId" element={<PublicOrder />} />
-              <Route path="/dashboard" element={<ObserverBlockedRoute><Dashboard /></ObserverBlockedRoute>} />
-              <Route path="/menu" element={<ObserverBlockedRoute><MenuManagement /></ObserverBlockedRoute>} />
-              <Route path="/order/create" element={<ObserverBlockedRoute><CreateOrder /></ObserverBlockedRoute>} />
-              <Route path="/orders" element={<ObserverBlockedRoute><OrderHistory /></ObserverBlockedRoute>} />
               <Route path="/receipt/:id" element={<Receipt />} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/inventory" element={<ObserverBlockedRoute><Inventory /></ObserverBlockedRoute>} />
-              <Route path="/tabs" element={<ObserverBlockedRoute><TabsPage /></ObserverBlockedRoute>} />
-              <Route path="/debtors" element={<ObserverBlockedRoute><Debtors /></ObserverBlockedRoute>} />
-              <Route path="/bookings" element={<ObserverBlockedRoute><Bookings /></ObserverBlockedRoute>} />
-              <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-              <Route path="/superadmin" element={<SuperadminRoute><SuperDashboard /></SuperadminRoute>} />
-              <Route path="/superadmin/restaurants" element={<SuperadminRoute><SuperRestaurants /></SuperadminRoute>} />
-              <Route path="/superadmin/restaurants/:id" element={<SuperadminRoute><SuperRestaurantDetail /></SuperadminRoute>} />
-              <Route path="/superadmin/restaurants/:id/menu" element={<SuperadminRoute><SuperRestaurantMenu /></SuperadminRoute>} />
-              <Route path="/superadmin/orders" element={<SuperadminRoute><SuperOrders /></SuperadminRoute>} />
-              <Route path="/superadmin/analytics" element={<SuperadminRoute><SuperAnalytics /></SuperadminRoute>} />
-              <Route path="/superadmin/products" element={<SuperadminRoute><SuperProducts /></SuperadminRoute>} />
-              <Route path="/superadmin/users" element={<SuperadminRoute><SuperUsers /></SuperadminRoute>} />
-              <Route path="/superadmin/broadcasts" element={<SuperadminRoute><SuperBroadcasts /></SuperadminRoute>} />
-              <Route path="/superadmin/subscriptions" element={<SuperadminRoute><SuperSubscriptions /></SuperadminRoute>} />
+              {/* Persistent layout — sidebar + header are mounted ONCE and never remount on tab switch */}
+              <Route element={<Layout />}>
+                <Route path="/dashboard" element={<ObserverBlockedRoute><Dashboard /></ObserverBlockedRoute>} />
+                <Route path="/menu" element={<ObserverBlockedRoute><MenuManagement /></ObserverBlockedRoute>} />
+                <Route path="/order/create" element={<ObserverBlockedRoute><CreateOrder /></ObserverBlockedRoute>} />
+                <Route path="/orders" element={<ObserverBlockedRoute><OrderHistory /></ObserverBlockedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/inventory" element={<ObserverBlockedRoute><Inventory /></ObserverBlockedRoute>} />
+                <Route path="/tabs" element={<ObserverBlockedRoute><TabsPage /></ObserverBlockedRoute>} />
+                <Route path="/debtors" element={<ObserverBlockedRoute><Debtors /></ObserverBlockedRoute>} />
+                <Route path="/bookings" element={<ObserverBlockedRoute><Bookings /></ObserverBlockedRoute>} />
+                <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path="/superadmin" element={<SuperadminRoute><SuperDashboard /></SuperadminRoute>} />
+                <Route path="/superadmin/restaurants" element={<SuperadminRoute><SuperRestaurants /></SuperadminRoute>} />
+                <Route path="/superadmin/restaurants/:id" element={<SuperadminRoute><SuperRestaurantDetail /></SuperadminRoute>} />
+                <Route path="/superadmin/restaurants/:id/menu" element={<SuperadminRoute><SuperRestaurantMenu /></SuperadminRoute>} />
+                <Route path="/superadmin/orders" element={<SuperadminRoute><SuperOrders /></SuperadminRoute>} />
+                <Route path="/superadmin/analytics" element={<SuperadminRoute><SuperAnalytics /></SuperadminRoute>} />
+                <Route path="/superadmin/products" element={<SuperadminRoute><SuperProducts /></SuperadminRoute>} />
+                <Route path="/superadmin/users" element={<SuperadminRoute><SuperUsers /></SuperadminRoute>} />
+                <Route path="/superadmin/broadcasts" element={<SuperadminRoute><SuperBroadcasts /></SuperadminRoute>} />
+                <Route path="/superadmin/subscriptions" element={<SuperadminRoute><SuperSubscriptions /></SuperadminRoute>} />
+              </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

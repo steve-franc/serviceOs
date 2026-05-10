@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { WorkdayNotes } from "@/components/WorkdayNotes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -598,11 +597,11 @@ const Admin = () => {
     }
   };
   if (roleLoading || restaurantLoading) {
-    return <Layout>
+    return <>
         <div className="flex items-center justify-center min-h-[60vh]">
           <p className="text-muted-foreground">Loading...</p>
         </div>
-      </Layout>;
+      </>;
   }
   if (!canViewReports) {
     return <Navigate to="/" replace />;
@@ -615,7 +614,7 @@ const Admin = () => {
   const todayExpensesTotal = todayExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
   const todayRevenue = todayPaidRevenue - todayExpensesTotal;
   const pendingStaff = staff.filter(s => !s.role);
-  return <Layout>
+  return <>
       <div className="max-w-7xl mx-auto space-y-6">
         {pendingStaff.length > 0 && (
           <Card className="border-yellow-500/50 bg-yellow-500/5">
@@ -1435,6 +1434,6 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>;
+    </>;
 };
 export default Admin;

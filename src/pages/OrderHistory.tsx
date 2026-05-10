@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -501,7 +500,7 @@ const OrderHistory = () => {
       </Card>
     );
   };
-  return <Layout>
+  return <>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -1058,6 +1057,6 @@ const OrderHistory = () => {
       </Dialog>
 
 
-    </Layout>;
+    </>;
 };
 export default OrderHistory;

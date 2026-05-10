@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,7 +51,7 @@ export default function Subscriptions() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
@@ -137,6 +136,6 @@ export default function Subscriptions() {
       </div>
 
       <TierEditDialog open={dialogOpen} onOpenChange={setDialogOpen} tier={editing} />
-    </Layout>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -433,7 +432,7 @@ const TabDetail = ({
     );
 
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <Button variant="ghost" size="sm" onClick={() => { setShowAddItems(false); setPendingItems([]); }}>
@@ -526,13 +525,13 @@ const TabDetail = ({
             </Drawer>
           )}
         </div>
-      </Layout>
+      </>
     );
   }
 
   // ── Tab detail view ──
   return (
-    <Layout>
+    <>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <Button variant="ghost" size="sm" onClick={onBack}>
@@ -700,7 +699,7 @@ const TabDetail = ({
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </>
   );
 };
 
@@ -767,7 +766,7 @@ const TabsPage = () => {
   }
 
   return (
-    <Layout>
+    <>
       <TabsList tabs={tabs} loading={loading} onOpenTab={setSelectedTab} onNewTab={() => setNewTabDialogOpen(true)} />
 
       <Dialog open={newTabDialogOpen} onOpenChange={setNewTabDialogOpen}>
@@ -808,7 +807,7 @@ const TabsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 };
 

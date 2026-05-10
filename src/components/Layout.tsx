@@ -2,17 +2,18 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useUserRole, useRestaurantAndRole } from "@/hooks/useRestaurantAndRole";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import { useAlerts } from "@/hooks/useAlerts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface LayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  const content = children ?? <Outlet />;
   const { hasRole } = useUserRole();
   const { restaurantStatus, isSuperadmin } = useRestaurantAndRole();
   const location = useLocation();
@@ -40,7 +41,7 @@ const Layout = ({ children }: LayoutProps) => {
         </header>
         <main className="container mx-auto px-4 py-8">
           {onHoldBanner}
-          {children}
+          {content}
         </main>
       </div>
     );
@@ -57,7 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
           </header>
           <main className="flex-1 p-6 overflow-auto">
             {onHoldBanner}
-            {children}
+            {content}
           </main>
         </div>
       </div>

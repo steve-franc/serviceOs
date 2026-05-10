@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
-import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageSkeleton } from "@/components/PageSkeleton";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -19,16 +19,12 @@ const Dashboard = () => {
   }, [role, loading, isManager, isSuperadmin, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!role) {
     return (
-      <Layout>
+      <>
         <div className="max-w-xl mx-auto">
           <Card>
             <CardHeader>
@@ -39,7 +35,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-      </Layout>
+      </>
     );
   }
 

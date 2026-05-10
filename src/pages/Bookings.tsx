@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isToday, isFuture, isPast, startOfDay } from "date-fns";
-import Layout from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,7 +99,7 @@ export default function Bookings() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <CalendarClock className="h-7 w-7 text-primary" />
@@ -214,6 +213,6 @@ export default function Bookings() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </>
   );
 }

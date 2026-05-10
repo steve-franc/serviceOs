@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import Layout from "@/components/Layout";
 import { useSuperUsers, useSuperRestaurants } from "@/hooks/useSuperadminData";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -117,7 +116,7 @@ export default function SuperUsers() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
@@ -266,6 +265,6 @@ export default function SuperUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -141,12 +140,12 @@ const Reports = () => {
     .slice(0, 5);
 
   if (roleLoading || restaurantLoading) {
-    return <Layout><div className="flex items-center justify-center min-h-[60vh]"><p className="text-muted-foreground">Loading...</p></div></Layout>;
+    return <><div className="flex items-center justify-center min-h-[60vh]"><p className="text-muted-foreground">Loading...</p></div></>;
   }
   if (!canViewReports) return <Navigate to="/" replace />;
 
   return (
-    <Layout>
+    <>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -323,7 +322,7 @@ const Reports = () => {
           </>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

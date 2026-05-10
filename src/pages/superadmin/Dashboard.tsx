@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import Layout from "@/components/Layout";
 import { StatCard } from "@/components/superadmin/StatCard";
 import { StatusBadge } from "@/components/superadmin/StatusBadge";
 import { useSuperOverview, useSuperRestaurants, useSuperOrders, useSuperDailyTrend, useSuperTopProducts } from "@/hooks/useSuperadminData";
@@ -25,7 +24,7 @@ export default function SuperDashboard() {
   const aov = totalOrd > 0 ? totalRev / totalOrd : 0;
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -167,6 +166,6 @@ export default function SuperDashboard() {
           </div>
         </motion.div>
       </div>
-    </Layout>
+    </>
   );
 }
