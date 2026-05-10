@@ -88,7 +88,24 @@ const OrderHistory = () => {
     };
   }, [restaurantId, invalidateOrders]);
 
-  const recentOrdersRaw = (ordersData?.recentOrders || []) as Order[];
+  // Fetch order_ids that are tied to service bookings — those belong to the Bookings tab,
+  // not the regular Order History list (the receipt is still accessible from Bookings).
+  const { data: bookingOrderIds = new Set<string>() } = useQuery({
+    queryKey: ["booking-order-ids", restaurantId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("service_bookings")
+        .select("order_id")
+        .eq("restaurant_id", restaurantId!);
+      if (error) throw error;
+      return new Set<string>((data || []).map((r: any) => r.order_id).filter(Boolean));
+    },
+    enabled: !!restaurantId,
+  });
+
+  const recentOrdersRaw = ((ordersData?.recentOrders || []) as Order[]).filter(
+    (o) => !bookingOrderIds.has(o.id)
+  );
   // Sort pending orders to the top
   const recentOrders = useMemo(() => {
     return [...recentOrdersRaw].sort((a, b) => {
@@ -97,7 +114,9 @@ const OrderHistory = () => {
       return 0;
     });
   }, [recentOrdersRaw]);
-  const archivedOrders = (ordersData?.archivedOrders || []) as Order[];
+  const archivedOrders = ((ordersData?.archivedOrders || []) as Order[]).filter(
+    (o) => !bookingOrderIds.has(o.id)
+  );
   const dailyReports = (ordersData?.dailyReports || []) as DailyReportInfo[];
   const lastEndDayDate = ordersData?.lastEndDayDate ?? null;
 
