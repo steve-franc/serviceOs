@@ -9,6 +9,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import { useTimeBasedTheme } from "./hooks/useTimeBasedTheme";
 import { useAutoEndDay } from "./hooks/useAutoEndDay";
 import Layout from "./components/Layout";
+import { PageSkeleton } from "./components/PageSkeleton";
 
 // Lazy-load all pages for faster initial load
 const Auth = lazy(() => import("./pages/Auth"));
