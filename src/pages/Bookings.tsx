@@ -8,7 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarClock, Phone, User, CheckCircle2, XCircle, Ban } from "lucide-react";
+import { CalendarClock, Phone, User, CheckCircle2, XCircle, Ban, Receipt } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Booking {
