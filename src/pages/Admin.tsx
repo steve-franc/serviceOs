@@ -286,10 +286,13 @@ const Admin = () => {
 
   const savePaymentMethods = async (updated: PaymentMethodConfig[]) => {
     if (!restaurantId) return false;
+    // Upsert so newly-created restaurants without a settings row still save.
     const { error } = await supabase
       .from("restaurant_settings")
-      .update({ payment_methods: updated as any })
-      .eq("restaurant_id", restaurantId);
+      .upsert(
+        { restaurant_id: restaurantId, payment_methods: updated as any },
+        { onConflict: "restaurant_id" }
+      );
     if (error) { toast.error("Failed to save payment methods"); return false; }
     setConfiguredPaymentMethods(updated);
     return true;
