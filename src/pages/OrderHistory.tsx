@@ -67,6 +67,7 @@ const OrderHistory = () => {
   const invalidateOrders = useInvalidateOrders();
   const { data: expensesData = [] } = useExpenses();
   const { data: settingsData } = useRestaurantSettings();
+  const queryClient = useQueryClient();
 
   // Real-time: refresh orders on any insert/update/delete
   useEffect(() => {
