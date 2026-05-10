@@ -34,6 +34,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function Bookings() {
   const { restaurantId } = useRestaurantContext();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"today" | "upcoming" | "past">("today");
 
