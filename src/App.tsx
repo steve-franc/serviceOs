@@ -58,9 +58,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
 
@@ -79,9 +77,7 @@ const ObserverBlockedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (authLoading || roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
@@ -95,9 +91,7 @@ const SuperadminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isSuperadmin, loading: roleLoading } = useUserRole();
   if (authLoading || roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
@@ -111,9 +105,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (authLoading || roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageSkeleton />
     );
   }
 
@@ -137,7 +129,7 @@ const App = () => {
           <ScrollToTop />
             <NotificationSound />
             <BroadcastPopup />
-          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>}>
+          <Suspense fallback={<PageSkeleton />}>
             <Routes>
               <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
               <Route path="/auth" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
