@@ -88,7 +88,7 @@ const OrderHistory = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [restaurantId, invalidateOrders]);
+  }, [restaurantId, invalidateOrders, queryClient]);
 
   // Fetch order_ids that are tied to service bookings — those belong to the Bookings tab,
   // not the regular Order History list (the receipt is still accessible from Bookings).
