@@ -8,7 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarClock, Phone, User, CheckCircle2, XCircle, Ban } from "lucide-react";
+import { CalendarClock, Phone, User, CheckCircle2, XCircle, Ban, Receipt } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Booking {
@@ -33,6 +34,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function Bookings() {
   const { restaurantId } = useRestaurantContext();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"today" | "upcoming" | "past">("today");
 
@@ -175,33 +177,47 @@ export default function Bookings() {
                             </div>
                           </div>
                         </CardHeader>
-                        {b.status === "booked" && (
+                        {(b.status === "booked" || b.order_id) && (
                           <CardContent className="pt-0 flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateStatus(b.id, "completed")}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                              Mark completed
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateStatus(b.id, "no_show")}
-                            >
-                              <XCircle className="h-3.5 w-3.5 mr-1.5" />
-                              No-show
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => updateStatus(b.id, "cancelled")}
-                            >
-                              <Ban className="h-3.5 w-3.5 mr-1.5" />
-                              Cancel
-                            </Button>
+                            {b.order_id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigate(`/receipt/${b.order_id}`)}
+                              >
+                                <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                                View receipt
+                              </Button>
+                            )}
+                            {b.status === "booked" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateStatus(b.id, "completed")}
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                  Mark completed
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateStatus(b.id, "no_show")}
+                                >
+                                  <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                                  No-show
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => updateStatus(b.id, "cancelled")}
+                                >
+                                  <Ban className="h-3.5 w-3.5 mr-1.5" />
+                                  Cancel
+                                </Button>
+                              </>
+                            )}
                           </CardContent>
                         )}
                       </Card>

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ const OrderHistory = () => {
   const invalidateOrders = useInvalidateOrders();
   const { data: expensesData = [] } = useExpenses();
   const { data: settingsData } = useRestaurantSettings();
+  const queryClient = useQueryClient();
 
   // Real-time: refresh orders on any insert/update/delete
   useEffect(() => {
@@ -78,6 +80,7 @@ const OrderHistory = () => {
         { event: '*', schema: 'public', table: 'orders' },
         () => {
           invalidateOrders();
+          queryClient.invalidateQueries({ queryKey: ["booking-order-ids", restaurantId] });
         }
       )
       .subscribe();
@@ -85,9 +88,26 @@ const OrderHistory = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [restaurantId, invalidateOrders]);
+  }, [restaurantId, invalidateOrders, queryClient]);
 
-  const recentOrdersRaw = (ordersData?.recentOrders || []) as Order[];
+  // Fetch order_ids that are tied to service bookings — those belong to the Bookings tab,
+  // not the regular Order History list (the receipt is still accessible from Bookings).
+  const { data: bookingOrderIds = new Set<string>() } = useQuery({
+    queryKey: ["booking-order-ids", restaurantId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("service_bookings")
+        .select("order_id")
+        .eq("restaurant_id", restaurantId!);
+      if (error) throw error;
+      return new Set<string>((data || []).map((r: any) => r.order_id).filter(Boolean));
+    },
+    enabled: !!restaurantId,
+  });
+
+  const recentOrdersRaw = ((ordersData?.recentOrders || []) as Order[]).filter(
+    (o) => !bookingOrderIds.has(o.id)
+  );
   // Sort pending orders to the top
   const recentOrders = useMemo(() => {
     return [...recentOrdersRaw].sort((a, b) => {
@@ -96,7 +116,9 @@ const OrderHistory = () => {
       return 0;
     });
   }, [recentOrdersRaw]);
-  const archivedOrders = (ordersData?.archivedOrders || []) as Order[];
+  const archivedOrders = ((ordersData?.archivedOrders || []) as Order[]).filter(
+    (o) => !bookingOrderIds.has(o.id)
+  );
   const dailyReports = (ordersData?.dailyReports || []) as DailyReportInfo[];
   const lastEndDayDate = ordersData?.lastEndDayDate ?? null;
 
