@@ -78,9 +78,8 @@ const OrderHistory = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
-        () => {
+      () => {
           invalidateOrders();
-          queryClient.invalidateQueries({ queryKey: ["booking-order-ids", restaurantId] });
         }
       )
       .subscribe();
@@ -90,24 +89,7 @@ const OrderHistory = () => {
     };
   }, [restaurantId, invalidateOrders, queryClient]);
 
-  // Fetch order_ids that are tied to service bookings — those belong to the Bookings tab,
-  // not the regular Order History list (the receipt is still accessible from Bookings).
-  const { data: bookingOrderIds = new Set<string>() } = useQuery({
-    queryKey: ["booking-order-ids", restaurantId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("service_bookings")
-        .select("order_id")
-        .eq("restaurant_id", restaurantId!);
-      if (error) throw error;
-      return new Set<string>((data || []).map((r: any) => r.order_id).filter(Boolean));
-    },
-    enabled: !!restaurantId,
-  });
-
-  const recentOrdersRaw = ((ordersData?.recentOrders || []) as Order[]).filter(
-    (o) => !bookingOrderIds.has(o.id)
-  );
+  const recentOrdersRaw = (ordersData?.recentOrders || []) as Order[];
   // Sort pending orders to the top
   const recentOrders = useMemo(() => {
     return [...recentOrdersRaw].sort((a, b) => {
@@ -116,9 +98,7 @@ const OrderHistory = () => {
       return 0;
     });
   }, [recentOrdersRaw]);
-  const archivedOrders = ((ordersData?.archivedOrders || []) as Order[]).filter(
-    (o) => !bookingOrderIds.has(o.id)
-  );
+  const archivedOrders = (ordersData?.archivedOrders || []) as Order[];
   const dailyReports = (ordersData?.dailyReports || []) as DailyReportInfo[];
   const lastEndDayDate = ordersData?.lastEndDayDate ?? null;
 
