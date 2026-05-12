@@ -66,7 +66,7 @@ export function useOrders() {
         () => { qc.invalidateQueries({ queryKey: ["orders", restaurantId] }); })
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'service_bookings', filter: `restaurant_id=eq.${restaurantId}` },
-        () => { qc.invalidateQueries({ queryKey: ["bookings", restaurantId] }); })
+        () => { qc.invalidateQueries({ queryKey: ["service-bookings", restaurantId] }); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [restaurantId, qc]);
