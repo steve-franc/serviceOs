@@ -87,8 +87,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b">
-        <div className={cn("flex items-center gap-3 px-2 py-3", collapsed && "justify-center")}>
+      <SidebarHeader className="border-b h-14 justify-center py-0">
+        <div className={cn("flex items-center gap-3 px-2", collapsed && "justify-center")}>
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 overflow-hidden">
             {logoUrl ? (
               <img src={logoUrl} alt={restaurantName || "Logo"} className="h-full w-full object-cover" />
