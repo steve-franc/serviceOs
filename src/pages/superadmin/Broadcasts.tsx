@@ -39,6 +39,17 @@ export default function Broadcasts() {
     },
   });
 
+  const { data: restaurantMap } = useQuery({
+    queryKey: ["super", "restaurants", "name-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("restaurants").select("id, name");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((r: any) => { map[r.id] = r.name; });
+      return map;
+    },
+  });
+
   const refresh = () => qc.invalidateQueries({ queryKey: ["super", "broadcasts"] });
 
   const toggle = async (id: string, active: boolean) => {
@@ -89,7 +100,11 @@ export default function Broadcasts() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium truncate">{b.title}</p>
                     <Badge variant="outline" className="text-[10px]">{b.variant}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{b.audience}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {b.audience === "restaurant"
+                        ? `→ ${restaurantMap?.[b.restaurant_id] ?? "business"}`
+                        : b.audience}
+                    </Badge>
                     {b.expires_at && new Date(b.expires_at) < new Date() && (
                       <Badge variant="outline" className="text-[10px] text-destructive border-destructive/40">expired</Badge>
                     )}
@@ -125,13 +140,28 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
   const [ctaUrl, setCtaUrl] = useState("");
   const [variant, setVariant] = useState("info");
   const [audience, setAudience] = useState("all");
+  const [restaurantId, setRestaurantId] = useState<string>("");
   const [frequencyHours, setFrequencyHours] = useState("24");
   const [maxShows, setMaxShows] = useState("0");
   const [expiresAt, setExpiresAt] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const { data: restaurants } = useQuery({
+    queryKey: ["super", "restaurants", "broadcast-target"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("restaurants")
+        .select("id, name")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: audience === "restaurant",
+  });
+
   const submit = async () => {
     if (!title.trim() || !body.trim()) return toast.error("Title and message required");
+    if (audience === "restaurant" && !restaurantId) return toast.error("Select a business");
     setBusy(true);
     const { error } = await supabase.rpc("superadmin_create_broadcast", {
       _title: title.trim(),
@@ -140,7 +170,7 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
       _cta_url: ctaUrl.trim() || null,
       _variant: variant,
       _audience: audience,
-      _restaurant_id: null,
+      _restaurant_id: audience === "restaurant" ? restaurantId : null,
       _frequency_hours: parseInt(frequencyHours) || 0,
       _max_shows: parseInt(maxShows) || 0,
       _expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
@@ -185,10 +215,24 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
               <SelectContent>
                 <SelectItem value="all">Everyone</SelectItem>
                 <SelectItem value="superadmins">Superadmins only</SelectItem>
+                <SelectItem value="restaurant">Specific business</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+        {audience === "restaurant" && (
+          <div>
+            <Label className="text-xs">Target business</Label>
+            <Select value={restaurantId} onValueChange={setRestaurantId}>
+              <SelectTrigger><SelectValue placeholder="Select a business…" /></SelectTrigger>
+              <SelectContent>
+                {(restaurants ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs">CTA label (optional)</Label>
