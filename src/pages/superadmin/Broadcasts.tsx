@@ -39,6 +39,17 @@ export default function Broadcasts() {
     },
   });
 
+  const { data: restaurantMap } = useQuery({
+    queryKey: ["super", "restaurants", "name-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("restaurants").select("id, name");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((r: any) => { map[r.id] = r.name; });
+      return map;
+    },
+  });
+
   const refresh = () => qc.invalidateQueries({ queryKey: ["super", "broadcasts"] });
 
   const toggle = async (id: string, active: boolean) => {
