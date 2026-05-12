@@ -100,7 +100,11 @@ export default function Broadcasts() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium truncate">{b.title}</p>
                     <Badge variant="outline" className="text-[10px]">{b.variant}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{b.audience}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {b.audience === "restaurant"
+                        ? `→ ${restaurantMap?.[b.restaurant_id] ?? "business"}`
+                        : b.audience}
+                    </Badge>
                     {b.expires_at && new Date(b.expires_at) < new Date() && (
                       <Badge variant="outline" className="text-[10px] text-destructive border-destructive/40">expired</Badge>
                     )}
