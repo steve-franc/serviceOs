@@ -125,13 +125,28 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
   const [ctaUrl, setCtaUrl] = useState("");
   const [variant, setVariant] = useState("info");
   const [audience, setAudience] = useState("all");
+  const [restaurantId, setRestaurantId] = useState<string>("");
   const [frequencyHours, setFrequencyHours] = useState("24");
   const [maxShows, setMaxShows] = useState("0");
   const [expiresAt, setExpiresAt] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const { data: restaurants } = useQuery({
+    queryKey: ["super", "restaurants", "broadcast-target"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("restaurants")
+        .select("id, name")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: audience === "restaurant",
+  });
+
   const submit = async () => {
     if (!title.trim() || !body.trim()) return toast.error("Title and message required");
+    if (audience === "restaurant" && !restaurantId) return toast.error("Select a business");
     setBusy(true);
     const { error } = await supabase.rpc("superadmin_create_broadcast", {
       _title: title.trim(),
@@ -140,7 +155,7 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
       _cta_url: ctaUrl.trim() || null,
       _variant: variant,
       _audience: audience,
-      _restaurant_id: null,
+      _restaurant_id: audience === "restaurant" ? restaurantId : null,
       _frequency_hours: parseInt(frequencyHours) || 0,
       _max_shows: parseInt(maxShows) || 0,
       _expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
