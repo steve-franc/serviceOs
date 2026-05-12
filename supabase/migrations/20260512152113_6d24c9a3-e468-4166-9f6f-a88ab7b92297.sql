@@ -1,0 +1,13 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.order_items;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.inventory;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.tabs;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.tab_items;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.daily_expenses;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.service_bookings;
+ALTER TABLE public.order_items REPLICA IDENTITY FULL;
+ALTER TABLE public.inventory REPLICA IDENTITY FULL;
+ALTER TABLE public.tabs REPLICA IDENTITY FULL;
+ALTER TABLE public.tab_items REPLICA IDENTITY FULL;
+ALTER TABLE public.daily_expenses REPLICA IDENTITY FULL;
+ALTER TABLE public.service_bookings REPLICA IDENTITY FULL;
+ALTER TABLE public.orders REPLICA IDENTITY FULL;

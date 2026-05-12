@@ -52,6 +52,25 @@ export function useInvalidateMenuItems() {
 // ── Orders ──────────────────────────────────────────────────
 export function useOrders() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`orders-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["orders", restaurantId] }); })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'order_items' },
+        () => { qc.invalidateQueries({ queryKey: ["orders", restaurantId] }); })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'service_bookings', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["service-bookings", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["orders", restaurantId],
     queryFn: async () => {
@@ -109,6 +128,19 @@ export function useInvalidateOrders() {
 // ── Inventory ───────────────────────────────────────────────
 export function useInventory() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`inventory-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["inventory", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["inventory", restaurantId],
     queryFn: async () => {
@@ -133,6 +165,22 @@ export function useInvalidateInventory() {
 // ── Tabs ────────────────────────────────────────────────────
 export function useTabs() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`tabs-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tabs', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["tabs", restaurantId] }); })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tab_items' },
+        () => { qc.invalidateQueries({ queryKey: ["tabs", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["tabs", restaurantId],
     queryFn: async () => {
@@ -158,6 +206,19 @@ export function useInvalidateTabs() {
 // ── Expenses ────────────────────────────────────────────────
 export function useExpenses() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`expenses-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'daily_expenses', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["expenses", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["expenses", restaurantId],
     queryFn: async () => {
