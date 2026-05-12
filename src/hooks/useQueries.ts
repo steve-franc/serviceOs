@@ -128,6 +128,19 @@ export function useInvalidateOrders() {
 // ── Inventory ───────────────────────────────────────────────
 export function useInventory() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`inventory-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["inventory", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["inventory", restaurantId],
     queryFn: async () => {
