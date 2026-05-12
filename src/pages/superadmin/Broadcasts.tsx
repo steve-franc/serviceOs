@@ -200,10 +200,24 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
               <SelectContent>
                 <SelectItem value="all">Everyone</SelectItem>
                 <SelectItem value="superadmins">Superadmins only</SelectItem>
+                <SelectItem value="restaurant">Specific business</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+        {audience === "restaurant" && (
+          <div>
+            <Label className="text-xs">Target business</Label>
+            <Select value={restaurantId} onValueChange={setRestaurantId}>
+              <SelectTrigger><SelectValue placeholder="Select a business…" /></SelectTrigger>
+              <SelectContent>
+                {(restaurants ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs">CTA label (optional)</Label>
