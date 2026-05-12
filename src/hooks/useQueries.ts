@@ -165,6 +165,22 @@ export function useInvalidateInventory() {
 // ── Tabs ────────────────────────────────────────────────────
 export function useTabs() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`tabs-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tabs', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["tabs", restaurantId] }); })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tab_items' },
+        () => { qc.invalidateQueries({ queryKey: ["tabs", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["tabs", restaurantId],
     queryFn: async () => {
