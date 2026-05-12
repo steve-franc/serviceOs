@@ -206,6 +206,19 @@ export function useInvalidateTabs() {
 // ── Expenses ────────────────────────────────────────────────
 export function useExpenses() {
   const { restaurantId } = useRestaurantContext();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`expenses-${restaurantId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'daily_expenses', filter: `restaurant_id=eq.${restaurantId}` },
+        () => { qc.invalidateQueries({ queryKey: ["expenses", restaurantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, qc]);
+
   return useQuery({
     queryKey: ["expenses", restaurantId],
     queryFn: async () => {
