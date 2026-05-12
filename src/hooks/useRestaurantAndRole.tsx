@@ -92,6 +92,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         setUser(currentUser);
+        notificationsStore.setActiveUser(currentUser?.id ?? null);
         setAuthLoading(false);
 
         if (!currentUser) {
