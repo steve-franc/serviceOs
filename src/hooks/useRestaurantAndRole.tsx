@@ -215,10 +215,12 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
 
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      notificationsStore.setActiveUser(nextUser?.id ?? null);
       setAuthLoading(false);
       setLoading(true);
-      setTimeout(() => loadAll(session?.user ?? null), 0);
+      setTimeout(() => loadAll(nextUser), 0);
     });
 
     loadAll();
