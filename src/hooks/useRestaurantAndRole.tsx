@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { notificationsStore } from "@/stores/notifications";
 
 export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | "superadmin" | null;
 
@@ -91,6 +92,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         setUser(currentUser);
+        notificationsStore.setActiveUser(currentUser?.id ?? null);
         setAuthLoading(false);
 
         if (!currentUser) {
@@ -213,10 +215,12 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
 
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      notificationsStore.setActiveUser(nextUser?.id ?? null);
       setAuthLoading(false);
       setLoading(true);
-      setTimeout(() => loadAll(session?.user ?? null), 0);
+      setTimeout(() => loadAll(nextUser), 0);
     });
 
     loadAll();
