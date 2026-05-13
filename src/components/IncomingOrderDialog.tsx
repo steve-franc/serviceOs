@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useAuth } from "@/hooks/useRestaurantAndRole";
