@@ -1327,6 +1327,10 @@ export type Database = {
         }[]
       }
       superadmin_overview: { Args: never; Returns: Json }
+      superadmin_platform_analytics: {
+        Args: { _business_types?: string[]; _days?: number; _status?: string }
+        Returns: Json
+      }
       superadmin_purge_restaurant: {
         Args: { _restaurant_id: string }
         Returns: undefined
