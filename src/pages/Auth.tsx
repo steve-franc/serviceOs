@@ -384,9 +384,16 @@ const Auth = () => {
           {showNewPassword ? <form onSubmit={handleSetNewPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} placeholder="At least 6 characters" />
+                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value.slice(0, 128))} required minLength={8} maxLength={128} placeholder="At least 8 characters" autoComplete="new-password" />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value.slice(0, 128))} required minLength={8} maxLength={128} placeholder="Re-enter password" autoComplete="new-password" />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-xs text-destructive">Passwords do not match</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={loading || !newPassword || newPassword !== confirmPassword}>
                 {loading ? "Updating..." : "Update Password"}
               </Button>
             </form> : showResetPassword ? <div className="space-y-4">
