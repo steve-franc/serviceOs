@@ -6,7 +6,7 @@ import { ShoppingCart, DollarSign, Store, TrendingUp } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice } from "@/lib/currency";
+import { formatPrice, formatPriceCompact } from "@/lib/currency";
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
