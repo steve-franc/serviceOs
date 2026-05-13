@@ -625,10 +625,10 @@ const MenuManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Dish Photo (shown on public order page)</Label>
+                  <Label>Item Image (shown on public order page)</Label>
                   {formData.image_url ? (
                     <div className="relative w-full h-40 rounded-md overflow-hidden border bg-muted">
-                      <img src={formData.image_url} alt="Dish" className="w-full h-full object-cover" />
+                      <img src={formData.image_url} alt="Item" className="w-full h-full object-cover" />
                       <Button
                         type="button"
                         variant="destructive"
