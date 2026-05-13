@@ -1359,6 +1359,22 @@ export type Database = {
           total_sold: number
         }[]
       }
+      superadmin_update_broadcast: {
+        Args: {
+          _audience: string
+          _body: string
+          _cta_label: string
+          _cta_url: string
+          _expires_at: string
+          _frequency_hours: number
+          _id: string
+          _max_shows: number
+          _restaurant_id: string
+          _title: string
+          _variant: string
+        }
+        Returns: undefined
+      }
       superadmin_upsert_tier: {
         Args: {
           _display_order: number
