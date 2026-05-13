@@ -34,13 +34,24 @@ const Auth = () => {
     user
   } = useAuth();
 
-  // Handle password recovery token from URL
+  // Detect password recovery flow (link from reset email)
   useEffect(() => {
+    // Initial check from URL hash (in case auth listener fires before mount)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get("type");
-    if (type === "recovery") {
-      setShowNewPassword(true);
+    if (hashParams.get("type") === "recovery" || hashParams.get("error_code")) {
+      if (hashParams.get("error_code")) {
+        toast.error(hashParams.get("error_description")?.replace(/\+/g, " ") || "Reset link is invalid or expired");
+      } else {
+        setShowNewPassword(true);
+      }
     }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setShowNewPassword(true);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
