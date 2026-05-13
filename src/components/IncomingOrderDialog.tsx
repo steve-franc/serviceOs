@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useAuth } from "@/hooks/useRestaurantAndRole";
@@ -32,6 +33,12 @@ interface PendingOrder {
 }
 
 export const IncomingOrderDialog = () => {
+  const location = useLocation();
+  const isPublicRoute =
+    location.pathname.startsWith("/order/") && location.pathname !== "/order/create" ||
+    location.pathname.startsWith("/receipt/") ||
+    location.pathname === "/auth" ||
+    location.pathname === "/";
   const { restaurantId } = useRestaurantContext();
   const { user } = useAuth();
   const invalidateOrders = useInvalidateOrders();
@@ -57,6 +64,7 @@ export const IncomingOrderDialog = () => {
   }, [restaurantId]);
 
   useEffect(() => {
+    if (isPublicRoute) return;
     if (!restaurantId || !user) return;
     fetchPending();
     const channel = supabase
@@ -70,7 +78,7 @@ export const IncomingOrderDialog = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [restaurantId, user, fetchPending]);
+  }, [restaurantId, user, fetchPending, isPublicRoute]);
 
   // Stop the alarm whenever the queue empties.
   useEffect(() => {
@@ -116,6 +124,7 @@ export const IncomingOrderDialog = () => {
     }
   };
 
+  if (isPublicRoute) return null;
   if (!current) return null;
   const busy = busyId === current.id;
 
