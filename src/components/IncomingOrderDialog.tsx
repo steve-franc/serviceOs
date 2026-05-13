@@ -124,6 +124,7 @@ export const IncomingOrderDialog = () => {
     }
   };
 
+  if (isPublicRoute) return null;
   if (!current) return null;
   const busy = busyId === current.id;
 
