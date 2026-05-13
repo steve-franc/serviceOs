@@ -21,8 +21,8 @@ export default function SuperOrders() {
         </div>
 
         <div className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
-          <div className="hidden md:grid grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            <span>#</span><span>Customer</span><span>Restaurant</span><span>Amount</span><span>Payment</span><span>Status</span>
+          <div className="hidden md:grid grid-cols-[80px_1fr_1fr_110px_110px_110px] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <span>#</span><span>Customer</span><span>Restaurant</span><span className="text-right">Amount</span><span>Payment</span><span>Status</span>
           </div>
           {isLoading ? (
             <div className="p-3 space-y-2">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
