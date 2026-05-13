@@ -78,7 +78,7 @@ export const IncomingOrderDialog = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [restaurantId, user, fetchPending]);
+  }, [restaurantId, user, fetchPending, isPublicRoute]);
 
   // Stop the alarm whenever the queue empties.
   useEffect(() => {
