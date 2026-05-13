@@ -64,6 +64,7 @@ export const IncomingOrderDialog = () => {
   }, [restaurantId]);
 
   useEffect(() => {
+    if (isPublicRoute) return;
     if (!restaurantId || !user) return;
     fetchPending();
     const channel = supabase
