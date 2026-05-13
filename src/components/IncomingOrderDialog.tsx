@@ -33,6 +33,12 @@ interface PendingOrder {
 }
 
 export const IncomingOrderDialog = () => {
+  const location = useLocation();
+  const isPublicRoute =
+    location.pathname.startsWith("/order/") && location.pathname !== "/order/create" ||
+    location.pathname.startsWith("/receipt/") ||
+    location.pathname === "/auth" ||
+    location.pathname === "/";
   const { restaurantId } = useRestaurantContext();
   const { user } = useAuth();
   const invalidateOrders = useInvalidateOrders();
