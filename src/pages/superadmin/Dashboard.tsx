@@ -6,7 +6,7 @@ import { ShoppingCart, DollarSign, Store, TrendingUp } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice } from "@/lib/currency";
+import { formatPrice, formatPriceCompact } from "@/lib/currency";
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -41,10 +41,10 @@ export default function SuperDashboard() {
             Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
           ) : (
             <>
-              <StatCard label="Total Revenue" value={formatPrice(totalRev)} icon={<DollarSign className="h-4 w-4" />} />
+              <StatCard label="Total Revenue" value={formatPriceCompact(totalRev)} icon={<DollarSign className="h-4 w-4" />} />
               <StatCard label="Total Orders" value={totalOrd.toLocaleString()} icon={<ShoppingCart className="h-4 w-4" />} />
               <StatCard label="Businesses" value={String(overview?.restaurants_total ?? 0)} sub={`${overview?.restaurants_active ?? 0} active`} icon={<Store className="h-4 w-4" />} />
-              <StatCard label="Avg Order Value" value={formatPrice(aov)} icon={<TrendingUp className="h-4 w-4" />} />
+              <StatCard label="Avg Order Value" value={formatPriceCompact(aov)} icon={<TrendingUp className="h-4 w-4" />} />
             </>
           )}
         </div>

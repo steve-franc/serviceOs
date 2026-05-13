@@ -65,8 +65,8 @@ export default function SuperRestaurants() {
         </div>
 
         <div className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
-          <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            <span>Name</span><span>Staff</span><span>Orders</span><span>Revenue</span><span>Status</span><span>Actions</span>
+          <div className="hidden md:grid grid-cols-[1fr_70px_80px_140px_90px_140px] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <span>Name</span><span className="text-right">Staff</span><span className="text-right">Orders</span><span className="text-right">Revenue</span><span>Status</span><span className="text-right">Actions</span>
           </div>
           {isLoading ? (
             <div className="p-3 space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
@@ -75,15 +75,15 @@ export default function SuperRestaurants() {
           ) : (
             filtered.map((r: any, i: number) => (
               <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-1 md:gap-4 items-center px-5 py-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors">
+                className="grid grid-cols-1 md:grid-cols-[1fr_70px_80px_140px_90px_140px] gap-1 md:gap-4 items-center px-5 py-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors">
                 <Link to={`/superadmin/restaurants/${r.id}`} className="block min-w-0">
                   <p className="font-medium text-sm truncate">{r.name}</p>
                   <p className="text-xs text-muted-foreground capitalize">{(r.business_type || "restaurant").replace("_", " ")}</p>
                   <p className="text-xs text-muted-foreground md:hidden">{r.orders_count} orders · {formatPrice(Number(r.revenue || 0))}</p>
                 </Link>
-                <span className="hidden md:block text-sm text-muted-foreground">{r.staff_count}</span>
-                <span className="hidden md:block text-sm text-muted-foreground">{r.orders_count}</span>
-                <span className="hidden md:block text-sm font-medium font-mono">{formatPrice(Number(r.revenue || 0))}</span>
+                <span className="hidden md:block text-sm text-muted-foreground text-right">{r.staff_count}</span>
+                <span className="hidden md:block text-sm text-muted-foreground text-right">{r.orders_count}</span>
+                <span className="hidden md:block text-sm font-medium font-mono text-right">{formatPrice(Number(r.revenue || 0))}</span>
                 <div><StatusBadge status={r.status} /></div>
                 <div className="flex gap-1 justify-end">
                   {r.status === "active" && <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => setStatus(r, "on_hold")} title="Hold"><Pause className="h-4 w-4" /></Button>}
