@@ -205,18 +205,27 @@ const Auth = () => {
 
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      toast.success("Password updated successfully!");
+      // Clean recovery hash from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Sign out so user must log in fresh with new password
+      await supabase.auth.signOut();
+      toast.success("Password updated. Please sign in with your new password.");
       setShowNewPassword(false);
       setNewPassword("");
-      navigate("/order/create");
+      setConfirmPassword("");
+      setMode("signin");
     } catch (error: any) {
       toast.error(error.message || "Failed to update password");
     } finally {
