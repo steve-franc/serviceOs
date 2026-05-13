@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -24,11 +23,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Megaphone, Trash2, Plus } from "lucide-react";
+import { Megaphone, Trash2, Plus, Pencil } from "lucide-react";
 
 export default function Broadcasts() {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null | undefined>(undefined); // undefined = closed, null = new, object = edit
 
   const { data, isLoading } = useQuery({
     queryKey: ["super", "broadcasts"],
@@ -66,6 +65,8 @@ export default function Broadcasts() {
     refresh();
   };
 
+  const dialogOpen = editing !== undefined;
+
   return (
     <>
       <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
@@ -76,12 +77,7 @@ export default function Broadcasts() {
             </h1>
             <p className="text-sm text-muted-foreground">Send platform-wide announcements with frequency control</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" /> New broadcast</Button>
-            </DialogTrigger>
-            <BroadcastForm onClose={() => { setOpen(false); refresh(); }} />
-          </Dialog>
+          <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 mr-2" /> New broadcast</Button>
         </div>
 
         <div className="rounded-xl border border-border bg-card divide-y divide-border">
@@ -120,6 +116,9 @@ export default function Broadcasts() {
                     <Switch checked={b.is_active} onCheckedChange={(v) => toggle(b.id, v)} />
                     <span className="text-xs text-muted-foreground">{b.is_active ? "Active" : "Paused"}</span>
                   </div>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(b)} title="Edit">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                   <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(b.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -129,21 +128,38 @@ export default function Broadcasts() {
           )}
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) setEditing(undefined); }}>
+        {dialogOpen && (
+          <BroadcastForm
+            existing={editing}
+            onClose={() => { setEditing(undefined); refresh(); }}
+          />
+        )}
+      </Dialog>
     </>
   );
 }
 
-function BroadcastForm({ onClose }: { onClose: () => void }) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [ctaLabel, setCtaLabel] = useState("");
-  const [ctaUrl, setCtaUrl] = useState("");
-  const [variant, setVariant] = useState("info");
-  const [audience, setAudience] = useState("all");
-  const [restaurantId, setRestaurantId] = useState<string>("");
-  const [frequencyHours, setFrequencyHours] = useState("24");
-  const [maxShows, setMaxShows] = useState("0");
-  const [expiresAt, setExpiresAt] = useState("");
+function toLocalInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function BroadcastForm({ existing, onClose }: { existing: any | null; onClose: () => void }) {
+  const isEdit = !!existing;
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [body, setBody] = useState(existing?.body ?? "");
+  const [ctaLabel, setCtaLabel] = useState(existing?.cta_label ?? "");
+  const [ctaUrl, setCtaUrl] = useState(existing?.cta_url ?? "");
+  const [variant, setVariant] = useState(existing?.variant ?? "info");
+  const [audience, setAudience] = useState(existing?.audience ?? "all");
+  const [restaurantId, setRestaurantId] = useState<string>(existing?.restaurant_id ?? "");
+  const [frequencyHours, setFrequencyHours] = useState(String(existing?.frequency_hours ?? 24));
+  const [maxShows, setMaxShows] = useState(String(existing?.max_shows ?? 0));
+  const [expiresAt, setExpiresAt] = useState(toLocalInput(existing?.expires_at));
   const [busy, setBusy] = useState(false);
 
   const { data: restaurants } = useQuery({
@@ -163,7 +179,7 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
     if (!title.trim() || !body.trim()) return toast.error("Title and message required");
     if (audience === "restaurant" && !restaurantId) return toast.error("Select a business");
     setBusy(true);
-    const { error } = await supabase.rpc("superadmin_create_broadcast", {
+    const params = {
       _title: title.trim(),
       _body: body.trim(),
       _cta_label: ctaLabel.trim() || null,
@@ -174,17 +190,20 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
       _frequency_hours: parseInt(frequencyHours) || 0,
       _max_shows: parseInt(maxShows) || 0,
       _expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-    });
+    };
+    const { error } = isEdit
+      ? await supabase.rpc("superadmin_update_broadcast", { _id: existing.id, ...params })
+      : await supabase.rpc("superadmin_create_broadcast", params);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Broadcast sent");
+    toast.success(isEdit ? "Broadcast updated" : "Broadcast sent");
     onClose();
   };
 
   return (
     <DialogContent className="max-w-lg">
       <DialogHeader>
-        <DialogTitle>New broadcast</DialogTitle>
+        <DialogTitle>{isEdit ? "Edit broadcast" : "New broadcast"}</DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
         <div>
@@ -262,7 +281,9 @@ function BroadcastForm({ onClose }: { onClose: () => void }) {
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button onClick={submit} disabled={busy}>{busy ? "Sending…" : "Send broadcast"}</Button>
+        <Button onClick={submit} disabled={busy}>
+          {busy ? "Saving…" : isEdit ? "Save changes" : "Send broadcast"}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
