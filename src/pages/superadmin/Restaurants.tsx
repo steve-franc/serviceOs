@@ -65,8 +65,8 @@ export default function SuperRestaurants() {
         </div>
 
         <div className="rounded-xl bg-card border border-border shadow-sm overflow-hidden">
-          <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            <span>Name</span><span>Staff</span><span>Orders</span><span>Revenue</span><span>Status</span><span>Actions</span>
+          <div className="hidden md:grid grid-cols-[1fr_70px_80px_140px_90px_140px] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <span>Name</span><span className="text-right">Staff</span><span className="text-right">Orders</span><span className="text-right">Revenue</span><span>Status</span><span className="text-right">Actions</span>
           </div>
           {isLoading ? (
             <div className="p-3 space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
