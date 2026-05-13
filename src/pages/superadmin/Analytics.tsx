@@ -47,9 +47,9 @@ export default function SuperAnalytics() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Avg Daily Revenue" value={formatPrice(avgDaily)} icon={<DollarSign className="h-4 w-4" />} />
+          <StatCard label="Avg Daily Revenue" value={formatPriceCompact(avgDaily)} icon={<DollarSign className="h-4 w-4" />} />
           <StatCard label="Avg Daily Orders" value={String(trend && trend.length > 0 ? Math.round(totalOrd / trend.length) : 0)} icon={<ShoppingCart className="h-4 w-4" />} />
-          <StatCard label="Total Revenue" value={formatPrice(totalRev)} icon={<TrendingUp className="h-4 w-4" />} />
+          <StatCard label="Total Revenue" value={formatPriceCompact(totalRev)} icon={<TrendingUp className="h-4 w-4" />} />
           <StatCard label="Total Orders" value={totalOrd.toLocaleString()} icon={<BarChart3 className="h-4 w-4" />} />
         </div>
 
