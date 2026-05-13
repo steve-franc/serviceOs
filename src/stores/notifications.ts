@@ -70,7 +70,7 @@ export const notificationsStore = {
     saveToStorage();
     emit();
     // Play sound (respects user preferences). Lazy-imported to avoid cycles.
-    void import("@/lib/notification-sound-bridge").then((m) => m.playForType(type));
+    void import("@/lib/notification-sound-bridge").then((m) => m.playForType(type, title));
   },
   markAllRead() {
     if (entries.every((e) => e.read)) return;
