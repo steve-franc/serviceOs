@@ -5,7 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo } from "react";
-import { formatPrice } from "@/lib/currency";
+import { formatPrice, formatPriceCompact } from "@/lib/currency";
 
 const PIE = ["hsl(var(--primary))", "hsl(var(--primary) / 0.75)", "hsl(var(--primary) / 0.55)", "hsl(var(--primary) / 0.35)", "hsl(var(--primary) / 0.2)"];
 
