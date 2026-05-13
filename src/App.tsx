@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth, RestaurantRoleProvider } from "./hooks/useRestaurantAndRole";
 import { NotificationSound } from "./components/NotificationSound";
+import { IncomingOrderDialog } from "./components/IncomingOrderDialog";
 import ScrollToTop from "./components/ScrollToTop";
 import { useTimeBasedTheme } from "./hooks/useTimeBasedTheme";
 import { useAutoEndDay } from "./hooks/useAutoEndDay";
@@ -128,6 +129,7 @@ const App = () => {
         <BrowserRouter>
           <ScrollToTop />
             <NotificationSound />
+            <IncomingOrderDialog />
             <BroadcastPopup />
           <Suspense fallback={<PageSkeleton />}>
             <Routes>
