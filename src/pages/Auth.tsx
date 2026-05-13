@@ -29,18 +29,30 @@ const Auth = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
   const {
     user
   } = useAuth();
 
-  // Handle password recovery token from URL
+  // Detect password recovery flow (link from reset email)
   useEffect(() => {
+    // Initial check from URL hash (in case auth listener fires before mount)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get("type");
-    if (type === "recovery") {
-      setShowNewPassword(true);
+    if (hashParams.get("type") === "recovery" || hashParams.get("error_code")) {
+      if (hashParams.get("error_code")) {
+        toast.error(hashParams.get("error_description")?.replace(/\+/g, " ") || "Reset link is invalid or expired");
+      } else {
+        setShowNewPassword(true);
+      }
     }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setShowNewPassword(true);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -194,18 +206,27 @@ const Auth = () => {
 
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      toast.success("Password updated successfully!");
+      // Clean recovery hash from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Sign out so user must log in fresh with new password
+      await supabase.auth.signOut();
+      toast.success("Password updated. Please sign in with your new password.");
       setShowNewPassword(false);
       setNewPassword("");
-      navigate("/order/create");
+      setConfirmPassword("");
+      setMode("signin");
     } catch (error: any) {
       toast.error(error.message || "Failed to update password");
     } finally {
@@ -363,9 +384,16 @@ const Auth = () => {
           {showNewPassword ? <form onSubmit={handleSetNewPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} placeholder="At least 6 characters" />
+                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value.slice(0, 128))} required minLength={8} maxLength={128} placeholder="At least 8 characters" autoComplete="new-password" />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value.slice(0, 128))} required minLength={8} maxLength={128} placeholder="Re-enter password" autoComplete="new-password" />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-xs text-destructive">Passwords do not match</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={loading || !newPassword || newPassword !== confirmPassword}>
                 {loading ? "Updating..." : "Update Password"}
               </Button>
             </form> : showResetPassword ? <div className="space-y-4">
