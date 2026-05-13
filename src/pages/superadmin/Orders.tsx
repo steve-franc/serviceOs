@@ -32,15 +32,15 @@ export default function SuperOrders() {
             orders.map((o: any, i: number) => (
               <motion.div key={o.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.02, 0.5) }}>
                 <Link to={`/receipt/${o.id}`}
-                  className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-1 md:gap-4 items-center px-5 py-3 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors">
+                  className="grid grid-cols-1 md:grid-cols-[80px_1fr_1fr_110px_110px_110px] gap-1 md:gap-4 items-center px-5 py-3 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors">
                   <span className="text-sm font-medium font-mono">#{o.order_number}</span>
                   <div className="min-w-0">
                     <p className="text-sm truncate">{o.customer_name || (o.is_public_order ? "Online" : "Walk-in")}</p>
                     <p className="text-xs text-muted-foreground">{fmt(o.created_at)}</p>
                   </div>
                   <span className="hidden md:block text-sm text-muted-foreground truncate">{o.restaurant_name}</span>
-                  <span className="hidden md:block text-sm font-medium font-mono">{formatPrice(Number(o.total))}</span>
-                  <span className="hidden md:block text-xs text-muted-foreground capitalize">{o.payment_method}</span>
+                  <span className="hidden md:block text-sm font-medium font-mono text-right">{formatPrice(Number(o.total))}</span>
+                  <span className="hidden md:block text-xs text-muted-foreground capitalize truncate">{o.payment_method}</span>
                   <div><StatusBadge status={o.status} /></div>
                 </Link>
               </motion.div>
