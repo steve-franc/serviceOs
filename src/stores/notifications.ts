@@ -69,6 +69,8 @@ export const notificationsStore = {
     entries = [entry, ...entries].slice(0, MAX);
     saveToStorage();
     emit();
+    // Play sound (respects user preferences). Lazy-imported to avoid cycles.
+    void import("@/lib/notification-sound-bridge").then((m) => m.playForType(type));
   },
   markAllRead() {
     if (entries.every((e) => e.read)) return;
