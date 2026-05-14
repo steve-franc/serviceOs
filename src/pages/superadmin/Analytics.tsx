@@ -23,7 +23,7 @@ import {
 } from "recharts";
 import {
   Users, Store, CalendarCheck, TrendingDown, TrendingUp,
-  RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight, Star,
+  RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight, Star, ArrowUpDown,
 } from "lucide-react";
 
 type Filters = {
