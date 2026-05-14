@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/superadmin/StatCard";
@@ -22,7 +23,7 @@ import {
 } from "recharts";
 import {
   Users, Store, CalendarCheck, TrendingDown, TrendingUp,
-  RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight, Star,
+  RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight, Star, ArrowUpDown,
 } from "lucide-react";
 
 type Filters = {
@@ -59,10 +60,50 @@ const tooltipStyle = {
   fontSize: 12,
 } as const;
 
+type SortDir = "asc" | "desc";
+type SortState<K extends string> = { key: K; dir: SortDir };
+
+function sortBy<T>(rows: T[], key: keyof T, dir: SortDir) {
+  const arr = [...rows];
+  arr.sort((a: any, b: any) => {
+    const av = a[key];
+    const bv = b[key];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === "number" && typeof bv === "number") return dir === "asc" ? av - bv : bv - av;
+    return dir === "asc"
+      ? String(av).localeCompare(String(bv))
+      : String(bv).localeCompare(String(av));
+  });
+  return arr;
+}
+
+function SortHead({
+  label, active, dir, onClick, align = "left",
+}: { label: string; active: boolean; dir: SortDir; onClick: () => void; align?: "left" | "right" }) {
+  return (
+    <TableHead className={align === "right" ? "text-right" : ""}>
+      <button
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground" : ""}`}
+      >
+        {label}
+        <ArrowUpDown className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`} />
+        {active && <span className="text-[10px]">{dir === "asc" ? "↑" : "↓"}</span>}
+      </button>
+    </TableHead>
+  );
+}
+
 export default function SuperAnalytics() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>({
     days: 30, businessTypes: [], status: "all",
   });
+  const [topSort, setTopSort] = useState<SortState<"name" | "business_type" | "bookings_period" | "bookings_prev" | "status">>({ key: "bookings_period", dir: "desc" });
+  const [decSort, setDecSort] = useState<SortState<"name" | "business_type" | "bookings_prev" | "bookings_period" | "pct_change" | "last_activity">>({ key: "pct_change", dir: "asc" });
+  const [belowSort, setBelowSort] = useState<SortState<"name" | "business_type" | "bookings_period" | "bookings_prev" | "status">>({ key: "bookings_period", dir: "asc" });
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["super", "platform-analytics", filters],
@@ -83,6 +124,25 @@ export default function SuperAnalytics() {
   const top: any[] = data?.top_businesses ?? [];
   const declining: any[] = data?.declining ?? [];
   const svc = data?.service_stats ?? {};
+
+  const avgBookings = useMemo(() => {
+    if (!top.length) return 0;
+    const total = top.reduce((s, b: any) => s + Number(b.bookings_period ?? 0), 0);
+    return total / top.length;
+  }, [top]);
+
+  const belowAverage = useMemo(
+    () => top.filter((b: any) => Number(b.bookings_period ?? 0) < avgBookings),
+    [top, avgBookings],
+  );
+
+  const sortedTop = useMemo(() => sortBy(top, topSort.key, topSort.dir).slice(0, 25), [top, topSort]);
+  const sortedDeclining = useMemo(() => sortBy(declining, decSort.key, decSort.dir), [declining, decSort]);
+  const sortedBelow = useMemo(() => sortBy(belowAverage, belowSort.key, belowSort.dir), [belowAverage, belowSort]);
+
+  const goToBusiness = (id: string) => navigate(`/superadmin/restaurants/${id}`);
+  const cycleSort = <K extends string>(s: SortState<K>, k: K, set: (n: SortState<K>) => void) =>
+    set({ key: k, dir: s.key === k && s.dir === "desc" ? "asc" : "desc" });
 
   const cancellationRate = useMemo(() => {
     const total = Number(svc.total ?? 0);
@@ -303,25 +363,25 @@ export default function SuperAnalytics() {
         </motion.div>
       </div>
 
-      {/* Tables */}
+      {/* Top Businesses */}
       <Card className="p-5">
         <h2 className="text-sm font-semibold mb-4">Top Businesses by Bookings</h2>
         {isLoading ? <Skeleton className="h-40" /> : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Business</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Bookings (period)</TableHead>
+                <SortHead label="Business" active={topSort.key === "name"} dir={topSort.dir} onClick={() => cycleSort(topSort, "name", setTopSort)} />
+                <SortHead label="Type" active={topSort.key === "business_type"} dir={topSort.dir} onClick={() => cycleSort(topSort, "business_type", setTopSort)} />
+                <SortHead label="Bookings (period)" align="right" active={topSort.key === "bookings_period"} dir={topSort.dir} onClick={() => cycleSort(topSort, "bookings_period", setTopSort)} />
                 <TableHead className="text-right">vs Prev</TableHead>
-                <TableHead>Status</TableHead>
+                <SortHead label="Status" active={topSort.key === "status"} dir={topSort.dir} onClick={() => cycleSort(topSort, "status", setTopSort)} />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {top.slice(0, 10).map((b: any) => {
+              {sortedTop.map((b: any) => {
                 const d = pctDelta(b.bookings_period, b.bookings_prev);
                 return (
-                  <TableRow key={b.id}>
+                  <TableRow key={b.id} onClick={() => goToBusiness(b.id)} className="cursor-pointer">
                     <TableCell className="font-medium">{b.name}</TableCell>
                     <TableCell className="capitalize text-muted-foreground">{b.business_type}</TableCell>
                     <TableCell className="text-right font-mono">{b.bookings_period}</TableCell>
@@ -334,7 +394,7 @@ export default function SuperAnalytics() {
                   </TableRow>
                 );
               })}
-              {top.length === 0 && (
+              {sortedTop.length === 0 && (
                 <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                   No data
                 </TableCell></TableRow>
@@ -344,6 +404,19 @@ export default function SuperAnalytics() {
         )}
       </Card>
 
+      {/* Highest Rated (placeholder until ratings tracked) */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Star className="h-4 w-4 text-amber-500" />
+          <h2 className="text-sm font-semibold">Highest Rated Businesses</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Customer ratings aren't tracked in the data model yet. Once a reviews
+          table is added, this table will populate and become sortable.
+        </p>
+      </Card>
+
+      {/* Declining */}
       <Card className="p-5">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -354,17 +427,17 @@ export default function SuperAnalytics() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Business</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Prev</TableHead>
-                <TableHead className="text-right">Current</TableHead>
-                <TableHead className="text-right">% Change</TableHead>
-                <TableHead>Last Activity</TableHead>
+                <SortHead label="Business" active={decSort.key === "name"} dir={decSort.dir} onClick={() => cycleSort(decSort, "name", setDecSort)} />
+                <SortHead label="Type" active={decSort.key === "business_type"} dir={decSort.dir} onClick={() => cycleSort(decSort, "business_type", setDecSort)} />
+                <SortHead label="Prev" align="right" active={decSort.key === "bookings_prev"} dir={decSort.dir} onClick={() => cycleSort(decSort, "bookings_prev", setDecSort)} />
+                <SortHead label="Current" align="right" active={decSort.key === "bookings_period"} dir={decSort.dir} onClick={() => cycleSort(decSort, "bookings_period", setDecSort)} />
+                <SortHead label="% Change" align="right" active={decSort.key === "pct_change"} dir={decSort.dir} onClick={() => cycleSort(decSort, "pct_change", setDecSort)} />
+                <SortHead label="Last Activity" active={decSort.key === "last_activity"} dir={decSort.dir} onClick={() => cycleSort(decSort, "last_activity", setDecSort)} />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {declining.map((b: any) => (
-                <TableRow key={b.id} className="bg-red-500/5">
+              {sortedDeclining.map((b: any) => (
+                <TableRow key={b.id} onClick={() => goToBusiness(b.id)} className="bg-red-500/5 cursor-pointer">
                   <TableCell className="font-medium">{b.name}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{b.business_type}</TableCell>
                   <TableCell className="text-right font-mono">{b.bookings_prev}</TableCell>
@@ -377,9 +450,53 @@ export default function SuperAnalytics() {
                   </TableCell>
                 </TableRow>
               ))}
-              {declining.length === 0 && (
+              {sortedDeclining.length === 0 && (
                 <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                   No businesses showing significant decline 🎉
+                </TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
+      {/* Below Average */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingDown className="h-4 w-4 text-amber-500" />
+          <h2 className="text-sm font-semibold">Businesses Below Average</h2>
+          <span className="text-xs text-muted-foreground">
+            (under platform avg of {avgBookings.toFixed(1)} bookings)
+          </span>
+        </div>
+        {isLoading ? <Skeleton className="h-32" /> : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortHead label="Business" active={belowSort.key === "name"} dir={belowSort.dir} onClick={() => cycleSort(belowSort, "name", setBelowSort)} />
+                <SortHead label="Type" active={belowSort.key === "business_type"} dir={belowSort.dir} onClick={() => cycleSort(belowSort, "business_type", setBelowSort)} />
+                <SortHead label="Bookings" align="right" active={belowSort.key === "bookings_period"} dir={belowSort.dir} onClick={() => cycleSort(belowSort, "bookings_period", setBelowSort)} />
+                <SortHead label="Prev" align="right" active={belowSort.key === "bookings_prev"} dir={belowSort.dir} onClick={() => cycleSort(belowSort, "bookings_prev", setBelowSort)} />
+                <SortHead label="Status" active={belowSort.key === "status"} dir={belowSort.dir} onClick={() => cycleSort(belowSort, "status", setBelowSort)} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedBelow.map((b: any) => (
+                <TableRow key={b.id} onClick={() => goToBusiness(b.id)} className="cursor-pointer">
+                  <TableCell className="font-medium">{b.name}</TableCell>
+                  <TableCell className="capitalize text-muted-foreground">{b.business_type}</TableCell>
+                  <TableCell className="text-right font-mono">{b.bookings_period}</TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">{b.bookings_prev}</TableCell>
+                  <TableCell>
+                    <Badge variant={b.status === "active" ? "default" : "secondary"} className="capitalize">
+                      {b.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {sortedBelow.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                  All businesses at or above average
                 </TableCell></TableRow>
               )}
             </TableBody>
