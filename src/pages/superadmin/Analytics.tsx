@@ -125,6 +125,25 @@ export default function SuperAnalytics() {
   const declining: any[] = data?.declining ?? [];
   const svc = data?.service_stats ?? {};
 
+  const avgBookings = useMemo(() => {
+    if (!top.length) return 0;
+    const total = top.reduce((s, b: any) => s + Number(b.bookings_period ?? 0), 0);
+    return total / top.length;
+  }, [top]);
+
+  const belowAverage = useMemo(
+    () => top.filter((b: any) => Number(b.bookings_period ?? 0) < avgBookings),
+    [top, avgBookings],
+  );
+
+  const sortedTop = useMemo(() => sortBy(top, topSort.key, topSort.dir).slice(0, 25), [top, topSort]);
+  const sortedDeclining = useMemo(() => sortBy(declining, decSort.key, decSort.dir), [declining, decSort]);
+  const sortedBelow = useMemo(() => sortBy(belowAverage, belowSort.key, belowSort.dir), [belowAverage, belowSort]);
+
+  const goToBusiness = (id: string) => navigate(`/superadmin/restaurants/${id}`);
+  const cycleSort = <K extends string>(s: SortState<K>, k: K, set: (n: SortState<K>) => void) =>
+    set({ key: k, dir: s.key === k && s.dir === "desc" ? "asc" : "desc" });
+
   const cancellationRate = useMemo(() => {
     const total = Number(svc.total ?? 0);
     if (!total) return null;
