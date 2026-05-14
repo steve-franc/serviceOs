@@ -503,6 +503,8 @@ export default function SuperAnalytics() {
           </Table>
         )}
       </Card>
+    </div>
+  );
 }
 
 function MetricRow({
