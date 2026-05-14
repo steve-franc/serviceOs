@@ -60,10 +60,50 @@ const tooltipStyle = {
   fontSize: 12,
 } as const;
 
+type SortDir = "asc" | "desc";
+type SortState<K extends string> = { key: K; dir: SortDir };
+
+function sortBy<T>(rows: T[], key: keyof T, dir: SortDir) {
+  const arr = [...rows];
+  arr.sort((a: any, b: any) => {
+    const av = a[key];
+    const bv = b[key];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === "number" && typeof bv === "number") return dir === "asc" ? av - bv : bv - av;
+    return dir === "asc"
+      ? String(av).localeCompare(String(bv))
+      : String(bv).localeCompare(String(av));
+  });
+  return arr;
+}
+
+function SortHead({
+  label, active, dir, onClick, align = "left",
+}: { label: string; active: boolean; dir: SortDir; onClick: () => void; align?: "left" | "right" }) {
+  return (
+    <TableHead className={align === "right" ? "text-right" : ""}>
+      <button
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground" : ""}`}
+      >
+        {label}
+        <ArrowUpDown className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`} />
+        {active && <span className="text-[10px]">{dir === "asc" ? "↑" : "↓"}</span>}
+      </button>
+    </TableHead>
+  );
+}
+
 export default function SuperAnalytics() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>({
     days: 30, businessTypes: [], status: "all",
   });
+  const [topSort, setTopSort] = useState<SortState<"name" | "business_type" | "bookings_period" | "bookings_prev" | "status">>({ key: "bookings_period", dir: "desc" });
+  const [decSort, setDecSort] = useState<SortState<"name" | "business_type" | "bookings_prev" | "bookings_period" | "pct_change" | "last_activity">>({ key: "pct_change", dir: "asc" });
+  const [belowSort, setBelowSort] = useState<SortState<"name" | "business_type" | "bookings_period" | "bookings_prev" | "status">>({ key: "bookings_period", dir: "asc" });
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["super", "platform-analytics", filters],
