@@ -395,7 +395,10 @@ const Admin = () => {
       .eq("restaurant_id", restaurantId);
     
     if (latestReport?.created_at) {
-      query = query.gt("created_at", latestReport.created_at);
+      // Include orders created OR paid since last End Day so settled debts
+      // (paid_at = now) bubble into today's pool even if the order is older.
+      const cutoff = latestReport.created_at;
+      query = query.or(`created_at.gt.${cutoff},paid_at.gt.${cutoff}`);
     }
     
     const { data: ordersData } = await query;
