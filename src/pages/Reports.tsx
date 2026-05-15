@@ -72,8 +72,12 @@ const Reports = () => {
     try {
       const startStr = dateRange.start.toISOString();
       const endStr = dateRange.end.toISOString();
+      // Previous comparable window for trend / % change analysis
+      const spanMs = dateRange.end.getTime() - dateRange.start.getTime();
+      const prevStart = new Date(dateRange.start.getTime() - spanMs - 1);
+      const prevEnd = new Date(dateRange.start.getTime() - 1);
 
-      const [reportsRes, expensesRes, ordersRes, settingsRes] = await Promise.all([
+      const [reportsRes, expensesRes, prevExpensesRes, ordersRes, settingsRes] = await Promise.all([
         supabase.from("daily_reports").select("id, report_date, total_orders, total_revenue, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr)
@@ -81,6 +85,9 @@ const Reports = () => {
         supabase.from("daily_expenses").select("amount, source, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr),
+        supabase.from("daily_expenses").select("amount, source, created_at")
+          .eq("restaurant_id", restaurantId)
+          .gte("created_at", prevStart.toISOString()).lte("created_at", prevEnd.toISOString()),
         supabase.from("orders").select("total, customer_name, payment_method, payment_status, status, created_at")
           .eq("restaurant_id", restaurantId).eq("status", "confirmed")
           .gte("created_at", startStr).lte("created_at", endStr),
@@ -90,6 +97,7 @@ const Reports = () => {
 
       setReports(reportsRes.data || []);
       setExpenses(expensesRes.data as ExpenseData[] || []);
+      setPrevExpenses(prevExpensesRes.data as ExpenseData[] || []);
       setOrders(ordersRes.data || []);
       setFixedMonthlyExpenses(Number((settingsRes.data as any)?.fixed_monthly_expenses) || 0);
     } catch {
