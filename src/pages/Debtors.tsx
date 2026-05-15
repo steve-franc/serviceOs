@@ -144,13 +144,36 @@ const Debtors = () => {
       if (orderErr) {
         toast.error("Debt updated but order status sync failed");
       }
+    } else if (newResolved) {
+      // Manual debt (no linked order): record a synthetic settlement order
+      // so the paid amount appears in today's pool.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && restaurantId) {
+          const { data: num } = await supabase.rpc("get_next_order_number", { _restaurant_id: restaurantId });
+          await supabase.from("orders").insert({
+            restaurant_id: restaurantId,
+            staff_id: user.id,
+            total: Number(debtor.amount_owed),
+            payment_method: "Debt Settlement",
+            payment_status: "paid",
+            status: "confirmed",
+            currency: debtor.currency || "TRY",
+            customer_name: debtor.customer_name,
+            notes: `Debt settlement${debtor.notes ? ` — ${debtor.notes}` : ""}`,
+            order_number: (num as string) || "",
+            discount_amount: 0,
+            is_public_order: false,
+          } as any);
+        }
+      } catch {
+        // best-effort; don't block the resolve action
+      }
     }
 
     toast.success(
       newResolved
-        ? debtor.source_order_id
-          ? "Marked as paid — added to today's pool"
-          : "Marked as paid"
+        ? "Marked as paid — added to today's pool"
         : "Marked as unpaid"
     );
     fetchDebtors();
