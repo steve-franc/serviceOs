@@ -5,14 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, TrendingUp, TrendingDown, Users, Calendar } from "lucide-react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, isWithinInterval } from "date-fns";
+import { BarChart3, TrendingUp, TrendingDown, Users, Calendar, Repeat, ArrowUpRight, ArrowDownRight, Receipt } from "lucide-react";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, isWithinInterval, differenceInCalendarDays } from "date-fns";
 import { formatPrice } from "@/lib/currency";
 import { formatDateFull, formatDateShort, daysInMonth, dailyShareOfMonthly } from "@/lib/date-format";
 import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate, useNavigate } from "react-router-dom";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
 interface ReportData {
   id: string;
