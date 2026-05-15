@@ -318,7 +318,97 @@ const Reports = () => {
               </>
             )}
 
-            {/* Top Customers */}
+            {/* Expense Insights */}
+            {expenseInsights.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Receipt className="h-5 w-5" />
+                      Expense Insights
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">vs previous {period}:</span>
+                      <Badge variant={totalPctChange > 0 ? "destructive" : "secondary"} className="gap-1">
+                        {totalPctChange > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        {totalPctChange > 0 ? "+" : ""}{totalPctChange.toFixed(1)}%
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Chart: Current vs Previous by source */}
+                  {expenseChartData.length > 0 && (
+                    <Card className="mb-4">
+                      <CardContent className="pt-6">
+                        <div className="h-64 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={expenseChartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                              <Tooltip
+                                contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                                formatter={(v: number) => formatPrice(Number(v))}
+                              />
+                              <Legend wrapperStyle={{ fontSize: 12 }} />
+                              <Bar dataKey="Previous" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                              <Bar dataKey="Current" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Per-source insight rows */}
+                  <div className="space-y-2">
+                    {expenseInsights.map(row => {
+                      const up = row.delta > 0;
+                      const down = row.delta < 0;
+                      return (
+                        <div key={row.source} className="flex items-center justify-between p-3 bg-muted rounded-lg gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="font-medium truncate">{row.source}</p>
+                            {row.isRecurring && (
+                              <Badge variant="outline" className="gap-1 text-xs">
+                                <Repeat className="h-3 w-3" />
+                                Recurring
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="text-right">
+                              <p className="text-muted-foreground text-xs">Prev</p>
+                              <p className="font-mono">{formatPrice(row.previous)}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-muted-foreground text-xs">Current</p>
+                              <p className="font-mono font-semibold">{formatPrice(row.current)}</p>
+                            </div>
+                            <Badge
+                              variant={up ? "destructive" : down ? "secondary" : "outline"}
+                              className="gap-1 min-w-[72px] justify-center"
+                            >
+                              {up ? <ArrowUpRight className="h-3 w-3" /> : down ? <ArrowDownRight className="h-3 w-3" /> : null}
+                              {row.previous === 0 && row.current === 0
+                                ? "—"
+                                : `${up ? "+" : ""}${row.pct.toFixed(1)}%`}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mt-3">
+                    "Recurring" = same source charged on 2+ different days or 3+ times this {period}.
+                    Percentages compare against the previous {period}.
+                  </p>
+                </div>
+              </>
+            )}
+
             {topCustomers.length > 0 && (
               <>
                 <Separator />
