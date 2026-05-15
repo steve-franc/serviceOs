@@ -46,6 +46,7 @@ const Reports = () => {
   const [offset, setOffset] = useState(0); // 0 = current, 1 = last, etc.
   const [reports, setReports] = useState<ReportData[]>([]);
   const [expenses, setExpenses] = useState<ExpenseData[]>([]);
+  const [prevExpenses, setPrevExpenses] = useState<ExpenseData[]>([]);
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [fixedMonthlyExpenses, setFixedMonthlyExpenses] = useState(0);
   const [loading, setLoading] = useState(true);
