@@ -119,12 +119,53 @@ const Reports = () => {
   const netProfit = totalRevenue - totalDeductions;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-  // Expenses by source
+  // Expenses by source (current period)
   const expensesBySource: Record<string, number> = {};
   expenses.forEach(e => {
     const src = e.source || "Unspecified";
     expensesBySource[src] = (expensesBySource[src] || 0) + Number(e.amount);
   });
+
+  // Previous-period totals by source — for % change comparison
+  const prevExpensesBySource: Record<string, number> = {};
+  prevExpenses.forEach(e => {
+    const src = e.source || "Unspecified";
+    prevExpensesBySource[src] = (prevExpensesBySource[src] || 0) + Number(e.amount);
+  });
+  const prevExpensesTotal = prevExpenses.reduce((s, e) => s + Number(e.amount), 0);
+
+  // Recurrence detection: how many distinct days each source appears in current period
+  const recurrenceBySource: Record<string, { days: Set<string>; count: number }> = {};
+  expenses.forEach(e => {
+    const src = e.source || "Unspecified";
+    const day = (e.created_at || "").slice(0, 10);
+    if (!recurrenceBySource[src]) recurrenceBySource[src] = { days: new Set(), count: 0 };
+    recurrenceBySource[src].days.add(day);
+    recurrenceBySource[src].count++;
+  });
+
+  // Combined per-source insight rows
+  const expenseInsights = Object.keys({ ...expensesBySource, ...prevExpensesBySource }).map(src => {
+    const current = expensesBySource[src] || 0;
+    const previous = prevExpensesBySource[src] || 0;
+    const delta = current - previous;
+    const pct = previous > 0 ? (delta / previous) * 100 : (current > 0 ? 100 : 0);
+    const rec = recurrenceBySource[src];
+    const distinctDays = rec ? rec.days.size : 0;
+    const occurrences = rec ? rec.count : 0;
+    const isRecurring = distinctDays >= 2 || occurrences >= 3;
+    return { source: src, current, previous, delta, pct, distinctDays, occurrences, isRecurring };
+  }).sort((a, b) => b.current - a.current);
+
+  // Chart data: current vs previous per source (top 8)
+  const expenseChartData = expenseInsights.slice(0, 8).map(r => ({
+    name: r.source.length > 14 ? r.source.slice(0, 13) + "…" : r.source,
+    Current: Number(r.current.toFixed(2)),
+    Previous: Number(r.previous.toFixed(2)),
+  }));
+  const totalPctChange = prevExpensesTotal > 0
+    ? ((totalExpenses - prevExpensesTotal) / prevExpensesTotal) * 100
+    : (totalExpenses > 0 ? 100 : 0);
 
   // Payment methods
   const pmBreakdown: Record<string, { count: number; total: number }> = {};
