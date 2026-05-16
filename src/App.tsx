@@ -28,6 +28,7 @@ const ReportBreakdown = lazy(() => import("./pages/ReportBreakdown"));
 const Debtors = lazy(() => import("./pages/Debtors"));
 const Bookings = lazy(() => import("./pages/Bookings"));
 const Reports = lazy(() => import("./pages/Reports"));
+const Billing = lazy(() => import("./pages/Billing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const SuperDashboard = lazy(() => import("./pages/superadmin/Dashboard"));
 const SuperRestaurants = lazy(() => import("./pages/superadmin/Restaurants"));
