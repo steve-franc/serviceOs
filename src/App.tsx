@@ -151,6 +151,7 @@ const App = () => {
                 <Route path="/bookings" element={<ObserverBlockedRoute><Bookings /></ObserverBlockedRoute>} />
                 <Route path="/report/:id" element={<ProtectedRoute><ReportBreakdown /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path="/billing" element={<ObserverBlockedRoute><Billing /></ObserverBlockedRoute>} />
                 <Route path="/superadmin" element={<SuperadminRoute><SuperDashboard /></SuperadminRoute>} />
                 <Route path="/superadmin/restaurants" element={<SuperadminRoute><SuperRestaurants /></SuperadminRoute>} />
                 <Route path="/superadmin/restaurants/:id" element={<SuperadminRoute><SuperRestaurantDetail /></SuperadminRoute>} />
