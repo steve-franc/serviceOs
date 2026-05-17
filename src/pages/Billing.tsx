@@ -187,10 +187,11 @@ export default function Billing() {
             )}
           </p>
         </div>
-        <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${statusInfo.cls}`}>
-          {statusInfo.label}
-          {restaurant?.current_period_end && status === "active" && (
-            <span className="ml-2 opacity-70">
+        <div className={`px-3 py-1.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${statusInfo.cls}`}>
+          {polling && <Loader2 className="h-3 w-3 animate-spin" />}
+          {polling ? "Syncing…" : statusInfo.label}
+          {restaurant?.current_period_end && status === "active" && !polling && (
+            <span className="ml-1 opacity-70">
               · renews {new Date(restaurant.current_period_end).toLocaleDateString()}
             </span>
           )}
