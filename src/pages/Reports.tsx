@@ -26,6 +26,7 @@ interface ReportData {
 interface ExpenseData {
   amount: number;
   source: string | null;
+  description: string;
   created_at: string;
 }
 
