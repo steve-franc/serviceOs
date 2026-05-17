@@ -50,6 +50,7 @@ export default function Billing() {
     },
   });
 
+  const [polling, setPolling] = useState(false);
   const { data: restaurant, refetch: refetchRestaurant } = useQuery({
     queryKey: ["billing", "restaurant", restaurantId],
     enabled: !!restaurantId,
