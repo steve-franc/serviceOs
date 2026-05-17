@@ -26,6 +26,7 @@ interface ReportData {
 interface ExpenseData {
   amount: number;
   source: string | null;
+  description: string;
   created_at: string;
 }
 
@@ -82,10 +83,10 @@ const Reports = () => {
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr)
           .order("created_at", { ascending: true }),
-        supabase.from("daily_expenses").select("amount, source, created_at")
+        supabase.from("daily_expenses").select("amount, source, description, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr),
-        supabase.from("daily_expenses").select("amount, source, created_at")
+        supabase.from("daily_expenses").select("amount, source, description, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", prevStart.toISOString()).lte("created_at", prevEnd.toISOString()),
         supabase.from("orders").select("total, customer_name, payment_method, payment_status, status, created_at")
@@ -134,32 +135,62 @@ const Reports = () => {
   });
   const prevExpensesTotal = prevExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
-  // Recurrence detection: how many distinct days each source appears in current period
-  const recurrenceBySource: Record<string, { days: Set<string>; count: number }> = {};
-  expenses.forEach(e => {
-    const src = e.source || "Unspecified";
-    const day = (e.created_at || "").slice(0, 10);
-    if (!recurrenceBySource[src]) recurrenceBySource[src] = { days: new Set(), count: 0 };
-    recurrenceBySource[src].days.add(day);
-    recurrenceBySource[src].count++;
-  });
+  // Group by expense (description) — the actual item charged
+  const normKey = (s: string | null | undefined) =>
+    (s || "Unspecified").trim().toLowerCase().replace(/\s+/g, " ");
+  const labelFor = (s: string | null | undefined) => (s || "Unspecified").trim() || "Unspecified";
 
-  // Combined per-source insight rows
-  const expenseInsights = Object.keys({ ...expensesBySource, ...prevExpensesBySource }).map(src => {
-    const current = expensesBySource[src] || 0;
-    const previous = prevExpensesBySource[src] || 0;
+  type ExpenseAgg = {
+    label: string;
+    total: number;
+    count: number;
+    days: Set<string>;
+    amounts: number[]; // individual charges, for avg unit price
+    lastAmount: number; // most recent unit charge in window
+    lastAt: number;
+  };
+  const aggregate = (rows: ExpenseData[]) => {
+    const map: Record<string, ExpenseAgg> = {};
+    rows.forEach(e => {
+      const k = normKey(e.description);
+      const amt = Number(e.amount);
+      const ts = new Date(e.created_at).getTime();
+      if (!map[k]) map[k] = { label: labelFor(e.description), total: 0, count: 0, days: new Set(), amounts: [], lastAmount: amt, lastAt: ts };
+      map[k].total += amt;
+      map[k].count += 1;
+      map[k].days.add((e.created_at || "").slice(0, 10));
+      map[k].amounts.push(amt);
+      if (ts >= map[k].lastAt) { map[k].lastAt = ts; map[k].lastAmount = amt; }
+    });
+    return map;
+  };
+  const currAgg = aggregate(expenses as ExpenseData[]);
+  const prevAgg = aggregate(prevExpenses as ExpenseData[]);
+
+  const expenseInsights = Object.keys({ ...currAgg, ...prevAgg }).map(key => {
+    const c = currAgg[key];
+    const p = prevAgg[key];
+    const label = c?.label || p?.label || "Unspecified";
+    const current = c?.total || 0;
+    const previous = p?.total || 0;
     const delta = current - previous;
     const pct = previous > 0 ? (delta / previous) * 100 : (current > 0 ? 100 : 0);
-    const rec = recurrenceBySource[src];
-    const distinctDays = rec ? rec.days.size : 0;
-    const occurrences = rec ? rec.count : 0;
+    const distinctDays = c?.days.size || 0;
+    const occurrences = c?.count || 0;
     const isRecurring = distinctDays >= 2 || occurrences >= 3;
-    return { source: src, current, previous, delta, pct, distinctDays, occurrences, isRecurring };
+    // Unit-price change: compare latest current charge vs latest previous charge
+    const currUnit = c?.lastAmount ?? null;
+    const prevUnit = p?.lastAmount ?? null;
+    const unitDelta = currUnit !== null && prevUnit !== null ? currUnit - prevUnit : null;
+    const unitPct = currUnit !== null && prevUnit !== null && prevUnit > 0
+      ? ((currUnit - prevUnit) / prevUnit) * 100
+      : null;
+    return { key, label, current, previous, delta, pct, distinctDays, occurrences, isRecurring, currUnit, prevUnit, unitDelta, unitPct };
   }).sort((a, b) => b.current - a.current);
 
-  // Chart data: current vs previous per source (top 8)
+  // Chart data: current vs previous per expense (top 8)
   const expenseChartData = expenseInsights.slice(0, 8).map(r => ({
-    name: r.source.length > 14 ? r.source.slice(0, 13) + "…" : r.source,
+    name: r.label.length > 14 ? r.label.slice(0, 13) + "…" : r.label,
     Current: Number(r.current.toFixed(2)),
     Previous: Number(r.previous.toFixed(2)),
   }));
@@ -367,13 +398,19 @@ const Reports = () => {
                       const up = row.delta > 0;
                       const down = row.delta < 0;
                       return (
-                        <div key={row.source} className="flex items-center justify-between p-3 bg-muted rounded-lg gap-3 flex-wrap">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <p className="font-medium truncate">{row.source}</p>
+                        <div key={row.key} className="flex items-center justify-between p-3 bg-muted rounded-lg gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                            <p className="font-medium truncate">{row.label}</p>
                             {row.isRecurring && (
                               <Badge variant="outline" className="gap-1 text-xs">
                                 <Repeat className="h-3 w-3" />
                                 Recurring
+                              </Badge>
+                            )}
+                            {row.unitPct !== null && Math.abs(row.unitPct) >= 0.5 && (
+                              <Badge variant={row.unitPct > 0 ? "destructive" : "secondary"} className="gap-1 text-xs">
+                                {row.unitPct > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                Price {row.unitPct > 0 ? "+" : ""}{row.unitPct.toFixed(1)}% ({formatPrice(row.prevUnit!)} → {formatPrice(row.currUnit!)})
                               </Badge>
                             )}
                           </div>
@@ -402,8 +439,8 @@ const Reports = () => {
                   </div>
 
                   <p className="text-xs text-muted-foreground mt-3">
-                    "Recurring" = same source charged on 2+ different days or 3+ times this {period}.
-                    Percentages compare against the previous {period}.
+                    Grouped by expense item. "Recurring" = same item charged on 2+ different days or 3+ times this {period}.
+                    "Price" badge shows the change in unit charge vs the previous {period}.
                   </p>
                 </div>
               </>

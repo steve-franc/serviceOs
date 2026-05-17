@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
 
     const update: Record<string, unknown> = {};
     switch (type) {
+      case "payment.succeeded":
+      case "subscription.created":
       case "subscription.active":
       case "subscription.renewed": {
         update.subscription_status = "active";
