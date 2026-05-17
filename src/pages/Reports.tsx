@@ -135,32 +135,62 @@ const Reports = () => {
   });
   const prevExpensesTotal = prevExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
-  // Recurrence detection: how many distinct days each source appears in current period
-  const recurrenceBySource: Record<string, { days: Set<string>; count: number }> = {};
-  expenses.forEach(e => {
-    const src = e.source || "Unspecified";
-    const day = (e.created_at || "").slice(0, 10);
-    if (!recurrenceBySource[src]) recurrenceBySource[src] = { days: new Set(), count: 0 };
-    recurrenceBySource[src].days.add(day);
-    recurrenceBySource[src].count++;
-  });
+  // Group by expense (description) — the actual item charged
+  const normKey = (s: string | null | undefined) =>
+    (s || "Unspecified").trim().toLowerCase().replace(/\s+/g, " ");
+  const labelFor = (s: string | null | undefined) => (s || "Unspecified").trim() || "Unspecified";
 
-  // Combined per-source insight rows
-  const expenseInsights = Object.keys({ ...expensesBySource, ...prevExpensesBySource }).map(src => {
-    const current = expensesBySource[src] || 0;
-    const previous = prevExpensesBySource[src] || 0;
+  type ExpenseAgg = {
+    label: string;
+    total: number;
+    count: number;
+    days: Set<string>;
+    amounts: number[]; // individual charges, for avg unit price
+    lastAmount: number; // most recent unit charge in window
+    lastAt: number;
+  };
+  const aggregate = (rows: ExpenseData[]) => {
+    const map: Record<string, ExpenseAgg> = {};
+    rows.forEach(e => {
+      const k = normKey(e.description);
+      const amt = Number(e.amount);
+      const ts = new Date(e.created_at).getTime();
+      if (!map[k]) map[k] = { label: labelFor(e.description), total: 0, count: 0, days: new Set(), amounts: [], lastAmount: amt, lastAt: ts };
+      map[k].total += amt;
+      map[k].count += 1;
+      map[k].days.add((e.created_at || "").slice(0, 10));
+      map[k].amounts.push(amt);
+      if (ts >= map[k].lastAt) { map[k].lastAt = ts; map[k].lastAmount = amt; }
+    });
+    return map;
+  };
+  const currAgg = aggregate(expenses as ExpenseData[]);
+  const prevAgg = aggregate(prevExpenses as ExpenseData[]);
+
+  const expenseInsights = Object.keys({ ...currAgg, ...prevAgg }).map(key => {
+    const c = currAgg[key];
+    const p = prevAgg[key];
+    const label = c?.label || p?.label || "Unspecified";
+    const current = c?.total || 0;
+    const previous = p?.total || 0;
     const delta = current - previous;
     const pct = previous > 0 ? (delta / previous) * 100 : (current > 0 ? 100 : 0);
-    const rec = recurrenceBySource[src];
-    const distinctDays = rec ? rec.days.size : 0;
-    const occurrences = rec ? rec.count : 0;
+    const distinctDays = c?.days.size || 0;
+    const occurrences = c?.count || 0;
     const isRecurring = distinctDays >= 2 || occurrences >= 3;
-    return { source: src, current, previous, delta, pct, distinctDays, occurrences, isRecurring };
+    // Unit-price change: compare latest current charge vs latest previous charge
+    const currUnit = c?.lastAmount ?? null;
+    const prevUnit = p?.lastAmount ?? null;
+    const unitDelta = currUnit !== null && prevUnit !== null ? currUnit - prevUnit : null;
+    const unitPct = currUnit !== null && prevUnit !== null && prevUnit > 0
+      ? ((currUnit - prevUnit) / prevUnit) * 100
+      : null;
+    return { key, label, current, previous, delta, pct, distinctDays, occurrences, isRecurring, currUnit, prevUnit, unitDelta, unitPct };
   }).sort((a, b) => b.current - a.current);
 
-  // Chart data: current vs previous per source (top 8)
+  // Chart data: current vs previous per expense (top 8)
   const expenseChartData = expenseInsights.slice(0, 8).map(r => ({
-    name: r.source.length > 14 ? r.source.slice(0, 13) + "…" : r.source,
+    name: r.label.length > 14 ? r.label.slice(0, 13) + "…" : r.label,
     Current: Number(r.current.toFixed(2)),
     Previous: Number(r.previous.toFixed(2)),
   }));
