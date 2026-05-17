@@ -83,10 +83,10 @@ const Reports = () => {
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr)
           .order("created_at", { ascending: true }),
-        supabase.from("daily_expenses").select("amount, source, created_at")
+        supabase.from("daily_expenses").select("amount, source, description, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", startStr).lte("created_at", endStr),
-        supabase.from("daily_expenses").select("amount, source, created_at")
+        supabase.from("daily_expenses").select("amount, source, description, created_at")
           .eq("restaurant_id", restaurantId)
           .gte("created_at", prevStart.toISOString()).lte("created_at", prevEnd.toISOString()),
         supabase.from("orders").select("total, customer_name, payment_method, payment_status, status, created_at")
