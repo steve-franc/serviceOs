@@ -50,6 +50,7 @@ export default function Billing() {
     },
   });
 
+  const [polling, setPolling] = useState(false);
   const { data: restaurant, refetch: refetchRestaurant } = useQuery({
     queryKey: ["billing", "restaurant", restaurantId],
     enabled: !!restaurantId,
@@ -74,6 +75,24 @@ export default function Billing() {
 
   const mode = (settings?.payment_mode === "live" ? "live" : "test") as "live" | "test";
 
+  const pollForUpdate = async (baselineTierId: string | null | undefined, baselineStatus: string | null | undefined) => {
+    setPolling(true);
+    const maxAttempts = 15;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const { data } = await refetchRestaurant();
+      const changed =
+        (data?.tier_id && data.tier_id !== baselineTierId) ||
+        (data?.subscription_status === "active" && baselineStatus !== "active");
+      if (changed) {
+        setPolling(false);
+        toast.success("Subscription updated");
+        return;
+      }
+    }
+    setPolling(false);
+  };
+
   useEffect(() => {
     try {
       DodoPayments.Initialize({
@@ -82,8 +101,7 @@ export default function Billing() {
         onEvent: (event: any) => {
           if (event.event_type === "checkout.opened") setLoadingTierId(null);
           if (event.event_type === "checkout.closed") {
-            // Refresh restaurant state — webhook may have updated it
-            setTimeout(() => refetchRestaurant(), 1500);
+            pollForUpdate(restaurant?.tier_id, restaurant?.subscription_status);
           }
           if (event.event_type === "checkout.error") {
             setLoadingTierId(null);
@@ -96,7 +114,18 @@ export default function Billing() {
       console.error("Dodo SDK init failed", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, restaurant?.tier_id, restaurant?.subscription_status]);
+
+  // If user returns via success URL, poll too
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") === "1" && restaurantId) {
+      pollForUpdate(restaurant?.tier_id, restaurant?.subscription_status);
+      // Clean the URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
 
   const handleSubscribe = async (tierId: string) => {
     if (!sdkReady) return;
@@ -158,10 +187,11 @@ export default function Billing() {
             )}
           </p>
         </div>
-        <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${statusInfo.cls}`}>
-          {statusInfo.label}
-          {restaurant?.current_period_end && status === "active" && (
-            <span className="ml-2 opacity-70">
+        <div className={`px-3 py-1.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${statusInfo.cls}`}>
+          {polling && <Loader2 className="h-3 w-3 animate-spin" />}
+          {polling ? "Syncing…" : statusInfo.label}
+          {restaurant?.current_period_end && status === "active" && !polling && (
+            <span className="ml-1 opacity-70">
               · renews {new Date(restaurant.current_period_end).toLocaleDateString()}
             </span>
           )}
