@@ -398,13 +398,19 @@ const Reports = () => {
                       const up = row.delta > 0;
                       const down = row.delta < 0;
                       return (
-                        <div key={row.source} className="flex items-center justify-between p-3 bg-muted rounded-lg gap-3 flex-wrap">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <p className="font-medium truncate">{row.source}</p>
+                        <div key={row.key} className="flex items-center justify-between p-3 bg-muted rounded-lg gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                            <p className="font-medium truncate">{row.label}</p>
                             {row.isRecurring && (
                               <Badge variant="outline" className="gap-1 text-xs">
                                 <Repeat className="h-3 w-3" />
                                 Recurring
+                              </Badge>
+                            )}
+                            {row.unitPct !== null && Math.abs(row.unitPct) >= 0.5 && (
+                              <Badge variant={row.unitPct > 0 ? "destructive" : "secondary"} className="gap-1 text-xs">
+                                {row.unitPct > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                Price {row.unitPct > 0 ? "+" : ""}{row.unitPct.toFixed(1)}% ({formatPrice(row.prevUnit!)} → {formatPrice(row.currUnit!)})
                               </Badge>
                             )}
                           </div>
