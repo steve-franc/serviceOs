@@ -439,8 +439,8 @@ const Reports = () => {
                   </div>
 
                   <p className="text-xs text-muted-foreground mt-3">
-                    "Recurring" = same source charged on 2+ different days or 3+ times this {period}.
-                    Percentages compare against the previous {period}.
+                    Grouped by expense item. "Recurring" = same item charged on 2+ different days or 3+ times this {period}.
+                    "Price" badge shows the change in unit charge vs the previous {period}.
                   </p>
                 </div>
               </>
