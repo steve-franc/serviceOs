@@ -20,8 +20,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [joinRestaurantId, setJoinRestaurantId] = useState<string>("");
+  const [joinRestaurantName, setJoinRestaurantName] = useState<string>("");
   const [newRestaurantName, setNewRestaurantName] = useState<string>("");
   const [businessType, setBusinessType] = useState<string>("restaurant");
   const [mode, setMode] = useState<AuthMode>("signin");
@@ -60,16 +60,15 @@ const Auth = () => {
       navigate("/order/create");
     }
   }, [user, navigate, showNewPassword]);
+  // Read invite from ?join=<restaurantId> and resolve name
   useEffect(() => {
-    supabase.from("restaurants").select("id, name").order("name").then(({
-      data,
-      error
-    }) => {
-      if (error) {
-        console.error(error);
-        return;
-      }
-      setRestaurants(data as Restaurant[] || []);
+    const params = new URLSearchParams(window.location.search);
+    const inviteId = params.get("join");
+    if (!inviteId) return;
+    setJoinRestaurantId(inviteId);
+    setMode("signup");
+    supabase.from("restaurants").select("name").eq("id", inviteId).maybeSingle().then(({ data }) => {
+      setJoinRestaurantName((data as any)?.name ?? "");
     });
   }, []);
   const handleSignIn = async (e: React.FormEvent) => {
@@ -263,47 +262,62 @@ const Auth = () => {
         </p>
       </div>
     </form>;
-  const renderSignUpForm = () => <form onSubmit={handleSignUp} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="signup-name">Full Name</Label>
-        <Input id="signup-name" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value.slice(0, 100))} required maxLength={100} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="signup-email">Email</Label>
-        <Input id="signup-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
-      </div>
-      <div className="space-y-2">
-        <Label>Business</Label>
-        <Select value={joinRestaurantId} onValueChange={setJoinRestaurantId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select your business" />
-          </SelectTrigger>
-          <SelectContent>
-            {restaurants.map(r => <SelectItem key={r.id} value={r.id}>
-                {r.name}
-              </SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="signup-password">Password</Label>
-        <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} />
-      </div>
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Creating account..." : "Sign Up"}
-      </Button>
-      <p className="text-xs text-center text-muted-foreground">
-        You'll receive a verification email after signing up. Your business manager will assign your role.
-      </p>
-      <div className="text-sm text-center pt-2 border-t">
-        <p className="text-muted-foreground">
-          Already have an account?{" "}
-          <button type="button" onClick={() => setMode("signin")} className="font-semibold text-foreground hover:underline">
-            Log In
-          </button>
+  const renderSignUpForm = () => {
+    if (!joinRestaurantId) {
+      return (
+        <div className="space-y-4 text-center">
+          <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+            Staff sign-up requires an invitation link from your business manager.
+            Ask them to share your invite link, or use the button below to create a new business.
+          </div>
+          <Button type="button" className="w-full" onClick={() => setMode("restaurant")}>
+            Create a New Business Instead
+          </Button>
+          <div className="text-sm text-center pt-2 border-t">
+            <p className="text-muted-foreground">
+              Already have an account?{" "}
+              <button type="button" onClick={() => setMode("signin")} className="font-semibold text-foreground hover:underline">
+                Log In
+              </button>
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <form onSubmit={handleSignUp} className="space-y-4">
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          You are joining <span className="font-semibold">{joinRestaurantName || "this business"}</span> as staff.
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="signup-name">Full Name</Label>
+          <Input id="signup-name" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value.slice(0, 100))} required maxLength={100} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="signup-email">Email</Label>
+          <Input id="signup-email" type="email" placeholder="staff@restaurant.com" value={email} onChange={e => setEmail(e.target.value.slice(0, 255))} required maxLength={255} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="signup-password">Password</Label>
+          <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value.slice(0, 128))} required minLength={6} maxLength={128} />
+        </div>
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? "Creating account..." : "Sign Up"}
+        </Button>
+        <p className="text-xs text-center text-muted-foreground">
+          You'll receive a verification email after signing up. Your business manager will assign your role.
         </p>
-      </div>
-    </form>;
+        <div className="text-sm text-center pt-2 border-t">
+          <p className="text-muted-foreground">
+            Already have an account?{" "}
+            <button type="button" onClick={() => setMode("signin")} className="font-semibold text-foreground hover:underline">
+              Log In
+            </button>
+          </p>
+        </div>
+      </form>
+    );
+  };
   const renderRestaurantForm = () => <form onSubmit={handleRegisterRestaurant} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="restaurant-owner-name">Your Name</Label>
