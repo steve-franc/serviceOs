@@ -20,8 +20,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [joinRestaurantId, setJoinRestaurantId] = useState<string>("");
+  const [joinRestaurantName, setJoinRestaurantName] = useState<string>("");
   const [newRestaurantName, setNewRestaurantName] = useState<string>("");
   const [businessType, setBusinessType] = useState<string>("restaurant");
   const [mode, setMode] = useState<AuthMode>("signin");
