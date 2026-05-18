@@ -60,16 +60,15 @@ const Auth = () => {
       navigate("/order/create");
     }
   }, [user, navigate, showNewPassword]);
+  // Read invite from ?join=<restaurantId> and resolve name
   useEffect(() => {
-    supabase.from("restaurants").select("id, name").order("name").then(({
-      data,
-      error
-    }) => {
-      if (error) {
-        console.error(error);
-        return;
-      }
-      setRestaurants(data as Restaurant[] || []);
+    const params = new URLSearchParams(window.location.search);
+    const inviteId = params.get("join");
+    if (!inviteId) return;
+    setJoinRestaurantId(inviteId);
+    setMode("signup");
+    supabase.from("restaurants").select("name").eq("id", inviteId).maybeSingle().then(({ data }) => {
+      setJoinRestaurantName((data as any)?.name ?? "");
     });
   }, []);
   const handleSignIn = async (e: React.FormEvent) => {
