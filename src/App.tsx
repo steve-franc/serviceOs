@@ -23,6 +23,7 @@ const Receipt = lazy(() => import("./pages/Receipt"));
 const Admin = lazy(() => import("./pages/Admin"));
 const PublicOrder = lazy(() => import("./pages/PublicOrder"));
 const Inventory = lazy(() => import("./pages/Inventory"));
+const Restock = lazy(() => import("./pages/Restock"));
 const TabsPage = lazy(() => import("./pages/Tabs"));
 const ReportBreakdown = lazy(() => import("./pages/ReportBreakdown"));
 const Debtors = lazy(() => import("./pages/Debtors"));
