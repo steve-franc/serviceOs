@@ -32,6 +32,7 @@ const staffItems = [
 const managerItems = [
   { title: "Menu", url: "/menu", icon: Menu },
   { title: "Inventory", url: "/inventory", icon: Package },
+  { title: "Supply", url: "/restock", icon: Truck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Admin", url: "/admin", icon: Shield },
   { title: "Billing", url: "/billing", icon: CreditCard },
