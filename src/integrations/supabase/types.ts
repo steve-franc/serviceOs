@@ -771,6 +771,60 @@ export type Database = {
           },
         ]
       }
+      restock_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          daily_expense_id: string | null
+          id: string
+          inventory_item_id: string
+          invoice_image_url: string | null
+          notes: string | null
+          purchase_date: string
+          quantity_purchased: number
+          restaurant_id: string
+          supplier_id: string | null
+          total_cost: number
+          unit_price: number
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          daily_expense_id?: string | null
+          id?: string
+          inventory_item_id: string
+          invoice_image_url?: string | null
+          notes?: string | null
+          purchase_date?: string
+          quantity_purchased: number
+          restaurant_id: string
+          supplier_id?: string | null
+          total_cost: number
+          unit_price: number
+          unit_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          daily_expense_id?: string | null
+          id?: string
+          inventory_item_id?: string
+          invoice_image_url?: string | null
+          notes?: string | null
+          purchase_date?: string
+          quantity_purchased?: number
+          restaurant_id?: string
+          supplier_id?: string | null
+          total_cost?: number
+          unit_price?: number
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_availability: {
         Row: {
           created_at: string
@@ -913,6 +967,51 @@ export type Database = {
           price_try?: number
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          notes: string | null
+          phone_number: string | null
+          restaurant_id: string
+          supplier_name: string
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone_number?: string | null
+          restaurant_id: string
+          supplier_name: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone_number?: string | null
+          restaurant_id?: string
+          supplier_name?: string
+          updated_at?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
