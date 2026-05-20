@@ -139,6 +139,7 @@ const Debtors = () => {
         .update({
           payment_status: newResolved ? "paid" : "unpaid",
           paid_via_debtor_id: newResolved ? debtor.id : null,
+          paid_at: newResolved ? new Date().toISOString() : null,
         } as any)
         .eq("id", debtor.source_order_id);
       if (orderErr) {
