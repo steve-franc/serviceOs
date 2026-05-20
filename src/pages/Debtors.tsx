@@ -131,23 +131,25 @@ const Debtors = () => {
       return;
     }
 
-    // If this debt came from an unpaid order, flip the order's payment status
-    // accordingly so it counts toward today's pool (when paid) or back to unpaid.
+    // If this debt came from an unpaid order, flip the original order's status
+    // (without bubbling it into today's pool — the synthetic settlement order
+    // below handles that).
     if (debtor.source_order_id) {
       const { error: orderErr } = await supabase
         .from("orders")
         .update({
           payment_status: newResolved ? "paid" : "unpaid",
           paid_via_debtor_id: newResolved ? debtor.id : null,
-          paid_at: newResolved ? new Date().toISOString() : null,
         } as any)
         .eq("id", debtor.source_order_id);
       if (orderErr) {
         toast.error("Debt updated but order status sync failed");
       }
-    } else if (newResolved) {
-      // Manual debt (no linked order): record a synthetic settlement order
-      // so the paid amount appears in today's pool.
+    }
+
+    // On resolve, always record a synthetic "Debt Settlement" order dated today
+    // so the paid amount lands in the current day's pool.
+    if (newResolved) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && restaurantId) {
