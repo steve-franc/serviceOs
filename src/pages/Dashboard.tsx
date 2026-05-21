@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, ShoppingCart, CalendarClock, Users, ArrowUpRight } from "lucide-react";
-import { formatCurrency } from "@/lib/currency";
+import { formatPrice as formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 function StatCard({
