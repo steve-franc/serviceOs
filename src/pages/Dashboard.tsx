@@ -66,7 +66,7 @@ const Overview = () => {
     queryFn: async () => {
       const [ordersRes, bookingsRes, debtorsRes] = await Promise.all([
         supabase.from("orders").select("id,total,status,payment_status,created_at,paid_at").eq("restaurant_id", restaurantId!).gte("created_at", cutoff),
-        supabase.from("bookings").select("id").eq("restaurant_id", restaurantId!).gte("booking_time", cutoff),
+        supabase.from("service_bookings").select("id").eq("restaurant_id", restaurantId!).gte("start_at", cutoff),
         supabase.from("debtors").select("id,amount_owed,payment_status").eq("restaurant_id", restaurantId!).eq("payment_status", "unpaid"),
       ]);
       const orders = ordersRes.data ?? [];
