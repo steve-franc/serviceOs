@@ -130,6 +130,14 @@
   }
 }
 
+@layer utilities {
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: hsl(var(--bg3)); }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.4); border-radius: 2px; }
+}
+
 @media print {
   /* Force light mode colors for printing */
   :root, .dark {
