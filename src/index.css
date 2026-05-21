@@ -86,6 +86,14 @@
     --border: 220 20% 18%;
     --input: 220 20% 18%;
     --ring: 230 75% 60%;
+    --bg1: 224 25% 8%;
+    --bg2: 224 25% 11%;
+    --bg3: 220 20% 16%;
+    --brand: 230 75% 60%;
+    --brand-foreground: 0 0% 100%;
+    --accent2: 142 71% 50%;
+    --accent3: 38 92% 55%;
+    --danger: 0 72% 55%;
     --sidebar-background: 224 25% 10%;
     --sidebar-foreground: 210 20% 95%;
     --sidebar-primary: 230 75% 60%;
