@@ -102,11 +102,11 @@ const Overview = () => {
     enabled: !!restaurantId,
     queryFn: async () => {
       const { data } = await supabase
-        .from("bookings")
-        .select("id,booking_time,table_number,guest_count,customer_name,status")
+        .from("service_bookings")
+        .select("id,start_at,customer_name,status")
         .eq("restaurant_id", restaurantId!)
-        .gte("booking_time", cutoff)
-        .order("booking_time", { ascending: true })
+        .gte("start_at", cutoff)
+        .order("start_at", { ascending: true })
         .limit(6);
       return data ?? [];
     },
