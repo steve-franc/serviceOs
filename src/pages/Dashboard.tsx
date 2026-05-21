@@ -225,12 +225,12 @@ const Overview = () => {
               <div key={b.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-bg3/60 relative overflow-hidden">
                 <span className={cn("absolute left-0 top-0 bottom-0 w-1", accentStrips[i % accentStrips.length])} />
                 <div className="pl-2 font-mono text-[13px] font-semibold tabular-nums">
-                  {new Date(b.booking_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(b.start_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium truncate">{b.customer_name || "Guest"}</p>
                   <p className="text-[11px] text-muted-foreground truncate">
-                    Table {b.table_number ?? "—"} · {b.guest_count ?? 1} guests
+                    {b.status || "scheduled"}
                   </p>
                 </div>
                 <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-bg2 text-muted-foreground">
