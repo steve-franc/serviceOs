@@ -64,10 +64,11 @@ const Overview = () => {
     queryKey: ["overview-stats", restaurantId, cutoff],
     enabled: !!restaurantId,
     queryFn: async () => {
+      const sb: any = supabase;
       const [ordersRes, bookingsRes, debtorsRes] = await Promise.all([
-        supabase.from("orders").select("id,total,status,payment_status,created_at,paid_at").eq("restaurant_id", restaurantId!).gte("created_at", cutoff),
-        supabase.from("service_bookings").select("id").eq("restaurant_id", restaurantId!).gte("start_at", cutoff),
-        supabase.from("debtors").select("id,amount_owed,payment_status").eq("restaurant_id", restaurantId!).eq("payment_status", "unpaid"),
+        sb.from("orders").select("id,total,status,payment_status,created_at,paid_at").eq("restaurant_id", restaurantId!).gte("created_at", cutoff),
+        sb.from("service_bookings").select("id").eq("restaurant_id", restaurantId!).gte("start_at", cutoff),
+        sb.from("debtors").select("id,amount_owed,payment_status").eq("restaurant_id", restaurantId!).eq("payment_status", "unpaid"),
       ]);
       const orders = ordersRes.data ?? [];
       const paid = orders.filter((o: any) => o.payment_status === "paid" || o.paid_at);
