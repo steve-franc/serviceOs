@@ -419,11 +419,18 @@ const OrderHistory = () => {
     const paymentStatus = order.payment_status || 'paid';
     const isUnpaid = paymentStatus === 'unpaid';
 
+    const borderClass = isPending
+      ? 'border-l-4 border-l-yellow-500'
+      : isUnpaid
+        ? 'border-l-4 border-l-accent3'
+        : 'border-l-4 border-l-accent2';
+    const amountClass = isUnpaid ? 'text-accent3' : 'text-accent2';
+
     return (
-      <Card key={order.id} className={`hover:shadow-md transition-shadow ${isPending ? 'border-yellow-500/50 bg-yellow-500/5' : isUnpaid ? 'border-destructive/40' : ''}`}>
+      <Card key={order.id} className={`hover:shadow-md transition-shadow ${borderClass} ${isPending ? 'bg-yellow-500/5' : ''}`}>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1 flex-1">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1 flex-1 min-w-0">
               <CardTitle className="text-xl flex items-center gap-2 flex-wrap">
                 Order #{order.order_number}
                 <Badge variant="outline" className="font-normal">
@@ -458,12 +465,12 @@ const OrderHistory = () => {
                   Note: {order.notes}
                 </CardDescription>}
             </div>
-            <div className="text-right space-y-2">
-              <p className="text-2xl font-bold text-primary">
+            <div className="flex flex-col sm:items-end gap-2 sm:shrink-0">
+              <p className={`text-2xl sm:text-3xl font-bold font-mono ${amountClass}`}>
                 {formatPrice(order.total)}
               </p>
               {isPending ? (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700" onClick={() => handleConfirmOrder(order.id)}>
                     <CheckCircle className="h-4 w-4" />
                     Confirm
@@ -474,24 +481,35 @@ const OrderHistory = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="flex gap-2 flex-wrap justify-end">
-                  <Button
-                    variant={isUnpaid ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => togglePaymentStatus(order)}
-                    title={isUnpaid ? "Mark as paid" : "Mark as unpaid"}
-                    className="gap-1"
-                  >
-                    <Wallet className="h-4 w-4" />
-                    {isUnpaid ? "Mark paid" : "Unpaid?"}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/receipt/${order.id}`)}>
+                <div className="flex gap-2 flex-wrap sm:justify-end">
+                  {isUnpaid ? (
+                    <Button
+                      size="sm"
+                      onClick={() => togglePaymentStatus(order)}
+                      className="gap-1 bg-accent2 hover:bg-accent2/90 text-white"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark Paid
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => togglePaymentStatus(order)}
+                      title="Mark as unpaid"
+                      className="gap-1"
+                      aria-label="Mark as unpaid"
+                    >
+                      <Wallet className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/receipt/${order.id}`)} aria-label="View receipt">
                     <Receipt className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/receipt/${order.id}?edit=true`)}>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/receipt/${order.id}?edit=true`)} aria-label="Edit order">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => confirmDelete(order.id)}>
+                  <Button variant="outline" size="sm" onClick={() => confirmDelete(order.id)} aria-label="Delete order">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -502,8 +520,14 @@ const OrderHistory = () => {
       </Card>
     );
   };
+  const revenuePaid = sumPaidRevenue(recentOrders as any);
+  const revenueUnpaid = sumUnpaidRevenue(recentOrders as any);
+  const expensesTotal = (expensesData as any[]).reduce((s, e: any) => s + Number(e.amount || 0), 0);
+  const netTotal = revenuePaid - expensesTotal;
+  const netNegative = netTotal < 0;
+
   return <>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6" style={{ maxWidth: '1100px' }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-3xl font-bold">Order History</h2>
@@ -519,29 +543,39 @@ const OrderHistory = () => {
           </Button>
         </div>
 
-        {/* Today's Revenue Card */}
+        {/* Summary stat strip */}
         {!loading && (
-          <Card className="bg-primary/5 border-primary/20">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Current Period Revenue</CardTitle>
-                </div>
-                <p className="text-3xl font-bold text-primary">
-                  {formatPrice(sumPaidRevenue(recentOrders as any))}
-                </p>
-              </div>
-              <CardDescription>
-                {recentOrders.filter(o => o.status === 'confirmed' && (o.payment_status || 'paid') === 'paid').length} paid order(s)
-                {sumUnpaidRevenue(recentOrders as any) > 0 && (
-                  <span className="text-destructive"> • {formatPrice(sumUnpaidRevenue(recentOrders as any))} unpaid (deducted)</span>
-                )}
-                {' '}since {lastEndDayDate ? formatDateFull(lastEndDayDate) : "start"}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <div
+            className="grid gap-3"
+            style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}
+          >
+            <div className="rounded-xl bg-card border border-border p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Revenue</p>
+              <p className="mt-2 text-2xl font-bold font-mono text-accent2">{formatPrice(revenuePaid)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Paid orders since {lastEndDayDate ? formatDateFull(lastEndDayDate) : "start"}</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Expenses</p>
+              <p className="mt-2 text-2xl font-bold font-mono text-foreground">{formatPrice(expensesTotal)}</p>
+              <p className="text-xs text-muted-foreground mt-1">{(expensesData as any[]).length} entries</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Net</p>
+              <p className={`mt-2 text-2xl font-bold font-mono ${netNegative ? 'text-destructive' : 'text-foreground'}`}>
+                {formatPrice(netTotal)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Revenue − Expenses</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Unpaid</p>
+              <p className="mt-2 text-2xl font-bold font-mono text-accent3">{formatPrice(revenueUnpaid)}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {recentOrders.filter(o => (o.payment_status || 'paid') === 'unpaid').length} order(s) owed
+              </p>
+            </div>
+          </div>
         )}
+
 
         <ExpenseManager />
 
