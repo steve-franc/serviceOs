@@ -441,32 +441,10 @@ export default function AppShell({ children }: { children?: ReactNode }) {
               <MenuIcon className="h-5 w-5" />
             </button>
           )}
-          <h1 className="text-[15px] font-semibold truncate shrink-0 max-w-[40%]">
+          <h1 className="text-[15px] font-semibold truncate flex-1 min-w-0">
             {pageTitle}
           </h1>
 
-          {/* Subtab pills */}
-          {activeSection?.subtabs && (
-            <div className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
-              <div className="inline-flex items-center gap-1 bg-bg3 p-1 rounded-[10px]">
-                {activeSection.subtabs.map(st => {
-                  const isActive = location.pathname === st.path || location.pathname.startsWith(st.path + "/");
-                  return (
-                    <NavLink
-                      key={st.path}
-                      to={st.path}
-                      className={cn(
-                        "whitespace-nowrap px-3 py-1.5 rounded-md text-[12.5px] font-medium transition-colors duration-150",
-                        isActive ? "bg-bg2 text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {st.label}
-                    </NavLink>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           <div className="ml-auto flex items-center gap-2">
             {!isSuperadmin && (
