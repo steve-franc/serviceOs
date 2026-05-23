@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -585,6 +586,11 @@ const PublicOrder = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Order online — ServiceOS</title>
+        <meta name="description" content="Browse the menu and place your order directly from your phone." />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground py-8 px-4">
         <div className="max-w-7xl mx-auto">

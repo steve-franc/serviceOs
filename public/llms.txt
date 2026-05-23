@@ -1,0 +1,10 @@
+# ServiceOS
+
+> Professional business management system for orders, inventory, staff, bookings, debtors, and operations — built for hospitality and service businesses.
+
+ServiceOS helps owners and operators run daily operations: take orders, manage menus and inventory, track tabs and debtors, handle bookings, and review financial reports.
+
+## Pages
+
+- [Home](/): Product overview and entry point to ServiceOS.
+- [Sign in](/auth): Account sign-in and registration for business operators.

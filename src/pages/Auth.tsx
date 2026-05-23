@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -384,6 +385,14 @@ const Auth = () => {
     }
   };
   return <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Helmet>
+        <title>Sign in to ServiceOS</title>
+        <meta name="description" content="Sign in or create your ServiceOS account to manage orders, inventory, bookings, and staff for your business." />
+        <link rel="canonical" href="https://serviceos.lovable.app/auth" />
+        <meta property="og:title" content="Sign in to ServiceOS" />
+        <meta property="og:description" content="Sign in or create your ServiceOS account to manage your business operations." />
+        <meta property="og:url" content="https://serviceos.lovable.app/auth" />
+      </Helmet>
       <Card className="w-full max-w-md shadow-[var(--shadow-soft)]">
         <CardHeader className="text-center space-y-3">
           <div className="flex justify-center">
