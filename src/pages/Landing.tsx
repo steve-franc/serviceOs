@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import {
   UtensilsCrossed,
@@ -74,6 +75,14 @@ const screenshots = [
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>ServiceOS — Business Management for Service Operations</title>
+        <meta name="description" content="Run orders, inventory, bookings, tabs and reports for your service business in one fast platform built for operators." />
+        <link rel="canonical" href="https://serviceos.lovable.app/" />
+        <meta property="og:title" content="ServiceOS — Business Management for Service Operations" />
+        <meta property="og:description" content="Run orders, inventory, bookings, tabs and reports for your service business in one fast platform built for operators." />
+        <meta property="og:url" content="https://serviceos.lovable.app/" />
+      </Helmet>
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
