@@ -914,6 +914,47 @@ const Admin = () => {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Store Currency</CardTitle>
+              </div>
+              <CardDescription>
+                Currency used across menu prices, orders, expenses, reports, and your public order page. Platform subscription billing is unaffected.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3 max-w-md">
+                <Select
+                  value={storeCurrency}
+                  onValueChange={saveStoreCurrency}
+                  disabled={readOnly || savingCurrency}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.symbol} · {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+                  Sample: {formatPrice(1234.5, storeCurrency)}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Existing records are not converted — only the symbol changes for display.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+
+        {restaurantId && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
                 <ImageIcon className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">Restaurant Logo</CardTitle>
               </div>
