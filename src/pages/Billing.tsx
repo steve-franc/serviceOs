@@ -223,7 +223,7 @@ export default function Billing() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-semibold font-mono">{formatPrice(Number(t.price_try ?? 0))}</p>
+                    <p className="text-lg font-semibold font-mono">{formatPrice(Number(t.price_try ?? 0), "TRY")}</p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">/ month</p>
                   </div>
                 </div>
