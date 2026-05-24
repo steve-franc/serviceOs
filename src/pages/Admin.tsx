@@ -155,7 +155,7 @@ const Admin = () => {
     if (!restaurantId) return;
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url")
+      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency")
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
     if (data) {
@@ -170,7 +170,28 @@ const Admin = () => {
       setThresholdInput(String((data as any).profit_margin_threshold || 20));
       setAllowPublicOrders(Boolean((data as any).allow_public_orders ?? true));
       setRestaurantLogoUrl((data as any).logo_url ?? null);
+      const cur = (((data as any).currency as string | undefined) || "TRY").toUpperCase();
+      setStoreCurrency(cur);
     }
+  };
+
+  const saveStoreCurrency = async (next: string) => {
+    if (!restaurantId) return;
+    const previous = storeCurrency;
+    setStoreCurrency(next);
+    setSavingCurrency(true);
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ currency: next } as any)
+      .eq("restaurant_id", restaurantId);
+    setSavingCurrency(false);
+    if (error) {
+      setStoreCurrency(previous);
+      toast.error("Failed to update currency");
+      return;
+    }
+    setActiveCurrency(next);
+    toast.success(`Store currency set to ${next}`);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
