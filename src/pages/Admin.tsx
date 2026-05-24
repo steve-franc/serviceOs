@@ -107,6 +107,8 @@ const Admin = () => {
   const [savingPublicOrders, setSavingPublicOrders] = useState(false);
   const [restaurantLogoUrl, setRestaurantLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [storeCurrency, setStoreCurrency] = useState<string>("TRY");
+  const [savingCurrency, setSavingCurrency] = useState(false);
   const { data: menuTags = [], isLoading: tagsLoading } = useMenuTags();
   const invalidateTags = useInvalidateMenuTags();
   const { data: menuItemsData = [] } = useMenuItems();
