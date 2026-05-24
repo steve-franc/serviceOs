@@ -104,7 +104,7 @@ const PublicOrder = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("restaurant_id, restaurant_name, allow_public_orders, payment_methods, logo_url")
+      .select("restaurant_id, restaurant_name, allow_public_orders, payment_methods, logo_url, currency")
       .eq("restaurant_id", urlRestaurantId!)
       .maybeSingle();
 
@@ -118,7 +118,9 @@ const PublicOrder = () => {
     if (data) {
       setRestaurantName(data.restaurant_name);
       setLogoUrl((data as any).logo_url ?? null);
-      setCurrency("TRY");
+      const cur = ((data as any).currency as string | undefined) || "TRY";
+      setCurrency(cur);
+      setActiveCurrency(cur);
       setRestaurantId(data.restaurant_id ?? null);
       const methods = parsePaymentMethods(data.payment_methods);
       setAvailablePaymentMethods(methods);
