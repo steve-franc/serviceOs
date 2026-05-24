@@ -248,6 +248,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     restaurantName,
     restaurantStatus,
     logoUrl,
+    currency,
     role,
     authLoading,
     loading,
