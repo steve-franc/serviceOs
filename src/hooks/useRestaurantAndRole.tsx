@@ -40,6 +40,7 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   restaurantName: null,
   restaurantStatus: null,
   logoUrl: null,
+  currency: "TRY",
   role: null,
   authLoading: true,
   loading: true,
