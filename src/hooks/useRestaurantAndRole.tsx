@@ -63,6 +63,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [restaurantStatus, setRestaurantStatus] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [currency, setCurrency] = useState<string>("TRY");
   const [role, setRole] = useState<UserRole>(null);
   const [isSuperadminAccount, setIsSuperadminAccount] = useState(false);
   const [godModeDisabled, setGodModeDisabledState] = useState<boolean>(() => {
