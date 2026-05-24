@@ -14,6 +14,7 @@ interface RestaurantRoleState {
   restaurantName: string | null;
   restaurantStatus: string | null;
   logoUrl: string | null;
+  currency: string;
   role: UserRole;
   authLoading: boolean;
   loading: boolean;
