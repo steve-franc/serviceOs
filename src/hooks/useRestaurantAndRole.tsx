@@ -197,7 +197,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
               .order("created_at", { ascending: false })
               .limit(1)
               .maybeSingle(),
-            supabase.from("restaurant_settings").select("logo_url").eq("restaurant_id", rid).maybeSingle(),
+            supabase.from("restaurant_settings").select("logo_url, currency").eq("restaurant_id", rid).maybeSingle(),
           ]);
 
           if (cancelled) return;
@@ -205,6 +205,9 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
           setRestaurantStatus((restaurantRes.data as any)?.status ?? null);
           setRole((roleRes.data?.role as UserRole) ?? null);
           setLogoUrl((settingsRes.data as any)?.logo_url ?? null);
+          const cur = ((settingsRes.data as any)?.currency as string | undefined) || "TRY";
+          setCurrency(cur);
+          setActiveCurrency(cur);
         }
       } catch (err) {
         console.error("Error loading restaurant/role:", err);
