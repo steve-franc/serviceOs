@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { notificationsStore } from "@/stores/notifications";
+import { setActiveCurrency } from "@/lib/currency";
 
 export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | "superadmin" | null;
 
