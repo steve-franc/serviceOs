@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Shield, Users, ShoppingBag, TrendingUp, TrendingDown, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
-import { formatPrice } from "@/lib/currency";
+import { formatPrice, SUPPORTED_CURRENCIES, setActiveCurrency } from "@/lib/currency";
 import { dailyShareOfMonthly, daysInMonth } from "@/lib/date-format";
 import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
