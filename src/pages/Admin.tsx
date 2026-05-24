@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Shield, Users, ShoppingBag, TrendingUp, TrendingDown, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
-import { formatPrice } from "@/lib/currency";
+import { formatPrice, SUPPORTED_CURRENCIES, setActiveCurrency } from "@/lib/currency";
 import { dailyShareOfMonthly, daysInMonth } from "@/lib/date-format";
 import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -107,6 +107,8 @@ const Admin = () => {
   const [savingPublicOrders, setSavingPublicOrders] = useState(false);
   const [restaurantLogoUrl, setRestaurantLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [storeCurrency, setStoreCurrency] = useState<string>("TRY");
+  const [savingCurrency, setSavingCurrency] = useState(false);
   const { data: menuTags = [], isLoading: tagsLoading } = useMenuTags();
   const invalidateTags = useInvalidateMenuTags();
   const { data: menuItemsData = [] } = useMenuItems();
@@ -153,7 +155,7 @@ const Admin = () => {
     if (!restaurantId) return;
     const { data } = await supabase
       .from("restaurant_settings")
-      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url")
+      .select("fixed_daily_bills, payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency")
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
     if (data) {
@@ -168,7 +170,28 @@ const Admin = () => {
       setThresholdInput(String((data as any).profit_margin_threshold || 20));
       setAllowPublicOrders(Boolean((data as any).allow_public_orders ?? true));
       setRestaurantLogoUrl((data as any).logo_url ?? null);
+      const cur = (((data as any).currency as string | undefined) || "TRY").toUpperCase();
+      setStoreCurrency(cur);
     }
+  };
+
+  const saveStoreCurrency = async (next: string) => {
+    if (!restaurantId) return;
+    const previous = storeCurrency;
+    setStoreCurrency(next);
+    setSavingCurrency(true);
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ currency: next } as any)
+      .eq("restaurant_id", restaurantId);
+    setSavingCurrency(false);
+    if (error) {
+      setStoreCurrency(previous);
+      toast.error("Failed to update currency");
+      return;
+    }
+    setActiveCurrency(next);
+    toast.success(`Store currency set to ${next}`);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -886,6 +909,47 @@ const Admin = () => {
             </CardDescription>
           </CardHeader>
         </Card>
+
+        {restaurantId && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Store Currency</CardTitle>
+              </div>
+              <CardDescription>
+                Currency used across menu prices, orders, expenses, reports, and your public order page. Platform subscription billing is unaffected.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3 max-w-md">
+                <Select
+                  value={storeCurrency}
+                  onValueChange={saveStoreCurrency}
+                  disabled={readOnly || savingCurrency}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.symbol} · {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+                  Sample: {formatPrice(1234.5, storeCurrency)}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Existing records are not converted — only the symbol changes for display.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
 
         {restaurantId && (
           <Card>

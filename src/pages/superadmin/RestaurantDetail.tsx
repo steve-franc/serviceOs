@@ -98,7 +98,7 @@ function SubscriptionCard({ restaurant, onChanged }: { restaurant: any; onChange
             <SelectContent>
               {(tiers ?? []).map((t: any) => (
                 <SelectItem key={t.id} value={t.id}>
-                  {t.name} {t.is_free ? "· Free" : `· ${formatPrice(Number(t.price_try ?? 0))}`}
+                  {t.name} {t.is_free ? "· Free" : `· ${formatPrice(Number(t.price_try ?? 0), "TRY")}`}
                 </SelectItem>
               ))}
             </SelectContent>

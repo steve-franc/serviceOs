@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { notificationsStore } from "@/stores/notifications";
+import { setActiveCurrency } from "@/lib/currency";
 
 export type UserRole = "server" | "ops" | "counter" | "manager" | "investor" | "superadmin" | null;
 
@@ -13,6 +14,7 @@ interface RestaurantRoleState {
   restaurantName: string | null;
   restaurantStatus: string | null;
   logoUrl: string | null;
+  currency: string;
   role: UserRole;
   authLoading: boolean;
   loading: boolean;
@@ -38,6 +40,7 @@ const RestaurantRoleContext = createContext<RestaurantRoleState>({
   restaurantName: null,
   restaurantStatus: null,
   logoUrl: null,
+  currency: "TRY",
   role: null,
   authLoading: true,
   loading: true,
@@ -60,6 +63,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [restaurantStatus, setRestaurantStatus] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [currency, setCurrency] = useState<string>("TRY");
   const [role, setRole] = useState<UserRole>(null);
   const [isSuperadminAccount, setIsSuperadminAccount] = useState(false);
   const [godModeDisabled, setGodModeDisabledState] = useState<boolean>(() => {
@@ -193,7 +197,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
               .order("created_at", { ascending: false })
               .limit(1)
               .maybeSingle(),
-            supabase.from("restaurant_settings").select("logo_url").eq("restaurant_id", rid).maybeSingle(),
+            supabase.from("restaurant_settings").select("logo_url, currency").eq("restaurant_id", rid).maybeSingle(),
           ]);
 
           if (cancelled) return;
@@ -201,6 +205,9 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
           setRestaurantStatus((restaurantRes.data as any)?.status ?? null);
           setRole((roleRes.data?.role as UserRole) ?? null);
           setLogoUrl((settingsRes.data as any)?.logo_url ?? null);
+          const cur = ((settingsRes.data as any)?.currency as string | undefined) || "TRY";
+          setCurrency(cur);
+          setActiveCurrency(cur);
         }
       } catch (err) {
         console.error("Error loading restaurant/role:", err);
@@ -241,6 +248,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
     restaurantName,
     restaurantStatus,
     logoUrl,
+    currency,
     role,
     authLoading,
     loading,
