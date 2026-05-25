@@ -662,6 +662,7 @@ const Admin = () => {
   const pendingStaff = staff.filter(s => !s.role);
   return <>
       <div className="max-w-7xl mx-auto space-y-6">
+      <div className="px-4 md:px-5 pt-2 space-y-4">
         {pendingStaff.length > 0 && (
           <Card className="border-yellow-500/50 bg-yellow-500/5">
             <CardHeader className="pb-2">
@@ -671,20 +672,45 @@ const Admin = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Go to the Staff Management tab to assign roles.
+              Switch to the Dashboard tab and scroll to Staff Management to assign roles.
             </CardContent>
           </Card>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
             <Shield className="h-6 w-6 text-primary" />
           </div>
-          <div>
-            <h2 className="text-3xl font-bold">Admin Dashboard</h2>
-            <p className="text-muted-foreground">Manage staff, orders, and reports</p>
+          <div className="min-w-0">
+            <h2 className="text-2xl md:text-3xl font-bold">Admin</h2>
+            <p className="text-sm text-muted-foreground">Daily operations and store settings</p>
           </div>
         </div>
+
+        {/* Top tab switcher */}
+        <div className="inline-flex p-[3px] gap-[3px] bg-muted rounded-lg border border-border">
+          {([
+            { id: "dashboard", label: "Dashboard" },
+            { id: "settings", label: "Settings" },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTopTab(t.id)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-150 min-h-[36px] ${
+                topTab === t.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {topTab === "dashboard" && (
+      <div className="max-w-[1100px] mx-auto px-4 md:px-5 py-4 md:py-6 space-y-5">
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
