@@ -109,6 +109,8 @@ const Admin = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [storeCurrency, setStoreCurrency] = useState<string>("TRY");
   const [savingCurrency, setSavingCurrency] = useState(false);
+  const [topTab, setTopTab] = useState<"dashboard" | "settings">("dashboard");
+  const [settingsPanel, setSettingsPanel] = useState<"bills" | "alerts" | "branding" | "public" | "payment">("bills");
   const { data: menuTags = [], isLoading: tagsLoading } = useMenuTags();
   const invalidateTags = useInvalidateMenuTags();
   const { data: menuItemsData = [] } = useMenuItems();
