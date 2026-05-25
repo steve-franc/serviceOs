@@ -2,3 +2,6 @@ project_id = "ahjckmkyttpesxpjvqil"
 
 [functions.dodo-webhook]
 verify_jwt = false
+
+[functions.dodo-tier-prices]
+verify_jwt = false
