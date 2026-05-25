@@ -810,373 +810,9 @@ const Admin = () => {
         <WorkdayNotes restaurantId={restaurantId} />
 
 
-        <Card className="border-primary/20">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Fixed Monthly Expenses</CardTitle>
-              </div>
-              {!readOnly && (
-                <Button variant="outline" size="sm" onClick={() => {
-                  setEditBills(monthlyBills.length > 0 ? [...monthlyBills] : [{ name: "", amount: 0 }]);
-                  setBillsDialogOpen(true);
-                }}>
-                  {monthlyBills.length > 0 ? "Edit Bills" : "Add Bills"}
-                </Button>
-              )}
-            </div>
-            <CardDescription>
-              {fixedMonthlyExpenses > 0
-                ? `₺${fixedMonthlyExpenses.toFixed(2)}/month → ₺${dailyShareOfMonthly(fixedMonthlyExpenses).toFixed(2)}/day (÷ ${daysInMonth()} days this month) deducted from daily profit`
-                : "Add your monthly fixed costs (rent, salaries, etc.) to deduct daily from profits"}
-            </CardDescription>
-          </CardHeader>
-          {monthlyBills.length > 0 && (
-            <CardContent>
-              <div className="space-y-1">
-                {monthlyBills.map((bill, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{bill.name}</span>
-                    <span className="font-medium">₺{bill.amount.toFixed(2)}</span>
-                  </div>
-                ))}
-                <Separator className="my-2" />
-                <div className="flex justify-between font-bold">
-                  <span>Total</span>
-                  <span>₺{fixedMonthlyExpenses.toFixed(2)}</span>
-                </div>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Monthly Bills Dialog */}
-        <Dialog open={billsDialogOpen} onOpenChange={setBillsDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Monthly Fixed Bills</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 max-h-[60vh] overflow-auto">
-              {editBills.map((bill, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    placeholder="Bill name (e.g. Rent)"
-                    value={bill.name}
-                    onChange={(e) => {
-                      const next = [...editBills];
-                      next[i] = { ...next[i], name: e.target.value };
-                      setEditBills(next);
-                    }}
-                    className="flex-1"
-                    maxLength={100}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Amount"
-                    value={bill.amount || ""}
-                    onChange={(e) => {
-                      const next = [...editBills];
-                      next[i] = { ...next[i], amount: parseFloat(e.target.value) || 0 };
-                      setEditBills(next);
-                    }}
-                    className="w-28"
-                    min={0}
-                    step="0.01"
-                  />
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 hover:text-destructive" onClick={() => {
-                    setEditBills(editBills.filter((_, idx) => idx !== i));
-                  }}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="w-full" onClick={() => setEditBills([...editBills, { name: "", amount: 0 }])}>
-                <Plus className="h-4 w-4 mr-1" /> Add Bill
-              </Button>
-              <Separator />
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span>₺{editBills.reduce((s, b) => s + b.amount, 0).toFixed(2)}</span>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setBillsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={() => {
-                const valid = editBills.filter(b => b.name.trim() && b.amount > 0);
-                saveMonthlyBills(valid);
-              }}>Save Bills</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Profit Margin Threshold */}
-        <Card className="border-primary/20">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Low Profit Alert Threshold</CardTitle>
-              </div>
-              {!readOnly && !editingThreshold && (
-                <Button variant="outline" size="sm" onClick={() => { setEditingThreshold(true); setThresholdInput(String(profitMarginThreshold)); }}>
-                  Edit
-                </Button>
-              )}
-              {!readOnly && editingThreshold && (
-                <div className="flex items-center gap-2">
-                  <Input type="number" value={thresholdInput} onChange={(e) => setThresholdInput(e.target.value)} className="w-20 h-8" min={0} max={100} step="1" />
-                  <span className="text-sm">%</span>
-                  <Button size="sm" onClick={saveProfitThreshold}><Save className="h-3 w-3 mr-1" />Save</Button>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingThreshold(false)}>Cancel</Button>
-                </div>
-              )}
-            </div>
-            <CardDescription>
-              Alert when daily profit margin drops below {profitMarginThreshold}%
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        {restaurantId && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Store Currency</CardTitle>
-              </div>
-              <CardDescription>
-                Currency used across menu prices, orders, expenses, reports, and your public order page. Platform subscription billing is unaffected.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 max-w-md">
-                <Select
-                  value={storeCurrency}
-                  onValueChange={saveStoreCurrency}
-                  disabled={readOnly || savingCurrency}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-80">
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.symbol} · {c.code} — {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
-                  Sample: {formatPrice(1234.5, storeCurrency)}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Existing records are not converted — only the symbol changes for display.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-
-        {restaurantId && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Restaurant Logo</CardTitle>
-              </div>
-              <CardDescription>
-                Upload a logo to replace the default placeholder across the app and your public order page.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 overflow-hidden border">
-                  {restaurantLogoUrl ? (
-                    <img src={restaurantLogoUrl} alt="Restaurant logo" className="h-full w-full object-cover" />
-                  ) : (
-                    <ImageIcon className="h-8 w-8 text-primary-foreground" />
-                  )}
-                </div>
-                {!readOnly && (
-                  <div className="flex flex-col gap-2">
-                    <label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoUpload}
-                        disabled={uploadingLogo}
-                      />
-                      <Button asChild variant="outline" size="sm" disabled={uploadingLogo}>
-                        <span className="cursor-pointer">
-                          <Upload className="h-4 w-4 mr-2" />
-                          {uploadingLogo ? "Uploading..." : restaurantLogoUrl ? "Replace logo" : "Upload logo"}
-                        </span>
-                      </Button>
-                    </label>
-                    {restaurantLogoUrl && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={removeLogo}
-                        disabled={uploadingLogo}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Remove
-                      </Button>
-                    )}
-                    <p className="text-xs text-muted-foreground">PNG, JPG, or SVG. Max 5MB.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {restaurantId && (
-          <Card className="border-accent/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Link2 className="h-5 w-5 text-accent-foreground" />
-                <CardTitle className="text-lg">Public Ordering Link</CardTitle>
-              </div>
-              <CardDescription>
-                Share this link with customers so they can order directly from your menu — no sign-in required.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5 pr-3">
-                  <Label className="text-sm font-medium">Accept public orders</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {allowPublicOrders
-                      ? "Customers can place orders via the link below."
-                      : "The public order page is currently disabled for customers."}
-                  </p>
-                </div>
-                <Switch
-                  checked={allowPublicOrders}
-                  onCheckedChange={togglePublicOrders}
-                  disabled={readOnly || savingPublicOrders}
-                  aria-label="Toggle public ordering"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  readOnly
-                  value={`${window.location.origin}/order/${restaurantId}`}
-                  className="font-mono text-sm"
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/order/${restaurantId}`);
-                    toast.success("Link copied to clipboard!");
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Payment Methods Configuration */}
-        {restaurantId && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Payment Methods</CardTitle>
-              </div>
-              <CardDescription>
-                Configure which payment methods are available for orders.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                {configuredPaymentMethods.map(method => (
-                  <div key={method.name} className="flex items-center gap-2 p-2 border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{method.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {method.currency} · Rate: {method.conversion_rate}
-                        {method.account_number ? ` · Acct: ${method.account_number}` : ""}
-                      </p>
-                    </div>
-                    {!readOnly && (
-                      <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMethod(method)}>
-                          <Settings className="h-3.5 w-3.5" />
-                        </Button>
-                        {!isProtectedMethod(method.name) && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => removePaymentMethod(method.name)}>
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {!readOnly && (
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="New payment method..."
-                    value={newPaymentMethod}
-                    onChange={(e) => setNewPaymentMethod(e.target.value)}
-                    className="max-w-xs"
-                    maxLength={50}
-                    onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
-                  />
-                  <Button size="sm" onClick={addPaymentMethod} disabled={!newPaymentMethod.trim()}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-
-            {/* Edit payment method dialog */}
-            <Dialog open={!!editingMethod} onOpenChange={(open) => !open && setEditingMethod(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Configure "{editingMethod?.name}"</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Currency Code</Label>
-                    <Input value={editCurrency} onChange={e => setEditCurrency(e.target.value.slice(0, 10))} placeholder="TRY" className="mt-2" maxLength={10} />
-                  </div>
-                  <div>
-                    <Label>Account Number / Details</Label>
-                    <Input value={editAccount} onChange={e => setEditAccount(e.target.value.slice(0, 200))} placeholder="e.g. TR12 3456 7890..." className="mt-2" maxLength={200} />
-                  </div>
-                  <div>
-                    <Label>Conversion Rate (1 TRY = ?)</Label>
-                    <Input type="number" value={editRate} onChange={e => setEditRate(e.target.value)} placeholder="1" className="mt-2" min={0} step="0.0001" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      If 1 TRY = 0.03 USD, enter 0.03. If same currency, keep at 1.
-                    </p>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setEditingMethod(null)}>Cancel</Button>
-                  <Button onClick={saveEditMethod}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </Card>
-        )}
-
+        {/* Staff Management (Dashboard tab) */}
         <Tabs defaultValue="staff" className="space-y-4">
-          <TabsList className="flex-wrap">
+          <TabsList className="flex-wrap overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
             <TabsTrigger value="staff">Staff Management</TabsTrigger>
             <TabsTrigger value="tags">Menu Tags</TabsTrigger>
             <TabsTrigger value="orders">All Orders</TabsTrigger>
@@ -1195,22 +831,18 @@ const Admin = () => {
                       <p className="text-center text-muted-foreground py-8">No staff members found</p>
                     ) : (
                       staff.map(member => (
-                        <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">{member.full_name}</p>
+                        <div key={member.id} className="flex items-center justify-between gap-2 p-4 border rounded-lg flex-wrap">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{member.full_name}</p>
                             <p className="text-xs text-muted-foreground">ID: {member.id.substring(0, 8)}...</p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {readOnly ? (
-                              <Badge variant="outline" className="capitalize">
-                                {member.role || "—"}
-                              </Badge>
+                              <Badge variant="outline" className="capitalize">{member.role || "—"}</Badge>
                             ) : (
                               <>
                                 <Select value={member.role} onValueChange={value => handleRoleChange(member.id, value)}>
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue placeholder="Assign role" />
-                                  </SelectTrigger>
+                                  <SelectTrigger className="w-32 min-h-[40px]"><SelectValue placeholder="Assign role" /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="server">Server</SelectItem>
                                     <SelectItem value="ops">Ops</SelectItem>
@@ -1221,7 +853,7 @@ const Admin = () => {
                                 </Select>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive min-h-[40px] min-w-[40px]">
                                       <UserMinus className="h-4 w-4" />
                                     </Button>
                                   </AlertDialogTrigger>
@@ -1229,18 +861,12 @@ const Admin = () => {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Remove Staff Member</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to remove {member.full_name} from this restaurant? 
-                                        They will lose access to all restaurant data and orders.
+                                        Are you sure you want to remove {member.full_name} from this restaurant? They will lose access to all restaurant data and orders.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction 
-                                        onClick={() => handleRemoveStaff(member.id, member.full_name)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                        Remove
-                                      </AlertDialogAction>
+                                      <AlertDialogAction onClick={() => handleRemoveStaff(member.id, member.full_name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remove</AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
@@ -1258,80 +884,43 @@ const Admin = () => {
           <TabsContent value="tags" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  Menu Tags
-                </CardTitle>
-                <CardDescription>
-                  Tag categories to group and filter menu items. A tag can include multiple categories.
-                </CardDescription>
+                <CardTitle className="flex items-center gap-2"><Tag className="h-5 w-5" />Menu Tags</CardTitle>
+                <CardDescription>Tag categories to group and filter menu items. A tag can include multiple categories.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Add tag-category mapping */}
                 {!readOnly && (
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
                       const name = newTagName.trim();
                       if (!name || !newTagCategory || !restaurantId) return;
-                      const { error } = await supabase.from("menu_tags").insert({
-                        name,
-                        category: newTagCategory,
-                        restaurant_id: restaurantId,
-                      });
+                      const { error } = await supabase.from("menu_tags").insert({ name, category: newTagCategory, restaurant_id: restaurantId });
                       if (error) {
                         if (error.code === '23505') toast.error("This category is already in this tag");
                         else toast.error("Failed to add");
                         return;
                       }
-                      setNewTagName("");
-                      setNewTagCategory("");
-                      invalidateTags();
+                      setNewTagName(""); setNewTagCategory(""); invalidateTags();
                       toast.success(`Category "${newTagCategory}" added to tag "${name}"`);
                     }}
                     className="flex flex-wrap gap-2 items-end"
                   >
                     <div className="space-y-1">
                       <Label className="text-xs">Tag Name</Label>
-                      <Input
-                        placeholder="e.g. Breakfast, Drinks..."
-                        value={newTagName}
-                        onChange={(e) => setNewTagName(e.target.value)}
-                        maxLength={50}
-                        className="w-40"
-                        list="existing-tags"
-                      />
-                      <datalist id="existing-tags">
-                        {tagNames.map(n => <option key={n} value={n} />)}
-                      </datalist>
+                      <Input placeholder="e.g. Breakfast, Drinks..." value={newTagName} onChange={(e) => setNewTagName(e.target.value)} maxLength={50} className="w-40" list="existing-tags" />
+                      <datalist id="existing-tags">{tagNames.map(n => <option key={n} value={n} />)}</datalist>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Category</Label>
                       <Select value={newTagCategory} onValueChange={setNewTagCategory}>
-                        <SelectTrigger className="w-44">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
+                        <SelectTrigger className="w-44"><SelectValue placeholder="Select category" /></SelectTrigger>
+                        <SelectContent>{categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                    <Button type="submit" size="sm" disabled={!newTagName.trim() || !newTagCategory}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add
-                    </Button>
+                    <Button type="submit" size="sm" disabled={!newTagName.trim() || !newTagCategory}><Plus className="h-4 w-4 mr-1" />Add</Button>
                   </form>
                 )}
-
-                {categories.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No menu categories found. Add menu items with categories first.
-                  </p>
-                )}
-
-                {/* Display grouped tags */}
+                {categories.length === 0 && <p className="text-sm text-muted-foreground">No menu categories found. Add menu items with categories first.</p>}
                 {tagsLoading ? (
                   <p className="text-sm text-muted-foreground">Loading tags...</p>
                 ) : Object.keys(groupedTags).length === 0 ? (
@@ -1340,24 +929,16 @@ const Admin = () => {
                   <div className="space-y-4">
                     {Object.entries(groupedTags).map(([tagName, { categories: tagCats }]) => (
                       <div key={tagName} className="border rounded-lg p-4 space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
                           <h4 className="font-semibold text-base">{tagName}</h4>
                           {!readOnly && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive h-7 text-xs"
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-7 text-xs"
                               onClick={async () => {
                                 const ids = tagCats.map(c => c.id);
-                                for (const id of ids) {
-                                  await supabase.from("menu_tags").delete().eq("id", id);
-                                }
+                                for (const id of ids) await supabase.from("menu_tags").delete().eq("id", id);
                                 invalidateTags();
                                 toast.success(`Tag "${tagName}" deleted`);
-                              }}
-                            >
-                              Delete Tag
-                            </Button>
+                              }}>Delete Tag</Button>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -1365,17 +946,12 @@ const Admin = () => {
                             <Badge key={id} variant="secondary" className="gap-1 py-1 px-3">
                               {category}
                               {!readOnly && (
-                                <button
-                                  onClick={async () => {
-                                    const { error } = await supabase.from("menu_tags").delete().eq("id", id);
-                                    if (error) { toast.error("Failed to remove"); return; }
-                                    invalidateTags();
-                                    toast.success(`Removed "${category}" from "${tagName}"`);
-                                  }}
-                                  className="ml-1 hover:text-destructive"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={async () => {
+                                  const { error } = await supabase.from("menu_tags").delete().eq("id", id);
+                                  if (error) { toast.error("Failed to remove"); return; }
+                                  invalidateTags();
+                                  toast.success(`Removed "${category}" from "${tagName}"`);
+                                }} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
                               )}
                             </Badge>
                           ))}
@@ -1389,12 +965,10 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-2">
               <h3 className="text-lg font-semibold">All Orders</h3>
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">Last 24 hours</SelectItem>
                   <SelectItem value="7">Last 7 days</SelectItem>
@@ -1403,27 +977,21 @@ const Admin = () => {
                 </SelectContent>
               </Select>
             </div>
-
             {loading ? <p className="text-center text-muted-foreground">Loading...</p> : <div className="space-y-3">
                 {orders.map(order => <Card key={order.id}>
                     <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold">Order #{order.order_number}</p>
                             <Badge variant="outline">{order.payment_method}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Staff: {order.profiles?.full_name || "Public Order"}
-                          </p>
+                          <p className="text-sm text-muted-foreground">Staff: {order.profiles?.full_name || "Public Order"}</p>
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(order.created_at), "PPp")}
+                            <Calendar className="h-3 w-3" />{format(new Date(order.created_at), "PPp")}
                           </p>
                         </div>
-                        <p className="text-2xl font-bold text-primary">
-                          {formatPrice(order.total, order.currency)}
-                        </p>
+                        <p className="text-2xl font-bold text-primary font-mono">{formatPrice(order.total, order.currency)}</p>
                       </div>
                     </CardContent>
                   </Card>)}
@@ -1431,12 +999,10 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-2">
               <h3 className="text-lg font-semibold">Daily Reports</h3>
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="7">Last 7 days</SelectItem>
                   <SelectItem value="30">Last 30 days</SelectItem>
@@ -1444,9 +1010,7 @@ const Admin = () => {
                 </SelectContent>
               </Select>
             </div>
-
             {loading ? <p className="text-center text-muted-foreground">Loading...</p> : <>
-              {/* Summary Totals */}
               {reports.length > 0 && (
                 <Card className="bg-primary/5 border-primary/20">
                   <CardHeader>
@@ -1457,18 +1021,13 @@ const Admin = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       <div>
                         <p className="text-sm text-muted-foreground">Total Revenue</p>
-                        <p className="text-3xl font-bold text-primary">
-                          {formatPrice(
-                            reports.reduce((sum, r) => sum + Number(r.total_revenue), 0),
-                            reports[0]?.currency || 'TRY'
-                          )}
+                        <p className="text-3xl font-bold text-primary font-mono">
+                          {formatPrice(reports.reduce((sum, r) => sum + Number(r.total_revenue), 0), reports[0]?.currency || 'TRY')}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Total Orders</p>
-                        <p className="text-3xl font-bold">
-                          {reports.reduce((sum, r) => sum + r.total_orders, 0)}
-                        </p>
+                        <p className="text-3xl font-bold font-mono">{reports.reduce((sum, r) => sum + r.total_orders, 0)}</p>
                       </div>
                       <div className="col-span-2 md:col-span-1">
                         <p className="text-sm text-muted-foreground mb-2">By Payment Method</p>
@@ -1485,9 +1044,7 @@ const Admin = () => {
                             return Object.entries(aggregated).map(([method, data]) => (
                               <div key={method} className="flex justify-between text-sm">
                                 <span>{method}</span>
-                                <span className="font-medium">
-                                  {data.count} orders · {formatPrice(data.total, reports[0]?.currency || 'TRY')}
-                                </span>
+                                <span className="font-medium font-mono">{data.count} orders · {formatPrice(data.total, reports[0]?.currency || 'TRY')}</span>
                               </div>
                             ));
                           })()}
@@ -1497,33 +1054,19 @@ const Admin = () => {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Individual Reports */}
               <div className="space-y-3">
                 {reports.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <p className="text-muted-foreground">No daily reports found for this period</p>
-                    </CardContent>
-                  </Card>
+                  <Card><CardContent className="py-12 text-center"><p className="text-muted-foreground">No daily reports found for this period</p></CardContent></Card>
                 ) : reports.map(report => <Card key={report.id}>
                     <CardHeader>
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center justify-between gap-4 flex-wrap">
                         <div>
-                          <CardTitle className="text-lg">
-                            {format(new Date(report.report_date), "PPP")}
-                          </CardTitle>
-                          <CardDescription>
-                            Staff: {report.profiles?.full_name || "Unknown"}
-                          </CardDescription>
+                          <CardTitle className="text-lg">{format(new Date(report.report_date), "PPP")}</CardTitle>
+                          <CardDescription>Staff: {report.profiles?.full_name || "Unknown"}</CardDescription>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="text-lg px-4 py-2">
-                            {formatPrice(report.total_revenue, report.currency || 'TRY')}
-                          </Badge>
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>
-                            View Breakdown
-                          </Button>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <Badge variant="outline" className="text-lg px-4 py-2 font-mono">{formatPrice(report.total_revenue, report.currency || 'TRY')}</Badge>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/report/${report.id}`)}>View Breakdown</Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -1531,14 +1074,12 @@ const Admin = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Total Orders</p>
-                          <p className="text-2xl font-bold">{report.total_orders}</p>
+                          <p className="text-2xl font-bold font-mono">{report.total_orders}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Payment Methods</p>
                           <div className="mt-1 space-y-1">
-                            {Object.entries(report.payment_methods || {}).map(([method, data]) => <p key={method} className="text-sm">
-                                {method}: {data.count} ({formatPrice(data.total, report.currency || 'TRY')})
-                              </p>)}
+                            {Object.entries(report.payment_methods || {}).map(([method, data]) => <p key={method} className="text-sm">{method}: {data.count} ({formatPrice(data.total, report.currency || 'TRY')})</p>)}
                           </div>
                         </div>
                       </div>
@@ -1548,6 +1089,284 @@ const Admin = () => {
             </>}
           </TabsContent>
         </Tabs>
+      </div>
+      )}
+
+      {topTab === "settings" && (
+      <div className="max-w-[1100px] mx-auto px-4 md:px-5 py-4 md:py-6">
+        <div className="grid gap-4 md:grid-cols-[200px_1fr] items-start">
+          {/* Settings Nav */}
+          <div className="bg-card border border-border rounded-xl p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+            {([
+              { id: "bills", label: "Monthly Bills", icon: Calendar },
+              { id: "alerts", label: "Profit Alerts", icon: AlertCircle },
+              { id: "branding", label: "Branding", icon: ImageIcon },
+              { id: "public", label: "Public Ordering", icon: Link2 },
+              { id: "payment", label: "Payment Methods", icon: ShoppingBag },
+            ] as const).map((item) => {
+              const Icon = item.icon;
+              const active = settingsPanel === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSettingsPanel(item.id)}
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors duration-150 flex-shrink-0 whitespace-nowrap min-h-[40px] md:rounded-md md:w-full md:justify-start justify-center max-md:rounded-full ${
+                    active
+                      ? "bg-muted text-foreground font-medium"
+                      : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="max-[420px]:hidden md:inline">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Settings Panel */}
+          <div className="space-y-4 min-w-0">
+            {settingsPanel === "bills" && (
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg">Fixed Monthly Expenses</CardTitle>
+                    </div>
+                    {!readOnly && (
+                      <Button variant="outline" size="sm" onClick={() => { setEditBills(monthlyBills.length > 0 ? [...monthlyBills] : [{ name: "", amount: 0 }]); setBillsDialogOpen(true); }}>
+                        {monthlyBills.length > 0 ? "Edit Bills" : "Add Bills"}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>
+                    {fixedMonthlyExpenses > 0
+                      ? `${formatPrice(fixedMonthlyExpenses, storeCurrency)}/month → ${formatPrice(dailyShareOfMonthly(fixedMonthlyExpenses), storeCurrency)}/day (÷ ${daysInMonth()} days this month) deducted from daily profit`
+                      : "Add your monthly fixed costs (rent, salaries, etc.) to deduct daily from profits"}
+                  </CardDescription>
+                </CardHeader>
+                {monthlyBills.length > 0 && (
+                  <CardContent>
+                    <div className="space-y-1">
+                      {monthlyBills.map((bill, i) => (
+                        <div key={i} className="flex justify-between text-sm py-1 border-b border-border last:border-b-0">
+                          <span className="text-muted-foreground">{bill.name}</span>
+                          <span className="font-medium font-mono">{formatPrice(bill.amount, storeCurrency)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between font-bold pt-3 mt-2 border-t border-border">
+                        <span>Total</span>
+                        <span className="font-mono">{formatPrice(fixedMonthlyExpenses, storeCurrency)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            )}
+
+            {settingsPanel === "alerts" && (
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg">Low Profit Alert Threshold</CardTitle>
+                    </div>
+                  </div>
+                  <CardDescription>Alert when daily profit margin drops below {profitMarginThreshold}%</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-lg bg-muted p-4 mb-4 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-muted-foreground">
+                      You'll get a notification any day your profit margin drops under <span className="font-medium font-mono">{profitMarginThreshold}%</span>.
+                    </p>
+                  </div>
+                  {!readOnly && (
+                    <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))] items-end">
+                      <div>
+                        <Label className="text-xs">Threshold (%)</Label>
+                        <Input type="number" value={thresholdInput} onChange={(e) => setThresholdInput(e.target.value)} min={0} max={100} step="1" className="mt-1.5" />
+                      </div>
+                      <Button onClick={saveProfitThreshold} className="min-h-[40px]"><Save className="h-3.5 w-3.5 mr-1" />Save Changes</Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {settingsPanel === "branding" && restaurantId && (
+              <>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2"><ImageIcon className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Restaurant Logo</CardTitle></div>
+                    <CardDescription>Upload a logo to replace the default placeholder across the app and your public order page.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="h-[60px] w-[60px] rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 overflow-hidden border">
+                        {restaurantLogoUrl ? <img src={restaurantLogoUrl} alt="Restaurant logo" className="h-full w-full object-cover" /> : <ImageIcon className="h-7 w-7 text-primary-foreground" />}
+                      </div>
+                      {!readOnly && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <label>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                            <Button asChild variant="outline" size="sm" disabled={uploadingLogo}>
+                              <span className="cursor-pointer"><Upload className="h-4 w-4 mr-2" />{uploadingLogo ? "Uploading..." : restaurantLogoUrl ? "Replace logo" : "Upload logo"}</span>
+                            </Button>
+                          </label>
+                          {restaurantLogoUrl && (
+                            <Button variant="outline" size="sm" onClick={removeLogo} disabled={uploadingLogo} className="text-destructive border-destructive/30 bg-destructive/10 hover:bg-destructive/15 hover:text-destructive">
+                              <Trash2 className="h-4 w-4 mr-2" />Remove
+                            </Button>
+                          )}
+                          <p className="text-xs text-muted-foreground w-full">PNG, JPG, or SVG. Max 5MB.</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2"><Settings className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Store Currency</CardTitle></div>
+                    <CardDescription>Currency used across menu prices, orders, expenses, reports, and your public order page. Platform subscription billing is unaffected.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+                      <Select value={storeCurrency} onValueChange={saveStoreCurrency} disabled={readOnly || savingCurrency}>
+                        <SelectTrigger className="min-h-[40px]"><SelectValue placeholder="Select currency" /></SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {SUPPORTED_CURRENCIES.map((c) => <SelectItem key={c.code} value={c.code}>{c.symbol} · {c.code} — {c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center text-xs text-muted-foreground font-mono">Sample: {formatPrice(1234.5, storeCurrency)}</div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3">Existing records are not converted — only the symbol changes for display.</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {settingsPanel === "public" && restaurantId && (
+              <Card className="border-accent/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2"><Link2 className="h-5 w-5 text-accent-foreground" /><CardTitle className="text-lg">Public Ordering Link</CardTitle></div>
+                  <CardDescription>Share this link with customers so they can order directly from your menu — no sign-in required.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-muted p-4 flex-wrap">
+                    <div className="space-y-0.5 pr-3 min-w-0">
+                      <Label className="text-sm font-medium">Accept public orders</Label>
+                      <p className={`text-xs ${allowPublicOrders ? "text-emerald-600" : "text-destructive"}`}>
+                        {allowPublicOrders ? "Customers can place orders via the link below." : "The public order page is currently disabled for customers."}
+                      </p>
+                    </div>
+                    <Switch checked={allowPublicOrders} onCheckedChange={togglePublicOrders} disabled={readOnly || savingPublicOrders} aria-label="Toggle public ordering" />
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Input readOnly value={`${window.location.origin}/order/${restaurantId}`} className="font-mono text-sm flex-1 min-w-[180px]" onClick={(e) => (e.target as HTMLInputElement).select()} />
+                    <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/order/${restaurantId}`); toast.success("Link copied to clipboard!"); }}>
+                      <Copy className="h-4 w-4 mr-1.5" />Copy
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => window.open(`${window.location.origin}/order/${restaurantId}`, "_blank")}>
+                      <Link2 className="h-4 w-4 mr-1.5" />Open
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {settingsPanel === "payment" && restaurantId && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <div className="flex items-center gap-2"><ShoppingBag className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Payment Methods</CardTitle></div>
+                      <CardDescription className="mt-1">Configure which payment methods are available for orders.</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    {configuredPaymentMethods.map(method => (
+                      <div key={method.name} className="flex items-center gap-2 p-3 border rounded-lg flex-wrap">
+                        <div className="h-[34px] w-[34px] rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                          <ShoppingBag className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{method.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {method.currency} · Rate: {method.conversion_rate}{method.account_number ? ` · Acct: ${method.account_number}` : ""}
+                          </p>
+                        </div>
+                        {!readOnly && (
+                          <>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 min-h-[40px]" onClick={() => openEditMethod(method)}><Settings className="h-4 w-4" /></Button>
+                            {!isProtectedMethod(method.name) && (
+                              <Button variant="ghost" size="icon" className="h-9 w-9 min-h-[40px] text-destructive hover:text-destructive" onClick={() => removePaymentMethod(method.name)}><X className="h-4 w-4" /></Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {!readOnly && (
+                    <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border">
+                      <Input placeholder="New payment method..." value={newPaymentMethod} onChange={(e) => setNewPaymentMethod(e.target.value)} className="flex-1 min-w-[140px]" maxLength={50} onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()} />
+                      <Button size="sm" onClick={addPaymentMethod} disabled={!newPaymentMethod.trim()} className="min-h-[40px]"><Plus className="h-4 w-4 mr-1" />Add</Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Root-level Dialogs (mounted regardless of active tab) */}
+      <Dialog open={billsDialogOpen} onOpenChange={setBillsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Monthly Fixed Bills</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-auto">
+            {editBills.map((bill, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input placeholder="Bill name (e.g. Rent)" value={bill.name} onChange={(e) => { const n = [...editBills]; n[i] = { ...n[i], name: e.target.value }; setEditBills(n); }} className="flex-1" maxLength={100} />
+                <Input type="number" placeholder="Amount" value={bill.amount || ""} onChange={(e) => { const n = [...editBills]; n[i] = { ...n[i], amount: parseFloat(e.target.value) || 0 }; setEditBills(n); }} className="w-28" min={0} step="0.01" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 hover:text-destructive" onClick={() => setEditBills(editBills.filter((_, idx) => idx !== i))}><X className="h-4 w-4" /></Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" className="w-full" onClick={() => setEditBills([...editBills, { name: "", amount: 0 }])}><Plus className="h-4 w-4 mr-1" /> Add Bill</Button>
+            <Separator />
+            <div className="flex justify-between font-bold"><span>Total</span><span className="font-mono">{formatPrice(editBills.reduce((s, b) => s + b.amount, 0), storeCurrency)}</span></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBillsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => { const valid = editBills.filter(b => b.name.trim() && b.amount > 0); saveMonthlyBills(valid); }}>Save Bills</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingMethod} onOpenChange={(open) => !open && setEditingMethod(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Configure "{editingMethod?.name}"</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Currency Code</Label><Input value={editCurrency} onChange={e => setEditCurrency(e.target.value.slice(0, 10))} placeholder="TRY" className="mt-2" maxLength={10} /></div>
+            <div><Label>Account Number / Details</Label><Input value={editAccount} onChange={e => setEditAccount(e.target.value.slice(0, 200))} placeholder="e.g. TR12 3456 7890..." className="mt-2" maxLength={200} /></div>
+            <div>
+              <Label>Conversion Rate (1 TRY = ?)</Label>
+              <Input type="number" value={editRate} onChange={e => setEditRate(e.target.value)} placeholder="1" className="mt-2" min={0} step="0.0001" />
+              <p className="text-xs text-muted-foreground mt-1">If 1 TRY = 0.03 USD, enter 0.03. If same currency, keep at 1.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingMethod(null)}>Cancel</Button>
+            <Button onClick={saveEditMethod}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </>;
 };
