@@ -50,6 +50,16 @@ export default function Billing() {
     },
   });
 
+  const { data: livePrices } = useQuery({
+    queryKey: ["billing", "dodo-prices"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("dodo-tier-prices");
+      if (error) throw error;
+      return (data?.prices ?? {}) as Record<string, { amount: number; currency: string; source: string }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [polling, setPolling] = useState(false);
   const { data: restaurant, refetch: refetchRestaurant } = useQuery({
     queryKey: ["billing", "restaurant", restaurantId],
@@ -223,7 +233,14 @@ export default function Billing() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-semibold font-mono">{formatPrice(Number(t.price_try ?? 0), "TRY")}</p>
+                    <p className="text-lg font-semibold font-mono">
+                      {(() => {
+                        const lp = livePrices?.[t.id];
+                        if (t.is_free) return formatPrice(0, "USD");
+                        if (lp) return formatPrice(lp.amount, lp.currency);
+                        return formatPrice(Number(t.price_try ?? 0), "TRY");
+                      })()}
+                    </p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">/ month</p>
                   </div>
                 </div>
