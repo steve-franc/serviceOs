@@ -50,6 +50,16 @@ export default function Billing() {
     },
   });
 
+  const { data: livePrices } = useQuery({
+    queryKey: ["billing", "dodo-prices"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("dodo-tier-prices");
+      if (error) throw error;
+      return (data?.prices ?? {}) as Record<string, { amount: number; currency: string; source: string }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [polling, setPolling] = useState(false);
   const { data: restaurant, refetch: refetchRestaurant } = useQuery({
     queryKey: ["billing", "restaurant", restaurantId],
