@@ -820,6 +820,49 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="staff" className="space-y-4">
+            {!readOnly && restaurantId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Link2 className="h-4 w-4" /> Staff Invite Link</CardTitle>
+                  <CardDescription>Share this link so staff can sign up and join this business. Assign them a role after they register.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const inviteUrl = `${window.location.origin}/auth?join=${restaurantId}`;
+                    return (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Input readOnly value={inviteUrl} className="flex-1 min-w-[200px] font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+                        <Button
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(inviteUrl);
+                              toast.success("Invite link copied");
+                            } catch {
+                              toast.error("Could not copy");
+                            }
+                          }}
+                        >
+                          <Copy className="h-4 w-4 mr-2" /> Copy
+                        </Button>
+                        {typeof navigator !== "undefined" && (navigator as any).share && (
+                          <Button
+                            variant="outline"
+                            onClick={async () => {
+                              try {
+                                await (navigator as any).share({ title: "Join our team", text: "Sign up to join us on ServiceOS", url: inviteUrl });
+                              } catch {}
+                            }}
+                          >
+                            Share
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle>Users</CardTitle>
