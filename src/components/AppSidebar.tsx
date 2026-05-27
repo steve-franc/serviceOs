@@ -153,12 +153,12 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {!isSuperadmin && (isManager || isInvestor) && (
+        {!isSuperadmin && isManager && (
           <SidebarGroup>
             <SidebarGroupLabel>Settings &amp; Admin</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {(isInvestor ? settingsAdminItems.filter(i => i.url === "/admin") : settingsAdminItems).map((item) => (
+                {settingsAdminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
