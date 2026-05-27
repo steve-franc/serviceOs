@@ -34,8 +34,12 @@ const managerItems = [
   { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Supply", url: "/restock", icon: Truck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "Admin", url: "/admin", icon: Shield },
   { title: "Billing", url: "/billing", icon: CreditCard },
+];
+
+const settingsAdminItems = [
+  { title: "Admin", url: "/admin", icon: Shield },
+  { title: "Settings", url: "/admin/settings", icon: SettingsIcon },
 ];
 
 // Ops can access menu management (no admin/reports/inventory)
