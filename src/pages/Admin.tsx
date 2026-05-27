@@ -7,13 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Shield, Users, ShoppingBag, TrendingUp, TrendingDown, Calendar, AlertCircle, UserMinus, Target, Save, Link2, Copy, Check, Tag, Plus, X, Settings, MessageCircle, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
-import { formatPrice, SUPPORTED_CURRENCIES, setActiveCurrency } from "@/lib/currency";
-import { dailyShareOfMonthly, daysInMonth } from "@/lib/date-format";
+import { Shield, Users, ShoppingBag, TrendingUp, TrendingDown, Calendar, AlertCircle, UserMinus, Target, Link2, Copy, Tag, Plus, X } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { formatPrice } from "@/lib/currency";
 import { sumPaidRevenue, sumUnpaidRevenue, dailyBillsTarget } from "@/lib/revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,8 +18,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { useMenuTags, useInvalidateMenuTags, useMenuItems } from "@/hooks/useQueries";
-import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useTabState } from "@/hooks/useTabState";
 import {
   AlertDialog,
   AlertDialogAction,
