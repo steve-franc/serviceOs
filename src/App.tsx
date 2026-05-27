@@ -21,6 +21,7 @@ const CreateOrder = lazy(() => import("./pages/CreateOrder"));
 const OrderHistory = lazy(() => import("./pages/OrderHistory"));
 const Receipt = lazy(() => import("./pages/Receipt"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const PublicOrder = lazy(() => import("./pages/PublicOrder"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Restock = lazy(() => import("./pages/Restock"));
@@ -146,6 +147,7 @@ const App = () => {
                 <Route path="/order/create" element={<ObserverBlockedRoute><CreateOrder /></ObserverBlockedRoute>} />
                 <Route path="/orders" element={<ObserverBlockedRoute><OrderHistory /></ObserverBlockedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
                 <Route path="/inventory" element={<ObserverBlockedRoute><Inventory /></ObserverBlockedRoute>} />
                 <Route path="/restock" element={<ObserverBlockedRoute><Restock /></ObserverBlockedRoute>} />
                 <Route path="/tabs" element={<ObserverBlockedRoute><TabsPage /></ObserverBlockedRoute>} />

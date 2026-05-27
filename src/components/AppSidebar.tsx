@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone, CalendarClock, CreditCard, Truck } from "lucide-react";
+import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone, CalendarClock, CreditCard, Truck, Settings as SettingsIcon } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,8 +34,12 @@ const managerItems = [
   { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Supply", url: "/restock", icon: Truck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "Admin", url: "/admin", icon: Shield },
   { title: "Billing", url: "/billing", icon: CreditCard },
+];
+
+const settingsAdminItems = [
+  { title: "Admin", url: "/admin", icon: Shield },
+  { title: "Settings", url: "/admin/settings", icon: SettingsIcon },
 ];
 
 // Ops can access menu management (no admin/reports/inventory)
@@ -131,6 +135,30 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {(isManager ? managerItems : opsItems).map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <NavLink to={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {!isSuperadmin && isManager && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Settings &amp; Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {settingsAdminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
