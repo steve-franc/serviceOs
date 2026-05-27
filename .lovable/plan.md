@@ -1,53 +1,50 @@
-## 1. Persist filters + scroll position across in-app navigation
+# Plan: Settings subtab, Superadmin polish, no-refresh tabs
 
-Today the back button works, but every page remounts fresh — search queries, collapsed categories, tab filters, and scroll positions are lost.
+## Change 1 — Settings as its own route/subtab
 
-**Add a small route-keyed state cache** (`src/lib/nav-cache.ts`) backed by `sessionStorage`:
-- `saveState(routeKey, payload)` / `loadState(routeKey)`
-- One `useScrollRestoration(key)` hook that captures `window.scrollY` (and the main scroll container) on unmount and restores on mount.
-- One `usePersistentState(key, initial)` hook (drop-in `useState` replacement that round-trips through sessionStorage).
+**New file:** `src/pages/AdminSettings.tsx`
+- Hosts the 5 panels currently in Admin's "Settings" tab:
+  1. Monthly Bills (Fixed Monthly Expenses + dialog)
+  2. Profit Alert Threshold
+  3. Branding (Logo upload + Display Name + Store Currency)
+  4. Public Ordering Link (toggle + share link)
+  5. Payment Methods (list + add/edit/remove + dialog)
+- Owns its own state, data loading (`fetchFixedDailyBills` equivalent), and root-level Dialogs (Monthly Bills, Payment Method edit).
+- Responsive nav: 200px vertical sidebar ≥768px, horizontal scrollable pills ≤768px, icon-only ≤420px. Uses `useTabState` so the active panel persists.
 
-**Wire it into the dashboard pages** that have meaningful filter/scroll state:
-- `OrderHistory`, `MenuManagement`, `Inventory`, `Tabs`, `Debtors`, `Bookings`, `Reports`, `CreateOrder`
-- Persist: `searchQuery`, `collapsedCategories`, active tab, date range, status filter, and scroll position.
-- Cache is keyed on the route path, so navigating away and coming back via the existing `SmartBackButton` restores everything. Cleared on full sign-out.
+**Edited files:**
+- `src/pages/Admin.tsx` — strip out all settings panels, root-level settings dialogs, and the `topTab`/`settingsPanel` machinery. Page becomes Dashboard-only (stat cards, Daily Bills Target, Workday Notes, Staff Management with its sub-tabs, Staff Invite Link). Keep all data fetching needed for the dashboard. Convert internal `useState` tabs to `useTabState` so switching is preserved across navigation.
+- `src/App.tsx` — register `/admin/settings` route (manager-only, inside Layout).
+- `src/components/AppSidebar.tsx` — add a "Settings & Admin" group containing two items: **Admin** (`/admin`) and **Settings** (`/admin/settings`). Move the existing Admin entry out of `managerItems` into this new group. Only visible to managers.
 
-`ScrollToTop.tsx` is updated so it does **not** clobber restoration when navigating "back" (only scrolls to top on forward navigation — detected via `useNavigationType() === 'POP'`).
+## Change 2 — Superadmin polish
 
-## 2. Remove "Place a Public Order" from the landing page
+The project already has full superadmin impersonation via God Mode (`useRestaurantAndRole`'s `setGodModeDisabled` + impersonated `restaurantId`, sidebar switch, `/superadmin/restaurants` list with "Open" actions). I will NOT rebuild this. The two gaps from the prompt that are real:
 
-Drop the second hero button in `src/pages/Landing.tsx` so only "Start Free" remains. No other content changes.
+- **Hide superadmins from staff lists:** audit every staff query in `Admin.tsx` (and `superadmin/Users.tsx` staff counts if relevant) and filter out users whose `profiles.is_superadmin = true`. Cover: Staff Management Users sub-tab, Total Staff stat card, orders/reports `staff_id` joins (display "Platform Admin" instead of removing — orders placed during impersonation should still be attributable, just not counted as staff).
+- **"Super Admin" pill in sidebar footer:** small accent badge next to user identity when `isSuperadminAccount` is true. Already partly present via the God Mode card — add a compact identity row beneath it.
 
-## 3. Menu item delete — investigation + fix
+I will skip the `SUPER_ADMIN_EMAILS` constant pattern from the prompt — the DB-backed `is_superadmin` flag is the correct source of truth and is already wired up.
 
-Schema shows no FK constraints on `order_items`, `tab_items`, or `service_bookings` referencing `menu_items`, so the delete should succeed at the DB level. The current code (`MenuManagement.tsx` `handleDelete`) shows a generic "Failed to delete item" toast that swallows the real Postgres error.
+## Change 3 — Stop tab switches from feeling like refreshes
 
-Steps:
-- Surface the real error: `toast.error(error.message ?? "Failed to delete item")` and log to console for diagnostics.
-- Verify the delete actually returns rows (`.delete().eq(...).select()`) — if RLS silently blocks (current `is_manager_or_ops` policy + `current_restaurant_id` mismatch), report a clear "You don't have permission" message instead of a misleading success/failure.
-- Add a short pre-delete check: count linked `order_items` / `tab_items` / `service_bookings`. If linked, show a confirmation explaining the item will be hidden from the menu but historical references stay intact, and switch to an "archive" path: set `is_available=false`, `is_public=false` instead of deleting. (Pure deletes still allowed when nothing references the item.)
-- Replace the native `confirm()` with the existing `AlertDialog` for a consistent UX.
+Audit pass, not a rewrite:
+- Confirm Layout is the route parent for `/admin` and the new `/admin/settings` so sidebar/header don't unmount. (Already true.)
+- Confirm `QueryClient` defaults already disable `refetchOnWindowFocus` / `refetchOnMount`. (Already true.)
+- Replace any `useState` tab switchers on Admin & the new Settings page with `useTabState` so panel selection survives navigation and reloads. No `key`-based remounts on tab panels.
+- Verify no `navigate()` / `<a href>` is used for in-page tab switching. Sidebar items (route changes) keep using `NavLink`.
 
-## 4. Public order creation — make it bulletproof
+## Technical notes
 
-`PublicOrder.handleSubmitOrder` calls `create_public_order` RPC. Failures today bubble up as a single toast and reset nothing, so the user can't tell what went wrong.
-
-Hardening:
-- Pre-flight: ensure at least one item has `quantity > 0` OR a valid `slot_at` (today an item with only `extra_units` and no `per_unit_price` would fail server-side with a cryptic message).
-- Strip `slot_at: null` keys for non-service items so the payload is minimal/clean.
-- On RPC error, show the server's `error.message` directly (it's already user-friendly: "Online ordering is currently unavailable", "One or more menu items are unavailable", etc.) and keep the cart populated so the user can retry.
-- Add a single retry on transient network failure (one `setTimeout` retry), then fail.
-- If `restaurantId` resolution from URL → settings hasn't completed, disable the submit button (currently the button can be clicked during `pageLoading`/missing settings race).
-- Re-fetch `menu_items` right before submitting to catch items that became unavailable or were deleted between page load and checkout — surface a friendly "X is no longer available, please remove it" message identifying the offending item by name (today the RPC just says "One or more menu items are unavailable").
-- Add basic phone/location length guards already present in `publicOrderSchema`; ensure schema requires non-empty trimmed values matching the asterisks shown in the form.
+- The "Settings" sidebar entry is gated behind `isManager` (same as Admin today).
+- `AdminSettings.tsx` re-uses `formatPrice`, `setActiveCurrency`, `SUPPORTED_CURRENCIES`, `parsePaymentMethods`, `PaymentMethodConfig` — same imports as today.
+- No DB migrations.
+- No changes to RLS, auth, or currency logic.
+- No edits to `src/integrations/supabase/{client,types}.ts`, `.env`, or `supabase/config.toml`.
 
 ## Files touched
 
-- new `src/lib/nav-cache.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/usePersistentState.ts`
-- edit `src/components/ScrollToTop.tsx`
-- edit `src/pages/Landing.tsx` (remove CTA)
-- edit `src/pages/MenuManagement.tsx` (delete fix + AlertDialog + persist filters)
-- edit `src/pages/PublicOrder.tsx` (submit hardening)
-- edit `src/pages/OrderHistory.tsx`, `Inventory.tsx`, `Tabs.tsx`, `Debtors.tsx`, `Bookings.tsx`, `Reports.tsx`, `CreateOrder.tsx` to use the persistence hooks
-
-No DB migrations required.
+- create `src/pages/AdminSettings.tsx`
+- edit `src/pages/Admin.tsx` (large reduction)
+- edit `src/App.tsx` (one new route)
+- edit `src/components/AppSidebar.tsx` (group + Settings entry + identity pill)
