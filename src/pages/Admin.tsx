@@ -183,7 +183,7 @@ const Admin = () => {
 
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, full_name, is_superadmin")
+      .select("id, full_name")
       .in("id", userIds);
     if (profilesError) throw profilesError;
 
@@ -193,9 +193,17 @@ const Admin = () => {
       .eq("restaurant_id", restaurantId);
     if (rolesError) throw rolesError;
 
+    // Identify any superadmins amongst these users (global role rows have null restaurant_id).
+    const { data: superRows } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "superadmin")
+      .in("user_id", userIds);
+    const superIds = new Set((superRows || []).map(r => r.user_id));
+
     // Hide superadmins from the staff list entirely.
     const staffMembers: StaffMember[] = (profiles || [])
-      .filter((p: any) => !p.is_superadmin)
+      .filter(p => !superIds.has(p.id))
       .map(profile => {
         const userRole = roles?.find(r => r.user_id === profile.id);
         return { id: profile.id, email: "", full_name: profile.full_name, role: userRole?.role || "" };
