@@ -91,12 +91,12 @@ function findActiveSection(sections: Section[], pathname: string): { section?: S
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "light";
-    return (localStorage.getItem("serviceos-theme") as "light" | "dark") ||
+    return (localStorage.getItem("coreos-theme") as "light" | "dark") ||
       (document.documentElement.classList.contains("dark") ? "dark" : "light");
   });
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("serviceos-theme", theme);
+    localStorage.setItem("coreos-theme", theme);
   }, [theme]);
   return { theme, toggle: () => setTheme(t => t === "dark" ? "light" : "dark") };
 }
@@ -291,7 +291,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   const { section: activeSection, subtab: activeSubtab } = findActiveSection(sections, location.pathname);
   const pageTitle = activeSection
     ? activeSubtab ? `${activeSection.label} — ${activeSubtab.label}` : activeSection.label
-    : "ServiceOS";
+    : "CoreOS";
 
   const onHoldBanner =
     !isSuperadmin && restaurantStatus === "on_hold" ? (
@@ -335,7 +335,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
       </div>
       {!sidebarCollapsed && (
         <>
-          <span className="font-bold text-[15px] tracking-tight truncate">{restaurantName || "serviceOS"}</span>
+          <span className="font-bold text-[15px] tracking-tight truncate">{restaurantName || "coreOS"}</span>
           <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-brand/15 text-brand">Pro</span>
         </>
       )}
@@ -403,7 +403,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
               <div className="h-[30px] w-[30px] rounded-md bg-brand text-white grid place-items-center font-bold text-sm overflow-hidden">
                 {logoUrl ? <img src={logoUrl} alt="" className="h-full w-full object-cover" /> : "S"}
               </div>
-              <span className="font-bold text-[15px] tracking-tight truncate">{restaurantName || "serviceOS"}</span>
+              <span className="font-bold text-[15px] tracking-tight truncate">{restaurantName || "coreOS"}</span>
               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-brand/15 text-brand">Pro</span>
               <button
                 type="button"
@@ -464,7 +464,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         {/* Breadcrumb */}
         {activeSection && (
           <div className="px-4 sm:px-6 pt-2.5 text-[12px] text-muted-foreground flex items-center gap-1.5">
-            <span>serviceOS</span>
+            <span>coreOS</span>
             <ChevronRight className="h-3 w-3 opacity-60" />
             <span>{activeSection.label}</span>
             {activeSubtab && (

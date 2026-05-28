@@ -589,7 +589,7 @@ const PublicOrder = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Order online — ServiceOS</title>
+        <title>Order online — CoreOS</title>
         <meta name="description" content="Browse the menu and place your order directly from your phone." />
         <meta name="robots" content="noindex" />
       </Helmet>
