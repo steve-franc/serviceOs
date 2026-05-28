@@ -450,7 +450,7 @@ const Admin = () => {
                           }}><Copy className="h-4 w-4 mr-2" /> Copy</Button>
                           {typeof navigator !== "undefined" && (navigator as any).share && (
                             <Button variant="outline" onClick={async () => {
-                              try { await (navigator as any).share({ title: "Join our team", text: "Sign up to join us on ServiceOS", url: inviteUrl }); } catch {}
+                              try { await (navigator as any).share({ title: "Join our team", text: "Sign up to join us on CoreOS", url: inviteUrl }); } catch {}
                             }}>Share</Button>
                           )}
                         </div>

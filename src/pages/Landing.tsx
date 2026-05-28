@@ -76,10 +76,10 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>ServiceOS — Business Management for Service Operations</title>
+        <title>CoreOS — Business Management for Service Operations</title>
         <meta name="description" content="Run orders, inventory, bookings, tabs and reports for your service business in one fast platform built for operators." />
         <link rel="canonical" href="https://serviceos.lovable.app/" />
-        <meta property="og:title" content="ServiceOS — Business Management for Service Operations" />
+        <meta property="og:title" content="CoreOS — Business Management for Service Operations" />
         <meta property="og:description" content="Run orders, inventory, bookings, tabs and reports for your service business in one fast platform built for operators." />
         <meta property="og:url" content="https://serviceos.lovable.app/" />
       </Helmet>
@@ -148,7 +148,7 @@ const Landing = () => {
               See it in action
             </h2>
             <p className="mt-3 text-muted-foreground">
-              A glimpse into the ServiceOS dashboard and tools.
+              A glimpse into the CoreOS dashboard and tools.
             </p>
           </div>
 
@@ -233,9 +233,9 @@ const Landing = () => {
         <div className="container mx-auto flex flex-col items-center gap-2 px-4 text-sm text-muted-foreground md:flex-row md:justify-between">
           <div className="flex items-center gap-2">
             <UtensilsCrossed className="h-4 w-4 text-primary" />
-            <span>ServiceOS</span>
+            <span>CoreOS</span>
           </div>
-          <p>© {new Date().getFullYear()} ServiceOS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} CoreOS. All rights reserved.</p>
         </div>
       </footer>
     </div>
