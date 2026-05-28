@@ -78,10 +78,10 @@ const Landing = () => {
       <Helmet>
         <title>CoreOS — Business Management for Service Operations</title>
         <meta name="description" content="Run orders, inventory, bookings, tabs and reports for your service business in one fast platform built for operators." />
-        <link rel="canonical" href="https://serviceos.lovable.app/" />
+        <link rel="canonical" href="https://coreos.lovable.app/" />
         <meta property="og:title" content="CoreOS — Business Management for Service Operations" />
         <meta property="og:description" content="Run orders, inventory, bookings, tabs and reports for your service business in one fast platform built for operators." />
-        <meta property="og:url" content="https://serviceos.lovable.app/" />
+        <meta property="og:url" content="https://coreos.lovable.app/" />
       </Helmet>
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-lg">
@@ -91,7 +91,7 @@ const Landing = () => {
               <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              Service<span className="text-primary">OS</span>
+              Core<span className="text-primary">OS</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
