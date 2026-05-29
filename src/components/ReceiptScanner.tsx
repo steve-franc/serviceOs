@@ -368,7 +368,7 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
         {stage === "processing" && (
           <div className="py-10 flex flex-col items-center gap-3">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm font-medium">Extracting receipt data…</p>
+            <p className="text-sm font-medium">{processingLabel}</p>
             {progress > 0 && <p className="text-xs text-muted-foreground">{progress}%</p>}
           </div>
         )}
