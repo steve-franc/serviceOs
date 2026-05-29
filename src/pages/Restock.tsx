@@ -80,6 +80,7 @@ const Restock = () => {
 
   const [restockOpen, setRestockOpen] = useState(false);
   const [supplierOpen, setSupplierOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
 
