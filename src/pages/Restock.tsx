@@ -232,6 +232,43 @@ const Restock = () => {
     await load();
   };
 
+  const handleScannedReceipt = async (r: ScannedReceipt) => {
+    if (!restaurantId) return;
+    try {
+      let invoice_url: string | null = null;
+      if (r.file) {
+        const ext = r.file.name.split(".").pop() || "jpg";
+        const path = `${restaurantId}/${Date.now()}-receipt.${ext}`;
+        const { error: upErr } = await supabase.storage.from("restock-invoices").upload(path, r.file);
+        if (!upErr) invoice_url = supabase.storage.from("restock-invoices").getPublicUrl(path).data.publicUrl;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const rows = r.items.map((it) => {
+        const inv = items.find((i) => i.id === it.inventory_item_id);
+        return {
+          restaurant_id: restaurantId,
+          inventory_item_id: it.inventory_item_id!,
+          supplier_id: r.supplier_id,
+          quantity_purchased: it.qty,
+          unit_type: inv?.unit || "units",
+          unit_price: it.unitPrice,
+          total_cost: it.total,
+          purchase_date: r.purchase_date,
+          invoice_image_url: invoice_url,
+          notes: r.notes || `From receipt scan${r.supplier_name ? ` — ${r.supplier_name}` : ""}`,
+          created_by: userData.user?.id,
+        };
+      });
+      const { error } = await supabase.from("restock_entries").insert(rows);
+      if (error) throw error;
+      toast.success(`Added ${rows.length} item${rows.length === 1 ? "" : "s"} from receipt`);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save scanned receipt");
+      throw err;
+    }
+  };
+
   // ===== Analytics =====
   const itemMap = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const supplierMap = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
