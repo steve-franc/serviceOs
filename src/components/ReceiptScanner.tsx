@@ -294,13 +294,17 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
                     {items.map((it, i) => (
                       <TableRow key={i}>
                         <TableCell>
-                          <Input className="mb-1 text-xs h-8" value={it.name} onChange={(e) => updateItem(i, { name: e.target.value })} placeholder="OCR name" />
-                          <Select value={it.inventory_item_id || ""} onValueChange={(v) => updateItem(i, { inventory_item_id: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Map to inventory…" /></SelectTrigger>
+                          <Input className="mb-1 text-xs h-8" value={it.name} onChange={(e) => updateItem(i, { name: e.target.value })} placeholder="Item name" />
+                          <Select value={it.inventory_item_id || "__new__"} onValueChange={(v) => updateItem(i, { inventory_item_id: v === "__new__" ? undefined : v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="__new__">+ Create new inventory item</SelectItem>
                               {inventoryItems.map((inv) => <SelectItem key={inv.id} value={inv.id}>{inv.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                          {!it.inventory_item_id && it.name.trim() && (
+                            <p className="text-[10px] text-muted-foreground mt-1">New item will be created in inventory</p>
+                          )}
                         </TableCell>
                         <TableCell><Input type="number" inputMode="decimal" className="h-8 text-right font-mono text-xs" value={it.qty} onChange={(e) => updateItem(i, { qty: parseFloat(e.target.value) || 0 })} /></TableCell>
                         <TableCell><Input type="number" inputMode="decimal" step="0.01" className="h-8 text-right font-mono text-xs" value={it.unitPrice} onChange={(e) => updateItem(i, { unitPrice: parseFloat(e.target.value) || 0 })} /></TableCell>
