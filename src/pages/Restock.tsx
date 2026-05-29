@@ -14,9 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { formatPrice, formatPriceCompact } from "@/lib/currency";
-import { Plus, TrendingUp, TrendingDown, Minus, Package, Truck, Receipt, AlertTriangle, BarChart3, Trash2, ImageIcon } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Minus, Package, Truck, Receipt, AlertTriangle, BarChart3, Trash2, ImageIcon, ScanLine } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { ReceiptScanner, type ScannedReceipt } from "@/components/ReceiptScanner";
 
 interface Supplier {
   id: string;
@@ -79,6 +80,7 @@ const Restock = () => {
 
   const [restockOpen, setRestockOpen] = useState(false);
   const [supplierOpen, setSupplierOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
 
@@ -230,6 +232,43 @@ const Restock = () => {
     await load();
   };
 
+  const handleScannedReceipt = async (r: ScannedReceipt) => {
+    if (!restaurantId) return;
+    try {
+      let invoice_url: string | null = null;
+      if (r.file) {
+        const ext = r.file.name.split(".").pop() || "jpg";
+        const path = `${restaurantId}/${Date.now()}-receipt.${ext}`;
+        const { error: upErr } = await supabase.storage.from("restock-invoices").upload(path, r.file);
+        if (!upErr) invoice_url = supabase.storage.from("restock-invoices").getPublicUrl(path).data.publicUrl;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const rows = r.items.map((it) => {
+        const inv = items.find((i) => i.id === it.inventory_item_id);
+        return {
+          restaurant_id: restaurantId,
+          inventory_item_id: it.inventory_item_id!,
+          supplier_id: r.supplier_id,
+          quantity_purchased: it.qty,
+          unit_type: inv?.unit || "units",
+          unit_price: it.unitPrice,
+          total_cost: it.total,
+          purchase_date: r.purchase_date,
+          invoice_image_url: invoice_url,
+          notes: r.notes || `From receipt scan${r.supplier_name ? ` — ${r.supplier_name}` : ""}`,
+          created_by: userData.user?.id,
+        };
+      });
+      const { error } = await supabase.from("restock_entries").insert(rows);
+      if (error) throw error;
+      toast.success(`Added ${rows.length} item${rows.length === 1 ? "" : "s"} from receipt`);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save scanned receipt");
+      throw err;
+    }
+  };
+
   // ===== Analytics =====
   const itemMap = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const supplierMap = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
@@ -371,9 +410,12 @@ const Restock = () => {
           <p className="text-sm text-muted-foreground">Track restocks, supplier costs, and price trends.</p>
         </div>
         {canEdit && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setSupplierOpen(true)}>
               <Truck className="h-4 w-4 mr-2" /> New Supplier
+            </Button>
+            <Button variant="outline" onClick={() => setScannerOpen(true)}>
+              <ScanLine className="h-4 w-4 mr-2" /> Scan Receipt
             </Button>
             <Button onClick={() => openRestock()}>
               <Plus className="h-4 w-4 mr-2" /> Log Restock
@@ -854,6 +896,14 @@ const Restock = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <ReceiptScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        inventoryItems={items}
+        suppliers={suppliers}
+        onConfirm={handleScannedReceipt}
+      />
     </div>
   );
 };
