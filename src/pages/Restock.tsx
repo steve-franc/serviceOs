@@ -243,11 +243,31 @@ const Restock = () => {
         if (!upErr) invoice_url = supabase.storage.from("restock-invoices").getPublicUrl(path).data.publicUrl;
       }
       const { data: userData } = await supabase.auth.getUser();
+
+      // Auto-create inventory items for any unmapped rows
+      const toCreate = r.items.filter((it) => !it.inventory_item_id && it.name.trim());
+      const createdMap = new Map<string, string>(); // name -> new id
+      if (toCreate.length) {
+        const payload = toCreate.map((it) => ({
+          restaurant_id: restaurantId,
+          name: it.name.trim().slice(0, 200),
+          unit: "units",
+          quantity: 0,
+          status: "available" as const,
+        }));
+        const { data: created, error: invErr } = await supabase.from("inventory").insert(payload).select("id, name");
+        if (invErr) throw invErr;
+        (created || []).forEach((c: any) => createdMap.set(c.name, c.id));
+        toast.success(`Created ${created?.length || 0} new inventory item${(created?.length || 0) === 1 ? "" : "s"}`);
+      }
+
       const rows = r.items.map((it) => {
-        const inv = items.find((i) => i.id === it.inventory_item_id);
+        const inventory_item_id = it.inventory_item_id || createdMap.get(it.name.trim().slice(0, 200));
+        if (!inventory_item_id) return null;
+        const inv = items.find((i) => i.id === inventory_item_id);
         return {
           restaurant_id: restaurantId,
-          inventory_item_id: it.inventory_item_id!,
+          inventory_item_id,
           supplier_id: r.supplier_id,
           quantity_purchased: it.qty,
           unit_type: inv?.unit || "units",
@@ -258,7 +278,7 @@ const Restock = () => {
           notes: r.notes || `From receipt scan${r.supplier_name ? ` — ${r.supplier_name}` : ""}`,
           created_by: userData.user?.id,
         };
-      });
+      }).filter(Boolean) as any[];
       const { error } = await supabase.from("restock_entries").insert(rows);
       if (error) throw error;
       toast.success(`Added ${rows.length} item${rows.length === 1 ? "" : "s"} from receipt`);
