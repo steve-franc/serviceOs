@@ -3,12 +3,57 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Camera, Upload, Loader2, Trash2, Plus, ScanLine } from "lucide-react";
+import { Camera, Upload, Loader2, Trash2, Plus, ScanLine, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+const MIN_GOOD_ITEMS = 2;
+
+// Preprocess: grayscale + contrast boost to help Tesseract.
+async function preprocessImage(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDim = 1600;
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+    const contrast = 1.4;
+    const intercept = 128 * (1 - contrast);
+    for (let i = 0; i < d.length; i += 4) {
+      const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      const v = Math.max(0, Math.min(255, contrast * g + intercept));
+      d[i] = d[i + 1] = d[i + 2] = v;
+    }
+    ctx.putImageData(img, 0, 0);
+    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b || file), "image/jpeg", 0.92));
+  } catch {
+    return file;
+  }
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const s = String(r.result || "");
+      const idx = s.indexOf(",");
+      resolve(idx >= 0 ? s.slice(idx + 1) : s);
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
 
 export interface ScannedItem {
   name: string;
@@ -104,6 +149,8 @@ function parseReceipt(text: string) {
 export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, onConfirm }: Props) {
   const [stage, setStage] = useState<"capture" | "processing" | "review">("capture");
   const [progress, setProgress] = useState(0);
+  const [processingLabel, setProcessingLabel] = useState("Extracting receipt data…");
+  const [engine, setEngine] = useState<"tesseract" | "ai" | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [items, setItems] = useState<ScannedItem[]>([]);
@@ -113,14 +160,64 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
   const [total, setTotal] = useState(0);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [rescanning, setRescanning] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
-    setStage("capture"); setProgress(0); setFile(null);
+    setStage("capture"); setProgress(0); setFile(null); setEngine(null);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null); setItems([]); setSupplierId(""); setSupplierName("");
     setPurchaseDate(format(new Date(), "yyyy-MM-dd")); setTotal(0); setNotes("");
+  };
+
+  const matchInventory = (its: ScannedItem[]): ScannedItem[] =>
+    its.map((it) => {
+      const lower = it.name.toLowerCase();
+      const found = inventoryItems.find((inv) =>
+        inv.name.toLowerCase() === lower ||
+        inv.name.toLowerCase().includes(lower) ||
+        lower.includes(inv.name.toLowerCase())
+      );
+      return { ...it, inventory_item_id: it.inventory_item_id || found?.id };
+    });
+
+  const applyResult = (result: { items: ScannedItem[]; supplier: string; date: string; total: number }) => {
+    setItems(matchInventory(result.items));
+    if (result.supplier) {
+      setSupplierName(result.supplier);
+      const sup = suppliers.find((s) =>
+        s.supplier_name.toLowerCase().includes(result.supplier.toLowerCase()) ||
+        result.supplier.toLowerCase().includes(s.supplier_name.toLowerCase())
+      );
+      if (sup) setSupplierId(sup.id);
+    }
+    if (result.date) setPurchaseDate(result.date);
+    if (result.total) setTotal(result.total);
+  };
+
+  const runAI = async (f: File): Promise<{ items: ScannedItem[]; supplier: string; date: string; total: number } | null> => {
+    const base64 = await fileToBase64(f);
+    const { data, error } = await supabase.functions.invoke("scan-receipt", {
+      body: { image_base64: base64, mime_type: f.type || "image/jpeg" },
+    });
+    if (error) {
+      const status = (error as any)?.context?.status;
+      const msg = status === 402
+        ? "AI credits exhausted. Top up in Settings → Workspace → Usage."
+        : status === 429
+          ? "AI is busy — please retry shortly."
+          : "AI scan failed.";
+      toast.error(msg);
+      return null;
+    }
+    if (data?.error) { toast.error(data.error); return null; }
+    return {
+      items: (data?.items || []) as ScannedItem[],
+      supplier: data?.supplier || "",
+      date: data?.purchase_date || "",
+      total: Number(data?.total) || 0,
+    };
   };
 
   const handleFile = async (f: File | null) => {
@@ -129,41 +226,65 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
     setPreviewUrl(URL.createObjectURL(f));
     setStage("processing");
     setProgress(0);
+    setProcessingLabel("Reading receipt locally…");
     try {
+      const pre = await preprocessImage(f);
       const { default: Tesseract } = await import("tesseract.js");
-      const { data } = await Tesseract.recognize(f, "eng", {
+      const { data } = await Tesseract.recognize(pre, "tur+eng", {
         logger: (m: any) => { if (m.status === "recognizing text") setProgress(Math.round((m.progress || 0) * 100)); },
-      });
+        // @ts-ignore tesseract.js accepts these params
+        tessedit_pageseg_mode: 6,
+      } as any);
       const parsed = parseReceipt(data.text || "");
-      if (parsed.items.length === 0) {
-        toast.warning("No line items detected. You can add them manually below.");
+
+      if (parsed.items.length < MIN_GOOD_ITEMS) {
+        setProcessingLabel("Local scan was weak — retrying with AI vision…");
+        setProgress(0);
+        const aiResult = await runAI(f);
+        if (aiResult && aiResult.items.length > 0) {
+          applyResult(aiResult);
+          setEngine("ai");
+          toast.success(`AI found ${aiResult.items.length} item${aiResult.items.length === 1 ? "" : "s"}`);
+        } else {
+          applyResult(parsed);
+          setEngine("tesseract");
+          toast.warning("No line items detected. You can add them manually below.");
+        }
       } else {
+        applyResult(parsed);
+        setEngine("tesseract");
         toast.success(`Found ${parsed.items.length} item${parsed.items.length === 1 ? "" : "s"}`);
-      }
-      // Auto-match inventory items by fuzzy name (case-insensitive contains)
-      const matched = parsed.items.map((it) => {
-        const lower = it.name.toLowerCase();
-        const found = inventoryItems.find((inv) =>
-          inv.name.toLowerCase() === lower ||
-          inv.name.toLowerCase().includes(lower) ||
-          lower.includes(inv.name.toLowerCase())
-        );
-        return { ...it, inventory_item_id: found?.id };
-      });
-      setItems(matched);
-      setSupplierName(parsed.supplier);
-      if (parsed.date) setPurchaseDate(parsed.date);
-      setTotal(parsed.total);
-      // Auto-match supplier
-      if (parsed.supplier) {
-        const sup = suppliers.find((s) => s.supplier_name.toLowerCase().includes(parsed.supplier.toLowerCase()) || parsed.supplier.toLowerCase().includes(s.supplier_name.toLowerCase()));
-        if (sup) setSupplierId(sup.id);
       }
       setStage("review");
     } catch (err: any) {
-      toast.error("Could not read receipt. Please try another image or add items manually.");
-      setItems([]);
+      setProcessingLabel("Local scan failed — trying AI vision…");
+      const aiResult = await runAI(f);
+      if (aiResult) {
+        applyResult(aiResult);
+        setEngine("ai");
+        toast.success(`AI found ${aiResult.items.length} item${aiResult.items.length === 1 ? "" : "s"}`);
+      } else {
+        toast.error("Could not read receipt. Please add items manually.");
+        setItems([]);
+      }
       setStage("review");
+    }
+  };
+
+  const rescanWithAI = async () => {
+    if (!file) return;
+    setRescanning(true);
+    try {
+      const aiResult = await runAI(file);
+      if (aiResult && aiResult.items.length > 0) {
+        applyResult(aiResult);
+        setEngine("ai");
+        toast.success(`AI found ${aiResult.items.length} item${aiResult.items.length === 1 ? "" : "s"}`);
+      } else if (aiResult) {
+        toast.warning("AI couldn't detect any items either.");
+      }
+    } finally {
+      setRescanning(false);
     }
   };
 
@@ -247,13 +368,22 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
         {stage === "processing" && (
           <div className="py-10 flex flex-col items-center gap-3">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm font-medium">Extracting receipt data…</p>
+            <p className="text-sm font-medium">{processingLabel}</p>
             {progress > 0 && <p className="text-xs text-muted-foreground">{progress}%</p>}
           </div>
         )}
 
         {stage === "review" && (
           <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant={engine === "ai" ? "default" : "secondary"} className="gap-1">
+                {engine === "ai" ? <><Sparkles className="h-3 w-3" /> AI vision</> : <><ScanLine className="h-3 w-3" /> Local OCR</>}
+              </Badge>
+              <Button type="button" size="sm" variant="outline" onClick={rescanWithAI} disabled={rescanning || !file}>
+                {rescanning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                {engine === "ai" ? "Re-scan with AI" : "Scan with AI"}
+              </Button>
+            </div>
             {previewUrl && (
               <div className="flex gap-3">
                 <img src={previewUrl} alt="Receipt" className="h-24 w-auto rounded border" />
