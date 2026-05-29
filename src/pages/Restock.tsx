@@ -14,9 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { formatPrice, formatPriceCompact } from "@/lib/currency";
-import { Plus, TrendingUp, TrendingDown, Minus, Package, Truck, Receipt, AlertTriangle, BarChart3, Trash2, ImageIcon } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Minus, Package, Truck, Receipt, AlertTriangle, BarChart3, Trash2, ImageIcon, ScanLine } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { ReceiptScanner, type ScannedReceipt } from "@/components/ReceiptScanner";
 
 interface Supplier {
   id: string;
