@@ -410,9 +410,12 @@ const Restock = () => {
           <p className="text-sm text-muted-foreground">Track restocks, supplier costs, and price trends.</p>
         </div>
         {canEdit && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setSupplierOpen(true)}>
               <Truck className="h-4 w-4 mr-2" /> New Supplier
+            </Button>
+            <Button variant="outline" onClick={() => setScannerOpen(true)}>
+              <ScanLine className="h-4 w-4 mr-2" /> Scan Receipt
             </Button>
             <Button onClick={() => openRestock()}>
               <Plus className="h-4 w-4 mr-2" /> Log Restock
