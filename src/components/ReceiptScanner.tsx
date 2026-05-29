@@ -182,10 +182,12 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
   const removeRow = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
 
   const submit = async () => {
-    const valid = items.filter((i) => i.inventory_item_id && i.qty > 0 && i.unitPrice >= 0);
-    if (valid.length === 0) return toast.error("Map at least one row to an inventory item.");
-    if (valid.length !== items.length) {
-      if (!confirm(`${items.length - valid.length} row(s) are not mapped to an inventory item and will be skipped. Continue?`)) return;
+    // Valid = has an inventory mapping OR has a name (will be auto-created)
+    const valid = items.filter((i) => (i.inventory_item_id || i.name.trim()) && i.qty > 0 && i.unitPrice >= 0);
+    const skipped = items.length - valid.length;
+    if (valid.length === 0) return toast.error("Add at least one item with a name, quantity, and price.");
+    if (skipped > 0) {
+      if (!confirm(`${skipped} row(s) are missing a name, quantity, or price and will be skipped. Continue?`)) return;
     }
     setSaving(true);
     try {
