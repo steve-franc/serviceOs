@@ -896,6 +896,14 @@ const Restock = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <ReceiptScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        inventoryItems={items}
+        suppliers={suppliers}
+        onConfirm={handleScannedReceipt}
+      />
     </div>
   );
 };
