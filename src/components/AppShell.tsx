@@ -48,7 +48,10 @@ const BUSINESS_SECTIONS: Section[] = [
   },
   {
     id: "settings", label: "Settings & Admin", icon: Settings,
-    subtabs: [{ label: "Admin", path: "/admin", icon: Shield }],
+    subtabs: [
+      { label: "Admin", path: "/admin", icon: Shield },
+      { label: "Settings", path: "/admin/settings", icon: Settings },
+    ],
   },
 ];
 
