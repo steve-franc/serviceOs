@@ -375,6 +375,15 @@ export function ReceiptScanner({ open, onOpenChange, inventoryItems, suppliers, 
 
         {stage === "review" && (
           <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant={engine === "ai" ? "default" : "secondary"} className="gap-1">
+                {engine === "ai" ? <><Sparkles className="h-3 w-3" /> AI vision</> : <><ScanLine className="h-3 w-3" /> Local OCR</>}
+              </Badge>
+              <Button type="button" size="sm" variant="outline" onClick={rescanWithAI} disabled={rescanning || !file}>
+                {rescanning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                {engine === "ai" ? "Re-scan with AI" : "Scan with AI"}
+              </Button>
+            </div>
             {previewUrl && (
               <div className="flex gap-3">
                 <img src={previewUrl} alt="Receipt" className="h-24 w-auto rounded border" />
