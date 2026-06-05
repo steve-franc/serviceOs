@@ -110,7 +110,10 @@ const Reports = () => {
 
   const totalRevenue = sumPaidRevenue(orders as any);
   const unpaidTotal = sumUnpaidRevenue(orders as any);
-  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  // Restock costs only deduct at the monthly level — exclude them from weekly totals.
+  const isRestock = (e: ExpenseData) => (e.source || "").toLowerCase() === "restock";
+  const deductibleExpenses = period === "month" ? expenses : expenses.filter(e => !isRestock(e));
+  const totalExpenses = deductibleExpenses.reduce((s, e) => s + Number(e.amount), 0);
   // Daily share of monthly bills is fixed at /30 per business rule.
   const days = period === "week" ? 7 : daysInMonth(dateRange.start);
   const fixedDeduction = period === "month"
