@@ -165,7 +165,13 @@ const Admin = () => {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    let q = supabase.from("daily_expenses").select("amount, created_at").eq("restaurant_id", restaurantId);
+    // Restock expenses are excluded from the daily total — they deduct from
+    // the monthly P&L instead (see Reports month view).
+    let q = supabase
+      .from("daily_expenses")
+      .select("amount, created_at, source")
+      .eq("restaurant_id", restaurantId)
+      .or("source.is.null,source.neq.restock");
     if (latestReport?.created_at) q = q.gt("created_at", latestReport.created_at);
     const { data } = await q;
     setTodayExpenses((data || []) as any);
