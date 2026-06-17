@@ -430,6 +430,100 @@ const AdminSettings = () => {
                     <p className="text-xs text-muted-foreground mt-3">Existing records are not converted — only the symbol changes for display.</p>
                   </CardContent>
                 </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2"><Paintbrush className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Brand Colors</CardTitle></div>
+                    <CardDescription>Customize your brand's primary and accent colors. Applied across buttons, links, sidebar, charts, and your public order page.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Primary color</Label>
+                          <Switch checked={brandPrimaryEnabled} onCheckedChange={setBrandPrimaryEnabled} disabled={readOnly} aria-label="Enable custom primary color" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={brandPrimaryHex}
+                            onChange={(e) => setBrandPrimaryHex(e.target.value)}
+                            disabled={readOnly || !brandPrimaryEnabled}
+                            className="h-10 w-14 rounded-md border border-border cursor-pointer disabled:opacity-50 bg-transparent"
+                            aria-label="Primary color"
+                          />
+                          <Input
+                            value={brandPrimaryHex}
+                            onChange={(e) => setBrandPrimaryHex(e.target.value)}
+                            disabled={readOnly || !brandPrimaryEnabled}
+                            className="font-mono uppercase"
+                            maxLength={7}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Used for buttons, links, active nav, and highlights.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Accent color</Label>
+                          <Switch checked={brandAccentEnabled} onCheckedChange={setBrandAccentEnabled} disabled={readOnly} aria-label="Enable custom accent color" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={brandAccentHex}
+                            onChange={(e) => setBrandAccentHex(e.target.value)}
+                            disabled={readOnly || !brandAccentEnabled}
+                            className="h-10 w-14 rounded-md border border-border cursor-pointer disabled:opacity-50 bg-transparent"
+                            aria-label="Accent color"
+                          />
+                          <Input
+                            value={brandAccentHex}
+                            onChange={(e) => setBrandAccentHex(e.target.value)}
+                            disabled={readOnly || !brandAccentEnabled}
+                            className="font-mono uppercase"
+                            maxLength={7}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Used for secondary highlights and chart accents.</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-border p-4 bg-muted/30">
+                      <p className="text-xs text-muted-foreground mb-3">Preview</p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div
+                          className="h-10 px-4 rounded-md flex items-center text-sm font-medium"
+                          style={{
+                            backgroundColor: brandPrimaryEnabled ? brandPrimaryHex : "hsl(var(--primary))",
+                            color: "#fff",
+                          }}
+                        >
+                          Primary button
+                        </div>
+                        <div
+                          className="h-10 px-4 rounded-md flex items-center text-sm font-medium border-2"
+                          style={{
+                            borderColor: brandAccentEnabled ? brandAccentHex : "hsl(var(--accent2))",
+                            color: brandAccentEnabled ? brandAccentHex : "hsl(var(--accent2))",
+                          }}
+                        >
+                          Accent tag
+                        </div>
+                      </div>
+                    </div>
+
+                    {!readOnly && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button onClick={saveBrandColors} disabled={savingBrand} className="min-h-[40px]">
+                          <Save className="h-4 w-4 mr-2" />{savingBrand ? "Saving..." : "Save brand colors"}
+                        </Button>
+                        <Button variant="outline" onClick={resetBrandColors} disabled={savingBrand} className="min-h-[40px]">
+                          Reset to default
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </>
             )}
 
