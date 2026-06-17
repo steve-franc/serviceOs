@@ -74,6 +74,8 @@ const screenshots = [
 ];
 
 const Landing = () => {
+  // Ensure landing page uses default theme, not any business's brand colors.
+  useBrandTheme(null);
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
