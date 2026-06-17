@@ -69,8 +69,10 @@ const AdminSettings = () => {
 
   const [brandPrimaryHex, setBrandPrimaryHex] = useState<string>("#3b5bdb");
   const [brandAccentHex, setBrandAccentHex] = useState<string>("#22c55e");
+  const [brandBackgroundHex, setBrandBackgroundHex] = useState<string>("#ffffff");
   const [brandPrimaryEnabled, setBrandPrimaryEnabled] = useState(false);
   const [brandAccentEnabled, setBrandAccentEnabled] = useState(false);
+  const [brandBackgroundEnabled, setBrandBackgroundEnabled] = useState(false);
   const [savingBrand, setSavingBrand] = useState(false);
 
   useEffect(() => {
