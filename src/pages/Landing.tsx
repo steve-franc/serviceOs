@@ -14,6 +14,7 @@ import {
 import dashboardPreview from "@/assets/dashboard-preview.jpg";
 import menuPreview from "@/assets/menu-preview.jpg";
 import ordersPreview from "@/assets/orders-preview.jpg";
+import { useBrandTheme } from "@/hooks/useBrandTheme";
 
 const features = [
   {
