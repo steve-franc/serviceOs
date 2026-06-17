@@ -30,6 +30,8 @@ import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useTabState } from "@/hooks/useTabState";
+import { applyBrandTheme, hexToHsl, hslToHex, hslString, parseHslString } from "@/lib/brand-theme";
+import { Paintbrush } from "lucide-react";
 
 type PanelId = "bills" | "alerts" | "branding" | "public" | "payment";
 
