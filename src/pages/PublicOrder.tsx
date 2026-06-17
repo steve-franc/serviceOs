@@ -22,6 +22,7 @@ import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods"
 import { BookSlotDialog } from "@/components/BookSlotDialog";
 import { format } from "date-fns";
 import { usePersistentState } from "@/hooks/usePersistentState";
+import { useBrandTheme } from "@/hooks/useBrandTheme";
 interface MenuItem {
   id: string;
   name: string;
