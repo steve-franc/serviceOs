@@ -1,0 +1,1 @@
+ALTER TABLE public.restaurant_settings ADD COLUMN IF NOT EXISTS brand_background text;

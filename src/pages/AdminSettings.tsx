@@ -69,8 +69,10 @@ const AdminSettings = () => {
 
   const [brandPrimaryHex, setBrandPrimaryHex] = useState<string>("#3b5bdb");
   const [brandAccentHex, setBrandAccentHex] = useState<string>("#22c55e");
+  const [brandBackgroundHex, setBrandBackgroundHex] = useState<string>("#ffffff");
   const [brandPrimaryEnabled, setBrandPrimaryEnabled] = useState(false);
   const [brandAccentEnabled, setBrandAccentEnabled] = useState(false);
+  const [brandBackgroundEnabled, setBrandBackgroundEnabled] = useState(false);
   const [savingBrand, setSavingBrand] = useState(false);
 
   useEffect(() => {
@@ -78,7 +80,7 @@ const AdminSettings = () => {
     (async () => {
       const { data } = await supabase
         .from("restaurant_settings")
-        .select("payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency, brand_primary, brand_accent")
+        .select("payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency, brand_primary, brand_accent, brand_background")
         .eq("restaurant_id", restaurantId)
         .maybeSingle();
       if (!data) return;
@@ -94,8 +96,10 @@ const AdminSettings = () => {
       setStoreCurrency(cur);
       const bp = parseHslString((data as any).brand_primary);
       const ba = parseHslString((data as any).brand_accent);
+      const bg = parseHslString((data as any).brand_background);
       if (bp) { setBrandPrimaryHex(hslToHex(bp)); setBrandPrimaryEnabled(true); }
       if (ba) { setBrandAccentHex(hslToHex(ba)); setBrandAccentEnabled(true); }
+      if (bg) { setBrandBackgroundHex(hslToHex(bg)); setBrandBackgroundEnabled(true); }
     })();
   }, [restaurantId]);
 
@@ -104,13 +108,14 @@ const AdminSettings = () => {
     setSavingBrand(true);
     const primary = brandPrimaryEnabled ? (hexToHsl(brandPrimaryHex) && hslString(hexToHsl(brandPrimaryHex)!)) || null : null;
     const accent = brandAccentEnabled ? (hexToHsl(brandAccentHex) && hslString(hexToHsl(brandAccentHex)!)) || null : null;
+    const background = brandBackgroundEnabled ? (hexToHsl(brandBackgroundHex) && hslString(hexToHsl(brandBackgroundHex)!)) || null : null;
     const { error } = await supabase
       .from("restaurant_settings")
-      .update({ brand_primary: primary, brand_accent: accent } as any)
+      .update({ brand_primary: primary, brand_accent: accent, brand_background: background } as any)
       .eq("restaurant_id", restaurantId);
     setSavingBrand(false);
     if (error) { toast.error("Failed to save brand colors"); return; }
-    applyBrandTheme(primary, accent);
+    applyBrandTheme(primary, accent, background);
     toast.success("Brand colors updated");
   };
 
@@ -119,13 +124,14 @@ const AdminSettings = () => {
     setSavingBrand(true);
     const { error } = await supabase
       .from("restaurant_settings")
-      .update({ brand_primary: null, brand_accent: null } as any)
+      .update({ brand_primary: null, brand_accent: null, brand_background: null } as any)
       .eq("restaurant_id", restaurantId);
     setSavingBrand(false);
     if (error) { toast.error("Failed to reset"); return; }
     setBrandPrimaryEnabled(false);
     setBrandAccentEnabled(false);
-    applyBrandTheme(null, null);
+    setBrandBackgroundEnabled(false);
+    applyBrandTheme(null, null, null);
     toast.success("Brand colors reset to default");
   };
 
@@ -437,7 +443,7 @@ const AdminSettings = () => {
                     <CardDescription>Customize your brand's primary and accent colors. Applied across buttons, links, sidebar, charts, and your public order page.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-medium">Primary color</Label>
@@ -486,10 +492,38 @@ const AdminSettings = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">Used for secondary highlights and chart accents.</p>
                       </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Background color</Label>
+                          <Switch checked={brandBackgroundEnabled} onCheckedChange={setBrandBackgroundEnabled} disabled={readOnly} aria-label="Enable custom background color" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={brandBackgroundHex}
+                            onChange={(e) => setBrandBackgroundHex(e.target.value)}
+                            disabled={readOnly || !brandBackgroundEnabled}
+                            className="h-10 w-14 rounded-md border border-border cursor-pointer disabled:opacity-50 bg-transparent"
+                            aria-label="Background color"
+                          />
+                          <Input
+                            value={brandBackgroundHex}
+                            onChange={(e) => setBrandBackgroundHex(e.target.value)}
+                            disabled={readOnly || !brandBackgroundEnabled}
+                            className="font-mono uppercase"
+                            maxLength={7}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Page background for your dashboard and public order page. Text color auto-adjusts for contrast.</p>
+                      </div>
                     </div>
 
-                    <div className="rounded-lg border border-border p-4 bg-muted/30">
-                      <p className="text-xs text-muted-foreground mb-3">Preview</p>
+
+                    <div
+                      className="rounded-lg border border-border p-4"
+                      style={{ backgroundColor: brandBackgroundEnabled ? brandBackgroundHex : undefined }}
+                    >
+                      <p className="text-xs opacity-70 mb-3">Preview</p>
                       <div className="flex items-center gap-3 flex-wrap">
                         <div
                           className="h-10 px-4 rounded-md flex items-center text-sm font-medium"
