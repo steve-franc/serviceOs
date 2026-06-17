@@ -650,6 +650,8 @@ export type Database = {
       restaurant_settings: {
         Row: {
           allow_public_orders: boolean
+          brand_accent: string | null
+          brand_primary: string | null
           created_at: string
           currency: string
           fixed_daily_bills: number
@@ -671,6 +673,8 @@ export type Database = {
         }
         Insert: {
           allow_public_orders?: boolean
+          brand_accent?: string | null
+          brand_primary?: string | null
           created_at?: string
           currency?: string
           fixed_daily_bills?: number
@@ -692,6 +696,8 @@ export type Database = {
         }
         Update: {
           allow_public_orders?: boolean
+          brand_accent?: string | null
+          brand_primary?: string | null
           created_at?: string
           currency?: string
           fixed_daily_bills?: number

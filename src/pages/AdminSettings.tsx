@@ -30,6 +30,8 @@ import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useTabState } from "@/hooks/useTabState";
+import { applyBrandTheme, hexToHsl, hslToHex, hslString, parseHslString } from "@/lib/brand-theme";
+import { Paintbrush } from "lucide-react";
 
 type PanelId = "bills" | "alerts" | "branding" | "public" | "payment";
 
@@ -65,12 +67,18 @@ const AdminSettings = () => {
   const [storeCurrency, setStoreCurrency] = useState<string>("TRY");
   const [savingCurrency, setSavingCurrency] = useState(false);
 
+  const [brandPrimaryHex, setBrandPrimaryHex] = useState<string>("#3b5bdb");
+  const [brandAccentHex, setBrandAccentHex] = useState<string>("#22c55e");
+  const [brandPrimaryEnabled, setBrandPrimaryEnabled] = useState(false);
+  const [brandAccentEnabled, setBrandAccentEnabled] = useState(false);
+  const [savingBrand, setSavingBrand] = useState(false);
+
   useEffect(() => {
     if (!restaurantId) return;
     (async () => {
       const { data } = await supabase
         .from("restaurant_settings")
-        .select("payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency")
+        .select("payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency, brand_primary, brand_accent")
         .eq("restaurant_id", restaurantId)
         .maybeSingle();
       if (!data) return;
@@ -84,8 +92,42 @@ const AdminSettings = () => {
       setRestaurantLogoUrl((data as any).logo_url ?? null);
       const cur = (((data as any).currency as string | undefined) || "TRY").toUpperCase();
       setStoreCurrency(cur);
+      const bp = parseHslString((data as any).brand_primary);
+      const ba = parseHslString((data as any).brand_accent);
+      if (bp) { setBrandPrimaryHex(hslToHex(bp)); setBrandPrimaryEnabled(true); }
+      if (ba) { setBrandAccentHex(hslToHex(ba)); setBrandAccentEnabled(true); }
     })();
   }, [restaurantId]);
+
+  const saveBrandColors = async () => {
+    if (!restaurantId) return;
+    setSavingBrand(true);
+    const primary = brandPrimaryEnabled ? (hexToHsl(brandPrimaryHex) && hslString(hexToHsl(brandPrimaryHex)!)) || null : null;
+    const accent = brandAccentEnabled ? (hexToHsl(brandAccentHex) && hslString(hexToHsl(brandAccentHex)!)) || null : null;
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ brand_primary: primary, brand_accent: accent } as any)
+      .eq("restaurant_id", restaurantId);
+    setSavingBrand(false);
+    if (error) { toast.error("Failed to save brand colors"); return; }
+    applyBrandTheme(primary, accent);
+    toast.success("Brand colors updated");
+  };
+
+  const resetBrandColors = async () => {
+    if (!restaurantId) return;
+    setSavingBrand(true);
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ brand_primary: null, brand_accent: null } as any)
+      .eq("restaurant_id", restaurantId);
+    setSavingBrand(false);
+    if (error) { toast.error("Failed to reset"); return; }
+    setBrandPrimaryEnabled(false);
+    setBrandAccentEnabled(false);
+    applyBrandTheme(null, null);
+    toast.success("Brand colors reset to default");
+  };
 
   const saveStoreCurrency = async (next: string) => {
     if (!restaurantId) return;
@@ -386,6 +428,100 @@ const AdminSettings = () => {
                       <div className="flex items-center text-xs text-muted-foreground font-mono">Sample: {formatPrice(1234.5, storeCurrency)}</div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-3">Existing records are not converted — only the symbol changes for display.</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2"><Paintbrush className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Brand Colors</CardTitle></div>
+                    <CardDescription>Customize your brand's primary and accent colors. Applied across buttons, links, sidebar, charts, and your public order page.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Primary color</Label>
+                          <Switch checked={brandPrimaryEnabled} onCheckedChange={setBrandPrimaryEnabled} disabled={readOnly} aria-label="Enable custom primary color" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={brandPrimaryHex}
+                            onChange={(e) => setBrandPrimaryHex(e.target.value)}
+                            disabled={readOnly || !brandPrimaryEnabled}
+                            className="h-10 w-14 rounded-md border border-border cursor-pointer disabled:opacity-50 bg-transparent"
+                            aria-label="Primary color"
+                          />
+                          <Input
+                            value={brandPrimaryHex}
+                            onChange={(e) => setBrandPrimaryHex(e.target.value)}
+                            disabled={readOnly || !brandPrimaryEnabled}
+                            className="font-mono uppercase"
+                            maxLength={7}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Used for buttons, links, active nav, and highlights.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Accent color</Label>
+                          <Switch checked={brandAccentEnabled} onCheckedChange={setBrandAccentEnabled} disabled={readOnly} aria-label="Enable custom accent color" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={brandAccentHex}
+                            onChange={(e) => setBrandAccentHex(e.target.value)}
+                            disabled={readOnly || !brandAccentEnabled}
+                            className="h-10 w-14 rounded-md border border-border cursor-pointer disabled:opacity-50 bg-transparent"
+                            aria-label="Accent color"
+                          />
+                          <Input
+                            value={brandAccentHex}
+                            onChange={(e) => setBrandAccentHex(e.target.value)}
+                            disabled={readOnly || !brandAccentEnabled}
+                            className="font-mono uppercase"
+                            maxLength={7}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Used for secondary highlights and chart accents.</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-border p-4 bg-muted/30">
+                      <p className="text-xs text-muted-foreground mb-3">Preview</p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div
+                          className="h-10 px-4 rounded-md flex items-center text-sm font-medium"
+                          style={{
+                            backgroundColor: brandPrimaryEnabled ? brandPrimaryHex : "hsl(var(--primary))",
+                            color: "#fff",
+                          }}
+                        >
+                          Primary button
+                        </div>
+                        <div
+                          className="h-10 px-4 rounded-md flex items-center text-sm font-medium border-2"
+                          style={{
+                            borderColor: brandAccentEnabled ? brandAccentHex : "hsl(var(--accent2))",
+                            color: brandAccentEnabled ? brandAccentHex : "hsl(var(--accent2))",
+                          }}
+                        >
+                          Accent tag
+                        </div>
+                      </div>
+                    </div>
+
+                    {!readOnly && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button onClick={saveBrandColors} disabled={savingBrand} className="min-h-[40px]">
+                          <Save className="h-4 w-4 mr-2" />{savingBrand ? "Saving..." : "Save brand colors"}
+                        </Button>
+                        <Button variant="outline" onClick={resetBrandColors} disabled={savingBrand} className="min-h-[40px]">
+                          Reset to default
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </>

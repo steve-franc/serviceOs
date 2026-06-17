@@ -22,6 +22,7 @@ import { PaymentMethodConfig, parsePaymentMethods } from "@/lib/payment-methods"
 import { BookSlotDialog } from "@/components/BookSlotDialog";
 import { format } from "date-fns";
 import { usePersistentState } from "@/hooks/usePersistentState";
+import { useBrandTheme } from "@/hooks/useBrandTheme";
 interface MenuItem {
   id: string;
   name: string;
@@ -62,6 +63,7 @@ const PublicOrder = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [currency, setCurrency] = useState("TRY");
   const [restaurantId, setRestaurantId] = useState<string | null>(urlRestaurantId || null);
+  useBrandTheme(urlRestaurantId || null);
   const [publicOrdersDisabled, setPublicOrdersDisabled] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
