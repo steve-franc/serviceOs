@@ -67,6 +67,12 @@ const AdminSettings = () => {
   const [storeCurrency, setStoreCurrency] = useState<string>("TRY");
   const [savingCurrency, setSavingCurrency] = useState(false);
 
+  const [brandPrimaryHex, setBrandPrimaryHex] = useState<string>("#3b5bdb");
+  const [brandAccentHex, setBrandAccentHex] = useState<string>("#22c55e");
+  const [brandPrimaryEnabled, setBrandPrimaryEnabled] = useState(false);
+  const [brandAccentEnabled, setBrandAccentEnabled] = useState(false);
+  const [savingBrand, setSavingBrand] = useState(false);
+
   useEffect(() => {
     if (!restaurantId) return;
     (async () => {
