@@ -78,7 +78,7 @@ const AdminSettings = () => {
     (async () => {
       const { data } = await supabase
         .from("restaurant_settings")
-        .select("payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency")
+        .select("payment_methods, fixed_monthly_expenses, profit_margin_threshold, monthly_bills, allow_public_orders, logo_url, currency, brand_primary, brand_accent")
         .eq("restaurant_id", restaurantId)
         .maybeSingle();
       if (!data) return;
@@ -92,8 +92,42 @@ const AdminSettings = () => {
       setRestaurantLogoUrl((data as any).logo_url ?? null);
       const cur = (((data as any).currency as string | undefined) || "TRY").toUpperCase();
       setStoreCurrency(cur);
+      const bp = parseHslString((data as any).brand_primary);
+      const ba = parseHslString((data as any).brand_accent);
+      if (bp) { setBrandPrimaryHex(hslToHex(bp)); setBrandPrimaryEnabled(true); }
+      if (ba) { setBrandAccentHex(hslToHex(ba)); setBrandAccentEnabled(true); }
     })();
   }, [restaurantId]);
+
+  const saveBrandColors = async () => {
+    if (!restaurantId) return;
+    setSavingBrand(true);
+    const primary = brandPrimaryEnabled ? (hexToHsl(brandPrimaryHex) && hslString(hexToHsl(brandPrimaryHex)!)) || null : null;
+    const accent = brandAccentEnabled ? (hexToHsl(brandAccentHex) && hslString(hexToHsl(brandAccentHex)!)) || null : null;
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ brand_primary: primary, brand_accent: accent } as any)
+      .eq("restaurant_id", restaurantId);
+    setSavingBrand(false);
+    if (error) { toast.error("Failed to save brand colors"); return; }
+    applyBrandTheme(primary, accent);
+    toast.success("Brand colors updated");
+  };
+
+  const resetBrandColors = async () => {
+    if (!restaurantId) return;
+    setSavingBrand(true);
+    const { error } = await supabase
+      .from("restaurant_settings")
+      .update({ brand_primary: null, brand_accent: null } as any)
+      .eq("restaurant_id", restaurantId);
+    setSavingBrand(false);
+    if (error) { toast.error("Failed to reset"); return; }
+    setBrandPrimaryEnabled(false);
+    setBrandAccentEnabled(false);
+    applyBrandTheme(null, null);
+    toast.success("Brand colors reset to default");
+  };
 
   const saveStoreCurrency = async (next: string) => {
     if (!restaurantId) return;
