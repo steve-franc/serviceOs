@@ -651,6 +651,7 @@ export type Database = {
         Row: {
           allow_public_orders: boolean
           brand_accent: string | null
+          brand_background: string | null
           brand_primary: string | null
           created_at: string
           currency: string
@@ -674,6 +675,7 @@ export type Database = {
         Insert: {
           allow_public_orders?: boolean
           brand_accent?: string | null
+          brand_background?: string | null
           brand_primary?: string | null
           created_at?: string
           currency?: string
@@ -697,6 +699,7 @@ export type Database = {
         Update: {
           allow_public_orders?: boolean
           brand_accent?: string | null
+          brand_background?: string | null
           brand_primary?: string | null
           created_at?: string
           currency?: string
