@@ -63,6 +63,7 @@ const PublicOrder = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [currency, setCurrency] = useState("TRY");
   const [restaurantId, setRestaurantId] = useState<string | null>(urlRestaurantId || null);
+  useBrandTheme(urlRestaurantId || null);
   const [publicOrdersDisabled, setPublicOrdersDisabled] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
