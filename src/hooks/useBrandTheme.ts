@@ -14,13 +14,14 @@ export function useBrandTheme(restaurantId: string | null | undefined) {
     (async () => {
       const { data } = await supabase
         .from("restaurant_settings")
-        .select("brand_primary, brand_accent")
+        .select("brand_primary, brand_accent, brand_background")
         .eq("restaurant_id", restaurantId)
         .maybeSingle();
       if (cancelled) return;
       applyBrandTheme(
         (data as any)?.brand_primary ?? null,
-        (data as any)?.brand_accent ?? null
+        (data as any)?.brand_accent ?? null,
+        (data as any)?.brand_background ?? null,
       );
     })();
     return () => {
