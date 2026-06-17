@@ -591,8 +591,29 @@ const PublicOrder = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Order online — CoreOS</title>
-        <meta name="description" content="Browse the menu and place your order directly from your phone." />
+        <title>{restaurantName ? `${restaurantName} — Order online` : "Order online"}</title>
+        <meta
+          name="description"
+          content={
+            restaurantName
+              ? `Browse the menu and place your order from ${restaurantName} directly — no sign-in required.`
+              : "Browse the menu and place your order directly from your phone."
+          }
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={restaurantName ? `${restaurantName} — Order online` : "Order online"} />
+        <meta
+          property="og:description"
+          content={
+            restaurantName
+              ? `Browse the menu and place your order from ${restaurantName} directly — no sign-in required.`
+              : "Browse the menu and place your order directly from your phone."
+          }
+        />
+        {logoUrl ? <meta property="og:image" content={logoUrl} /> : null}
+        {logoUrl ? <meta name="twitter:image" content={logoUrl} /> : null}
+        <meta name="twitter:card" content={logoUrl ? "summary_large_image" : "summary"} />
+        <meta name="twitter:title" content={restaurantName ? `${restaurantName} — Order online` : "Order online"} />
         <meta name="robots" content="noindex" />
       </Helmet>
       {/* Header */}

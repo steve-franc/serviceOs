@@ -543,15 +543,30 @@ const AdminSettings = () => {
                     </div>
                     <Switch checked={allowPublicOrders} onCheckedChange={togglePublicOrders} disabled={readOnly || savingPublicOrders} aria-label="Toggle public ordering" />
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Input readOnly value={`${window.location.origin}/order/${restaurantId}`} className="font-mono text-sm flex-1 min-w-[180px]" onClick={(e) => (e.target as HTMLInputElement).select()} />
-                    <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/order/${restaurantId}`); toast.success("Link copied to clipboard!"); }}>
-                      <Copy className="h-4 w-4 mr-1.5" />Copy
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => window.open(`${window.location.origin}/order/${restaurantId}`, "_blank")}>
-                      <Link2 className="h-4 w-4 mr-1.5" />Open
-                    </Button>
-                  </div>
+                  {(() => {
+                    const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined;
+                    const appOrigin = window.location.origin;
+                    const directUrl = `${appOrigin}/order/${restaurantId}`;
+                    const shareUrl = projectRef
+                      ? `https://${projectRef}.supabase.co/functions/v1/order-preview/${restaurantId}?to=${encodeURIComponent(appOrigin)}`
+                      : directUrl;
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Input readOnly value={shareUrl} className="font-mono text-sm flex-1 min-w-[180px]" onClick={(e) => (e.target as HTMLInputElement).select()} />
+                          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success("Share link copied — rich previews enabled!"); }}>
+                            <Copy className="h-4 w-4 mr-1.5" />Copy
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => window.open(directUrl, "_blank")}>
+                            <Link2 className="h-4 w-4 mr-1.5" />Open
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          This link shows your business name and logo when shared on WhatsApp, X, Facebook, iMessage, Slack and more. It redirects customers to your order page automatically.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             )}
