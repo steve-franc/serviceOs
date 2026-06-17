@@ -67,16 +67,22 @@ const PRIMARY_VARS = [
   "--chart-1",
 ];
 const ACCENT_VARS = ["--accent2", "--chart-3"];
+const BACKGROUND_VARS = ["--background", "--sidebar-background"];
 
 // Pick a readable foreground for a primary color (white on dark, near-black on light).
 function readableForeground(hsl: Hsl): string {
   return hsl.l > 62 ? "220 25% 10%" : "0 0% 100%";
 }
 
-export function applyBrandTheme(primary: string | null, accent: string | null) {
+export function applyBrandTheme(
+  primary: string | null,
+  accent: string | null,
+  background: string | null = null,
+) {
   const root = document.documentElement;
   const p = parseHslString(primary);
   const a = parseHslString(accent);
+  const b = parseHslString(background);
   if (p) {
     const v = hslString(p);
     PRIMARY_VARS.forEach((k) => root.style.setProperty(k, v));
@@ -95,8 +101,19 @@ export function applyBrandTheme(primary: string | null, accent: string | null) {
   } else {
     ACCENT_VARS.forEach((k) => root.style.removeProperty(k));
   }
+  if (b) {
+    const v = hslString(b);
+    const fg = readableForeground(b);
+    BACKGROUND_VARS.forEach((k) => root.style.setProperty(k, v));
+    root.style.setProperty("--foreground", fg);
+    root.style.setProperty("--sidebar-foreground", fg);
+  } else {
+    BACKGROUND_VARS.forEach((k) => root.style.removeProperty(k));
+    root.style.removeProperty("--foreground");
+    root.style.removeProperty("--sidebar-foreground");
+  }
 }
 
 export function clearBrandTheme() {
-  applyBrandTheme(null, null);
+  applyBrandTheme(null, null, null);
 }
