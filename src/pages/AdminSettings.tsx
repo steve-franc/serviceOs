@@ -443,7 +443,7 @@ const AdminSettings = () => {
                     <CardDescription>Customize your brand's primary and accent colors. Applied across buttons, links, sidebar, charts, and your public order page.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-medium">Primary color</Label>
@@ -492,7 +492,32 @@ const AdminSettings = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">Used for secondary highlights and chart accents.</p>
                       </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Background color</Label>
+                          <Switch checked={brandBackgroundEnabled} onCheckedChange={setBrandBackgroundEnabled} disabled={readOnly} aria-label="Enable custom background color" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={brandBackgroundHex}
+                            onChange={(e) => setBrandBackgroundHex(e.target.value)}
+                            disabled={readOnly || !brandBackgroundEnabled}
+                            className="h-10 w-14 rounded-md border border-border cursor-pointer disabled:opacity-50 bg-transparent"
+                            aria-label="Background color"
+                          />
+                          <Input
+                            value={brandBackgroundHex}
+                            onChange={(e) => setBrandBackgroundHex(e.target.value)}
+                            disabled={readOnly || !brandBackgroundEnabled}
+                            className="font-mono uppercase"
+                            maxLength={7}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Page background for your dashboard and public order page. Text color auto-adjusts for contrast.</p>
+                      </div>
                     </div>
+
 
                     <div className="rounded-lg border border-border p-4 bg-muted/30">
                       <p className="text-xs text-muted-foreground mb-3">Preview</p>
