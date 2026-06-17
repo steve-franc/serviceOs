@@ -519,8 +519,11 @@ const AdminSettings = () => {
                     </div>
 
 
-                    <div className="rounded-lg border border-border p-4 bg-muted/30">
-                      <p className="text-xs text-muted-foreground mb-3">Preview</p>
+                    <div
+                      className="rounded-lg border border-border p-4"
+                      style={{ backgroundColor: brandBackgroundEnabled ? brandBackgroundHex : undefined }}
+                    >
+                      <p className="text-xs opacity-70 mb-3">Preview</p>
                       <div className="flex items-center gap-3 flex-wrap">
                         <div
                           className="h-10 px-4 rounded-md flex items-center text-sm font-medium"
