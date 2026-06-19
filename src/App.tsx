@@ -25,6 +25,7 @@ const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const PublicOrder = lazy(() => import("./pages/PublicOrder"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Restock = lazy(() => import("./pages/Restock"));
+const BuyList = lazy(() => import("./pages/BuyList"));
 const TabsPage = lazy(() => import("./pages/Tabs"));
 const ReportBreakdown = lazy(() => import("./pages/ReportBreakdown"));
 const Debtors = lazy(() => import("./pages/Debtors"));
