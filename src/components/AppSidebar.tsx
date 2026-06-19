@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone, CalendarClock, CreditCard, Truck, Settings as SettingsIcon } from "lucide-react";
+import { ShoppingCart, Menu, History, Shield, Package, LogOut, UtensilsCrossed, Receipt, Users, BarChart3, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Crown, Megaphone, CalendarClock, CreditCard, Truck, Settings as SettingsIcon, ShoppingBasket } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ const staffItems = [
   { title: "Tabs", url: "/tabs", icon: Receipt },
   { title: "Debtors", url: "/debtors", icon: Users },
   { title: "Orders", url: "/orders", icon: History },
+  { title: "Buy List", url: "/buy-list", icon: ShoppingBasket },
 ];
 
 const managerItems = [

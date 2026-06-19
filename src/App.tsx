@@ -25,6 +25,7 @@ const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const PublicOrder = lazy(() => import("./pages/PublicOrder"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Restock = lazy(() => import("./pages/Restock"));
+const BuyList = lazy(() => import("./pages/BuyList"));
 const TabsPage = lazy(() => import("./pages/Tabs"));
 const ReportBreakdown = lazy(() => import("./pages/ReportBreakdown"));
 const Debtors = lazy(() => import("./pages/Debtors"));
@@ -150,6 +151,7 @@ const App = () => {
                 <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
                 <Route path="/inventory" element={<ObserverBlockedRoute><Inventory /></ObserverBlockedRoute>} />
                 <Route path="/restock" element={<ObserverBlockedRoute><Restock /></ObserverBlockedRoute>} />
+                <Route path="/buy-list" element={<ObserverBlockedRoute><BuyList /></ObserverBlockedRoute>} />
                 <Route path="/tabs" element={<ObserverBlockedRoute><TabsPage /></ObserverBlockedRoute>} />
                 <Route path="/debtors" element={<ObserverBlockedRoute><Debtors /></ObserverBlockedRoute>} />
                 <Route path="/bookings" element={<ObserverBlockedRoute><Bookings /></ObserverBlockedRoute>} />

@@ -141,6 +141,72 @@ export type Database = {
         }
         Relationships: []
       }
+      buy_list_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          for_date: string
+          id: string
+          inventory_item_id: string | null
+          name: string
+          notes: string | null
+          purchased_at: string | null
+          purchased_by: string | null
+          quantity: number
+          restaurant_id: string
+          status: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          for_date?: string
+          id?: string
+          inventory_item_id?: string | null
+          name: string
+          notes?: string | null
+          purchased_at?: string | null
+          purchased_by?: string | null
+          quantity?: number
+          restaurant_id: string
+          status?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          for_date?: string
+          id?: string
+          inventory_item_id?: string | null
+          name?: string
+          notes?: string | null
+          purchased_at?: string | null
+          purchased_by?: string | null
+          quantity?: number
+          restaurant_id?: string
+          status?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buy_list_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buy_list_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_expenses: {
         Row: {
           amount: number
