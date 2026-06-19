@@ -27,6 +27,7 @@ const staffItems = [
   { title: "Tabs", url: "/tabs", icon: Receipt },
   { title: "Debtors", url: "/debtors", icon: Users },
   { title: "Orders", url: "/orders", icon: History },
+  { title: "Buy List", url: "/buy-list", icon: ShoppingBasket },
 ];
 
 const managerItems = [
