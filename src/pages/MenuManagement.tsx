@@ -751,112 +751,239 @@ const MenuManagement = () => {
         {loading && <p className="text-center text-muted-foreground">Loading menu...</p>}
 
         {!loading && menuItems.length > 0 && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search menu items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}>
+            {[
+              { label: "Total Items", value: totalItems, suffix: `${totalItems} items`, accent: "hsl(var(--primary))" },
+              { label: "Available", value: totalAvailable, suffix: `${totalAvailable} available`, accent: "hsl(142 71% 45%)" },
+              { label: "Public", value: totalPublic, suffix: `${totalPublic} public`, accent: "hsl(199 89% 48%)" },
+              { label: "Categories", value: totalCategories, suffix: `${totalCategories} categories`, accent: "hsl(38 92% 50%)" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-[10px] border bg-card px-3.5 py-3"
+                style={{ borderTop: `2px solid ${s.accent}` }}
+              >
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">{s.label}</div>
+                <div className="text-[18px] font-bold font-mono mt-1" style={{ color: s.accent }}>{s.value}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">{s.suffix}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && menuItems.length > 0 && (
+          <div className="flex gap-2.5 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search menu items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 text-[13px]"
+              />
+            </div>
+            <div className="flex gap-1 rounded-[10px] border bg-card p-1 overflow-x-auto scrollbar-none">
+              {(["all", "available", "hidden"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setStatusFilter(f)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-colors whitespace-nowrap ${
+                    statusFilter === f
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {!loading && menuItems.length === 0 && <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground mb-4">No menu items yet</p>
-              <Button onClick={() => setDialogOpen(true)} className="bg-[#435663]">
+              <Button onClick={() => setDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Item
               </Button>
             </CardContent>
           </Card>}
 
-        {!loading && filteredItems.length > 0 && <div className="space-y-4">
+        {!loading && filteredItems.length > 0 && <div className="space-y-2">
             {Object.entries(groupedItems).map(([category, items]) => {
               const isOpen = isSearching || !collapsedCategories.has(category);
+              const color = categoryColor(category);
+              const availCount = items.filter(i => i.is_available).length;
               return (
-                <Collapsible key={category} open={isOpen} onOpenChange={() => !isSearching && toggleCategory(category)}>
-                  <CollapsibleTrigger className="flex items-center gap-2 w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors">
-                    {isSearching ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    ) : isOpen ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <h3 className="text-xl font-semibold">{category}</h3>
-                    <Badge variant="secondary" className="ml-auto">{items.length}</Badge>
+                <Collapsible key={category} open={isOpen} onOpenChange={() => !isSearching && toggleCategory(category)} className="rounded-xl border bg-card overflow-hidden">
+                  <CollapsibleTrigger className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-muted/40 transition-colors select-none">
+                    <div
+                      className="h-8 w-8 rounded-[9px] flex-shrink-0 border"
+                      style={{ background: `${color.replace(")", " / 0.18)").replace("hsl", "hsla")}`, borderColor: color.replace(")", " / 0.3)").replace("hsl", "hsla") }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[15px] font-bold truncate">{category}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{availCount} of {items.length} items available</div>
+                    </div>
+                    <span
+                      className="text-[11px] px-2.5 py-1 rounded-md font-medium flex-shrink-0"
+                      style={{ background: color.replace(")", " / 0.15)").replace("hsl", "hsla"), color }}
+                    >
+                      {items.length} items
+                    </span>
+                    <ChevronDown
+                      className="h-[18px] w-[18px] text-muted-foreground flex-shrink-0 transition-transform"
+                      style={{ transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)" }}
+                    />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-3">
-                      {items.map(item => <Card key={item.id} className="hover:shadow-md transition-shadow">
-                          <CardHeader>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <CardTitle className="text-lg">{item.name}</CardTitle>
-                                <div className="flex flex-col gap-2 mt-1">
-                                  {item.base_price > 0 && (
-                                    <Badge variant="secondary" className="font-bold w-fit">
-                                      {formatPrice(item.base_price, item.currency)}
-                                    </Badge>
-                                  )}
-                                  {item.per_unit_price && <Badge variant={item.base_price > 0 ? "outline" : "secondary"} className={item.base_price > 0 ? "text-xs w-fit" : "font-bold w-fit"}>
-                                      {item.base_price > 0 ? "+" : ""}{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
-                                      </Badge>}
-                                  {item.is_service ? (
-                                    <Badge variant="outline" className="text-xs w-fit">
-                                      <CalendarClock className="h-3 w-3 mr-1" />
-                                      Service · {item.service_duration_minutes ?? 60} min · {item.slot_capacity ?? 1}/slot
-                                    </Badge>
-                                  ) : item.is_inventory_item && (
-                                    <Badge variant={item.stock_qty > 0 ? "outline" : "destructive"} className="text-xs w-fit">
-                                      Stock: {item.stock_qty}
-                                    </Badge>
-                                  )}
-                                </div>
+                    <div className="grid gap-3.5 p-3.5 pt-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                      {items.map(item => (
+                        <div
+                          key={item.id}
+                          className="group flex flex-col rounded-xl bg-card border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                          style={{ borderLeft: `3px solid ${color}` }}
+                        >
+                          <div
+                            className="flex items-start justify-between gap-2 px-3.5 pt-3.5 pb-2.5 border-b"
+                            style={{
+                              background: `linear-gradient(135deg, ${color.replace(")", " / 0.13)").replace("hsl", "hsla")}, ${color.replace(")", " / 0.03)").replace("hsl", "hsla")})`,
+                              borderBottomColor: color.replace(")", " / 0.13)").replace("hsl", "hsla"),
+                            }}
+                          >
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-[10px] object-cover flex-shrink-0 border" style={{ borderColor: color.replace(")", " / 0.3)").replace("hsl", "hsla") }} />
+                            ) : (
+                              <div
+                                className="h-10 w-10 rounded-[10px] flex items-center justify-center flex-shrink-0 border text-[18px]"
+                                style={{
+                                  background: color.replace(")", " / 0.18)").replace("hsl", "hsla"),
+                                  borderColor: color.replace(")", " / 0.3)").replace("hsl", "hsla"),
+                                  color,
+                                }}
+                              >
+                                {item.is_service ? <CalendarClock className="h-5 w-5" /> : (item.name?.[0]?.toUpperCase() || "•")}
+                              </div>
+                            )}
+                            <div className="flex flex-wrap gap-1.5 justify-end">
+                              <span
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                                  item.is_available
+                                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-destructive/15 text-destructive"
+                                }`}
+                              >
+                                {item.is_available ? "Available" : "Unavailable"}
+                              </span>
+                              <span
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                                  item.is_public
+                                    ? "bg-primary/15 text-primary"
+                                    : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {item.is_public ? "Public" : "Hidden"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2.5 px-3.5 py-3 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="text-[13px] font-bold leading-tight flex-1 break-words">{item.name}</div>
+                              <div className="text-[14px] font-bold font-mono flex-shrink-0" style={{ color }}>
+                                {item.base_price > 0 ? formatPrice(item.base_price, item.currency) : (item.per_unit_price ? formatPrice(item.per_unit_price, item.currency) : "—")}
                               </div>
                             </div>
-                            {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
-                            <div className="flex items-center gap-2 mt-3">
-                              <Switch
-                                checked={item.is_available}
-                                onCheckedChange={() => handleToggleAvailability(item)}
-                                id={`available-${item.id}`}
-                              />
-                              <Label htmlFor={`available-${item.id}`} className="text-sm font-normal">
-                                {item.is_available ? 'Available' : 'Unavailable'}
-                              </Label>
+
+                            {item.per_unit_price && item.base_price > 0 && (
+                              <div className="text-[11px] text-muted-foreground font-mono -mt-1.5">
+                                +{formatPrice(item.per_unit_price, item.currency)} / {item.pricing_unit}
+                              </div>
+                            )}
+
+                            {item.is_service ? (
+                              <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                                <CalendarClock className="h-3 w-3" />
+                                {item.service_duration_minutes ?? 60} min · {item.slot_capacity ?? 1}/slot
+                              </div>
+                            ) : item.is_inventory_item && (
+                              <div className={`text-[11px] inline-flex items-center gap-1 ${item.stock_qty > 0 ? "text-muted-foreground" : "text-destructive"}`}>
+                                Stock: {item.stock_qty}
+                              </div>
+                            )}
+
+                            {item.description && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-2">{item.description}</p>
+                            )}
+
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[12px] text-muted-foreground">Available for orders</span>
+                              <Switch checked={item.is_available} onCheckedChange={() => handleToggleAvailability(item)} />
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Switch
-                                checked={item.is_public}
-                                onCheckedChange={() => handleTogglePublic(item)}
-                                id={`public-${item.id}`}
-                              />
-                              <Label htmlFor={`public-${item.id}`} className="text-sm font-normal">
-                                {item.is_public ? 'Public' : 'Internal Only'}
-                              </Label>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[12px] text-muted-foreground">Visible to public</span>
+                              <Switch checked={item.is_public} onCheckedChange={() => handleTogglePublic(item)} />
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1">
+
+                            <div className="border-t pt-2.5 mt-auto flex gap-1.5">
+                              <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1 h-8 text-[13px]">
                                 <Pencil className="h-3 w-3 mr-1" />
                                 Edit
                               </Button>
-                              <Button variant="outline" size="sm" onClick={() => requestDelete(item)} className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-3 w-3" />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => requestDelete(item)}
+                                className="h-8 w-8 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
-                          </CardContent>
-                        </Card>)}
+                          </div>
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetForm();
+                          setFormData(prev => ({ ...prev, category }));
+                          setDialogOpen(true);
+                        }}
+                        className="rounded-xl border-2 border-dashed border-border/60 min-h-[175px] flex flex-col items-center justify-center gap-1.5 text-muted-foreground text-xs transition-all hover:bg-muted/30"
+                        style={{ ['--cat' as any]: color }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.color = ""; }}
+                      >
+                        <span className="text-[20px] leading-none">+</span>
+                        <span className="font-medium">Add to {category}</span>
+                      </button>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
               );
             })}
+
+            <button
+              type="button"
+              onClick={() => { resetForm(); setDialogOpen(true); }}
+              className="w-full rounded-xl border-2 border-dashed border-border/60 px-5 py-[18px] flex items-center justify-center gap-2.5 text-muted-foreground text-[13px] font-medium transition-all hover:border-primary hover:text-primary hover:bg-primary/5 mt-2"
+            >
+              <span className="text-[20px] leading-none">+</span>
+              Add New Category
+            </button>
           </div>}
+
+        {!loading && filteredItems.length === 0 && menuItems.length > 0 && (
+          <div className="text-center px-5 py-[60px]">
+            <div className="text-[40px] mb-2">🔍</div>
+            <div className="text-[15px] font-bold mb-1.5">No items found</div>
+            <div className="text-[13px] text-muted-foreground">Try a different search or filter</div>
+          </div>
+        )}
+
 
         {!loading && filteredItems.length === 0 && menuItems.length > 0 && (
           <p className="text-center text-muted-foreground py-8">No items match your search</p>
