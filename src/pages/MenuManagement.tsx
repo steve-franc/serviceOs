@@ -478,19 +478,20 @@ const MenuManagement = () => {
         }}>
             <div className="flex flex-col sm:flex-row gap-2 flex-wrap w-full lg:w-auto">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => restaurantId && window.open(`/order/${restaurantId}`, "_blank", "noopener,noreferrer")}
                 disabled={!restaurantId}
+                className="w-full sm:w-auto"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Preview Public Page
               </Button>
-              <Button variant="outline" onClick={() => setShareDialogOpen(true)} disabled={availableItems.length === 0}>
+              <Button variant="ghost" onClick={() => setShareDialogOpen(true)} disabled={availableItems.length === 0} className="w-full sm:w-auto">
                 <Share2 className="h-4 w-4 mr-2" />
                 Share Menu
               </Button>
               <DialogTrigger asChild>
-                <Button className="bg-[#435663]">
+                <Button className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Item
                 </Button>
