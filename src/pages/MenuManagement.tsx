@@ -453,12 +453,24 @@ const MenuManagement = () => {
     toast.success("Menu copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
+  const totalItems = menuItems.length;
+  const totalAvailable = menuItems.filter(i => i.is_available).length;
+  const totalPublic = menuItems.filter(i => i.is_public).length;
+  const totalCategories = new Set(menuItems.map(i => i.category || "Uncategorized")).size;
+
   return <>
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="py-[10px]">
-            <h2 className="text-3xl font-bold">Menu Management</h2>
-            <p className="text-muted-foreground my-[10px]">Add and manage your menu items</p>
+      <div className="max-w-6xl mx-auto space-y-6 px-3 sm:px-4 lg:px-5">
+        <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
+          <span>serviceOS</span>
+          <span className="mx-1.5 opacity-50">›</span>
+          <span>Inventory & Supply</span>
+          <span className="mx-1.5 opacity-50">›</span>
+          <span className="text-foreground font-medium">Menu</span>
+        </nav>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight">Menu Management</h1>
+            <p className="text-[13px] text-muted-foreground mt-1">Add and manage your menu items across categories</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={open => {
           setDialogOpen(open);
