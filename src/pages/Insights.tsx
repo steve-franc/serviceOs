@@ -41,9 +41,7 @@ import {
   addMonths,
   addYears,
 } from "date-fns";
-import { ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PageSkeleton } from "@/components/PageSkeleton";
 
 type Period = "day" | "week" | "month" | "year";
 
