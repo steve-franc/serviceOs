@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, DollarSign, Package, Wallet, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft, DollarSign, Package, Wallet, TrendingUp } from "lucide-react";
 import {
   ResponsiveContainer,
   ComposedChart,
