@@ -476,7 +476,7 @@ const MenuManagement = () => {
           setDialogOpen(open);
           if (!open) resetForm();
         }}>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-col sm:flex-row gap-2 flex-wrap w-full lg:w-auto">
               <Button
                 variant="outline"
                 onClick={() => restaurantId && window.open(`/order/${restaurantId}`, "_blank", "noopener,noreferrer")}
