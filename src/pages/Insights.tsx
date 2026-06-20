@@ -85,6 +85,7 @@ export default function Insights() {
   const { restaurantId, loading: ctxLoading } = useRestaurantContext();
   const { isManager, isInvestor, loading: roleLoading } = useUserRole();
   const [period, setPeriod] = useState<Period>("month");
+  const [offset, setOffset] = useState(0); // 0 = current, -1 = previous, etc.
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [restocks, setRestocks] = useState<RestockRow[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
@@ -92,13 +93,34 @@ export default function Insights() {
   const [items, setItems] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
+  // Reset offset when switching period
+  useEffect(() => { setOffset(0); }, [period]);
+
   const range = useMemo(() => {
     const now = new Date();
-    if (period === "day") return { start: startOfDay(now), end: endOfDay(now) };
-    if (period === "week") return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) };
-    if (period === "month") return { start: startOfMonth(now), end: endOfMonth(now) };
-    return { start: startOfYear(now), end: endOfYear(now) };
-  }, [period]);
+    if (period === "day") {
+      const d = addDays(now, offset);
+      return { start: startOfDay(d), end: endOfDay(d) };
+    }
+    if (period === "week") {
+      const end = addDays(now, offset * 7);
+      return { start: startOfDay(subDays(end, 6)), end: endOfDay(end) };
+    }
+    if (period === "month") {
+      const d = addMonths(now, offset);
+      return { start: startOfMonth(d), end: endOfMonth(d) };
+    }
+    const d = addYears(now, offset);
+    return { start: startOfYear(d), end: endOfYear(d) };
+  }, [period, offset]);
+
+  const rangeLabel = useMemo(() => {
+    if (period === "day") return format(range.start, "EEEE, MMM d, yyyy");
+    if (period === "week") return `${format(range.start, "MMM d")} – ${format(range.end, "MMM d, yyyy")}`;
+    if (period === "month") return format(range.start, "MMMM yyyy");
+    return format(range.start, "yyyy");
+  }, [period, range]);
+
 
   useEffect(() => {
     if (!restaurantId) return;
