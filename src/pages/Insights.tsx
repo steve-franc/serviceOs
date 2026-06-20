@@ -42,6 +42,7 @@ import {
   addYears,
 } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PageSkeleton } from "@/components/PageSkeleton";
 
 type Period = "day" | "week" | "month" | "year";
 
