@@ -71,6 +71,7 @@ const MenuManagement = () => {
   const [unitsDialogOpen, setUnitsDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = usePersistentState<string>("menu:search", "");
+  const [statusFilter, setStatusFilter] = useState<"all" | "available" | "hidden">("all");
   const [collapsedCategoriesArr, setCollapsedCategoriesArr] = usePersistentState<string[]>("menu:collapsed", []);
   const collapsedCategories = useMemo(() => new Set(collapsedCategoriesArr), [collapsedCategoriesArr]);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
