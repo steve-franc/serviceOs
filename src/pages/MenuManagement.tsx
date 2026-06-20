@@ -985,9 +985,6 @@ const MenuManagement = () => {
         )}
 
 
-        {!loading && filteredItems.length === 0 && menuItems.length > 0 && (
-          <p className="text-center text-muted-foreground py-8">No items match your search</p>
-        )}
 
         <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
           <AlertDialogContent>
