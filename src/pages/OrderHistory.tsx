@@ -631,18 +631,20 @@ const OrderHistory = () => {
               </div>
             </div>
 
-            <TabsList>
-              <TabsTrigger value="recent" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {lastEndDayDate ? `Since ${format(new Date(lastEndDayDate), "PP p")}` : "All Orders"}
-                <Badge variant="secondary" className="ml-1">
+            <TabsList className="grid w-full grid-cols-2 h-auto">
+              <TabsTrigger value="recent" className="flex items-center gap-1.5 min-w-0 px-2">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span className="truncate min-w-0">
+                  {lastEndDayDate ? `Since ${format(new Date(lastEndDayDate), "PP p")}` : "All Orders"}
+                </span>
+                <Badge variant="secondary" className="ml-1 shrink-0">
                   {filteredRecentOrders.length}
                 </Badge>
               </TabsTrigger>
-              <TabsTrigger value="archived" className="flex items-center gap-2">
-                <Archive className="h-4 w-4" />
-                Archives
-                <Badge variant="secondary" className="ml-1">
+              <TabsTrigger value="archived" className="flex items-center gap-1.5 min-w-0 px-2">
+                <Archive className="h-4 w-4 shrink-0" />
+                <span className="truncate min-w-0">Archives</span>
+                <Badge variant="secondary" className="ml-1 shrink-0">
                   {filteredArchivedOrders.length}
                 </Badge>
               </TabsTrigger>
