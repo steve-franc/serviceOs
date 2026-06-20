@@ -383,16 +383,25 @@ const MenuManagement = () => {
     setEditingItem(null);
   };
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return menuItems;
-    const q = searchQuery.toLowerCase();
-    return menuItems.filter(item =>
-      item.name.toLowerCase().includes(q) ||
-      (item.category && item.category.toLowerCase().includes(q)) ||
-      (item.description && item.description.toLowerCase().includes(q))
-    );
-  }, [menuItems, searchQuery]);
+    const q = searchQuery.trim().toLowerCase();
+    return menuItems.filter(item => {
+      if (statusFilter === "available" && !item.is_available) return false;
+      if (statusFilter === "hidden" && item.is_available) return false;
+      if (!q) return true;
+      return item.name.toLowerCase().includes(q) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.description && item.description.toLowerCase().includes(q));
+    });
+  }, [menuItems, searchQuery, statusFilter]);
 
-  const isSearching = searchQuery.trim().length > 0;
+  const isSearching = searchQuery.trim().length > 0 || statusFilter !== "all";
+
+  const categoryColor = (cat: string) => {
+    let h = 0;
+    for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) >>> 0;
+    const hue = h % 360;
+    return `hsl(${hue} 70% 55%)`;
+  };
 
   const groupedItems = filteredItems.reduce((acc, item) => {
     const category = item.category || "Uncategorized";
