@@ -336,6 +336,31 @@ export default function Insights() {
             ))}
           </div>
         </div>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOffset((o) => o - 1)}
+            className="gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <div className="text-sm font-medium tabular-nums text-center flex-1">
+            {rangeLabel}
+            {offset === 0 && <span className="ml-2 text-xs text-muted-foreground">(current)</span>}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOffset((o) => o + 1)}
+            disabled={offset >= 0}
+            className="gap-1"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Stat cards */}
