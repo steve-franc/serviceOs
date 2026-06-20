@@ -4,6 +4,7 @@ import {
   Home, Zap, Package, CreditCard, Settings, ShoppingCart, History, CalendarClock, Receipt,
   Users, Menu as MenuIcon, Truck, BarChart3, Shield, ChevronRight, X, Plus, Sun, Moon,
   LogOut, LayoutDashboard, Store, UtensilsCrossed as ProductIcon, Megaphone, Crown,
+  ShoppingBasket, LineChart,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ const BUSINESS_SECTIONS: Section[] = [
       { label: "Bookings", path: "/bookings", icon: CalendarClock },
       { label: "Tabs", path: "/tabs", icon: Receipt },
       { label: "Debtors", path: "/debtors", icon: Users, badgeKind: "warn" },
+      { label: "Buy List", path: "/buy-list", icon: ShoppingBasket },
     ],
   },
   {
@@ -42,8 +44,9 @@ const BUSINESS_SECTIONS: Section[] = [
   {
     id: "finance", label: "Finance", icon: CreditCard,
     subtabs: [
-      { label: "Billing", path: "/billing", icon: CreditCard },
+      { label: "Insights", path: "/insights", icon: LineChart },
       { label: "Reports", path: "/reports", icon: BarChart3 },
+      { label: "Billing", path: "/billing", icon: CreditCard },
     ],
   },
   {
