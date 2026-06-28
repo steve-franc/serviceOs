@@ -68,7 +68,7 @@ const Auth = () => {
     if (!inviteId) return;
     setJoinRestaurantId(inviteId);
     setMode("signup");
-    supabase.from("restaurants").select("name").eq("id", inviteId).maybeSingle().then(({ data }) => {
+    supabase.rpc("get_public_restaurant_info", { _restaurant_id: inviteId }).then(({ data }) => {
       setJoinRestaurantName((data as any)?.name ?? "");
     });
   }, []);
