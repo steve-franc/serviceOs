@@ -85,21 +85,20 @@ const Receipt = () => {
           throw new Error("Receipt not found");
         }
 
-        const publicReceipt = data as unknown as { order: OrderData; items: OrderItemData[] };
+        const publicReceipt = data as unknown as {
+          order: OrderData;
+          items: OrderItemData[];
+          restaurant?: { name?: string | null; payment_methods?: any };
+        };
         setOrder(publicReceipt.order);
         setOrderItems(publicReceipt.items || []);
-
-        // Fetch restaurant name for public receipts
-        const { data: orderRow } = await supabase.rpc("get_public_receipt", { _order_id: id! });
-        // We need the restaurant_id to get the name; extract from orders via a separate approach
-        // For now, try to get it from restaurant_settings
-        try {
-          const { data: allSettings } = await supabase.from("restaurant_settings").select("restaurant_name, restaurant_id").limit(100);
-          if (allSettings && allSettings.length > 0) {
-            // Just use the first one for public receipts since we can't easily get restaurant_id
-            setRestaurantName(allSettings[0].restaurant_name);
-          }
-        } catch {}
+        if (publicReceipt.restaurant?.name) {
+          setRestaurantName(publicReceipt.restaurant.name);
+        }
+        if (publicReceipt.restaurant?.payment_methods) {
+          const parsed = parsePaymentMethods(publicReceipt.restaurant.payment_methods);
+          setPaymentMethods(getMethodNames(parsed));
+        }
         return;
       }
 

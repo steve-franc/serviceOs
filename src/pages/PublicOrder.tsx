@@ -104,35 +104,23 @@ const PublicOrder = () => {
   }, [restaurantId]);
 
   const fetchSettings = async () => {
-    const { data } = await supabase
-      .from("restaurant_settings")
-      .select("restaurant_id, restaurant_name, allow_public_orders, payment_methods, logo_url, currency")
-      .eq("restaurant_id", urlRestaurantId!)
-      .maybeSingle();
-
-    // Check restaurant status — only 'active' restaurants accept public orders
-    const { data: restaurantRow } = await supabase
-      .from("restaurants")
-      .select("name, status")
-      .eq("id", urlRestaurantId!)
-      .maybeSingle();
-
-    if (data) {
-      setRestaurantName(data.restaurant_name);
-      setLogoUrl((data as any).logo_url ?? null);
-      const cur = ((data as any).currency as string | undefined) || "TRY";
+    const { data } = await supabase.rpc("get_public_restaurant_info", {
+      _restaurant_id: urlRestaurantId!,
+    });
+    const info = data as any;
+    if (info) {
+      setRestaurantName(info.restaurant_name ?? info.name ?? null);
+      setLogoUrl(info.logo_url ?? null);
+      const cur = (info.currency as string | undefined) || "TRY";
       setCurrency(cur);
       setActiveCurrency(cur);
-      setRestaurantId(data.restaurant_id ?? null);
-      const methods = parsePaymentMethods(data.payment_methods);
+      setRestaurantId(info.restaurant_id ?? info.id ?? null);
+      const methods = parsePaymentMethods(info.payment_methods);
       setAvailablePaymentMethods(methods);
       setPaymentMethod(methods[0]?.name || "Cash");
-      if (!data.allow_public_orders || (restaurantRow && (restaurantRow as any).status !== "active")) {
+      if (!info.allow_public_orders || info.status !== "active") {
         setPublicOrdersDisabled(true);
       }
-    } else if (restaurantRow) {
-      setRestaurantName(restaurantRow.name);
-      if ((restaurantRow as any).status !== "active") setPublicOrdersDisabled(true);
     }
     setPageLoading(false);
   };

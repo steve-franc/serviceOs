@@ -1342,6 +1342,10 @@ export type Database = {
         Returns: string
       }
       get_public_receipt: { Args: { _order_id: string }; Returns: Json }
+      get_public_restaurant_info: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
       get_restaurant_features: {
         Args: { _restaurant_id: string }
         Returns: Json
@@ -1362,6 +1366,7 @@ export type Database = {
             }
             Returns: boolean
           }
+      invited_restaurant_id: { Args: { _uid: string }; Returns: string }
       is_investor: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean

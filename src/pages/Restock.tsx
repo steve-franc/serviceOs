@@ -176,7 +176,7 @@ const Restock = () => {
         const path = `${restaurantId}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("restock-invoices").upload(path, form.invoice_file);
         if (upErr) throw upErr;
-        invoice_url = supabase.storage.from("restock-invoices").getPublicUrl(path).data.publicUrl;
+        invoice_url = path;
       }
 
       const { data: userData } = await supabase.auth.getUser();
@@ -240,7 +240,7 @@ const Restock = () => {
         const ext = r.file.name.split(".").pop() || "jpg";
         const path = `${restaurantId}/${Date.now()}-receipt.${ext}`;
         const { error: upErr } = await supabase.storage.from("restock-invoices").upload(path, r.file);
-        if (!upErr) invoice_url = supabase.storage.from("restock-invoices").getPublicUrl(path).data.publicUrl;
+        if (!upErr) invoice_url = path;
       }
       const { data: userData } = await supabase.auth.getUser();
 
@@ -702,9 +702,29 @@ const Restock = () => {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             {e.invoice_image_url && (
-                              <a href={e.invoice_image_url} target="_blank" rel="noreferrer">
-                                <Button size="icon" variant="ghost" className="h-7 w-7"><ImageIcon className="h-3.5 w-3.5" /></Button>
-                              </a>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={async () => {
+                                  const raw = e.invoice_image_url!;
+                                  let path = raw;
+                                  // Backwards-compat: extract path from any legacy full URL
+                                  const marker = "/restock-invoices/";
+                                  const idx = raw.indexOf(marker);
+                                  if (idx >= 0) path = raw.substring(idx + marker.length);
+                                  const { data, error } = await supabase.storage
+                                    .from("restock-invoices")
+                                    .createSignedUrl(path, 60);
+                                  if (error || !data?.signedUrl) {
+                                    toast.error("Invoice not available");
+                                    return;
+                                  }
+                                  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                                }}
+                              >
+                                <ImageIcon className="h-3.5 w-3.5" />
+                              </Button>
                             )}
                             {canEdit && (
                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteEntry(e.id)}>
