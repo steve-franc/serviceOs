@@ -218,8 +218,8 @@ const OrderHistory = () => {
   };
 
 
-  const filteredRecentOrders = useMemo(() => filterOrders(recentOrders), [recentOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
-  const filteredArchivedOrders = useMemo(() => filterOrders(archivedOrders), [archivedOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
+  const filteredRecentOrders = useMemo(() => filterOrders(recentOrders), [recentOrders, selectedTag, paymentFilter, orderSearch, orderItemsMap, menuItemCategoryMap, taggedCategories]);
+  const filteredArchivedOrders = useMemo(() => filterOrders(archivedOrders), [archivedOrders, selectedTag, paymentFilter, orderSearch, orderItemsMap, menuItemCategoryMap, taggedCategories]);
 
   const [unpaidDialogOpen, setUnpaidDialogOpen] = useState(false);
   const [unpaidTarget, setUnpaidTarget] = useState<Order | null>(null);
