@@ -1386,6 +1386,7 @@ export type Database = {
         Args: { _broadcast_id: string; _dismissed?: boolean }
         Returns: undefined
       }
+      reset_auto_day_end: { Args: { _restaurant_id: string }; Returns: Json }
       subscription_sweep_expired: { Args: never; Returns: Json }
       superadmin_assign_tier: {
         Args: { _restaurant_id: string; _tier_id: string }

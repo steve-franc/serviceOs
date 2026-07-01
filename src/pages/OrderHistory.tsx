@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle } from "lucide-react";
+import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle, RotateCcw } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import { format, parseISO } from "date-fns";
 import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,11 +64,35 @@ interface DailyReport {
 const OrderHistory = () => {
   const navigate = useNavigate();
   const { restaurantId } = useRestaurantContext();
+  const { isManager } = useUserRole();
   const { data: ordersData, isLoading: loading } = useOrders();
   const invalidateOrders = useInvalidateOrders();
   const { data: expensesData = [] } = useExpenses();
   const { data: settingsData } = useRestaurantSettings();
   const queryClient = useQueryClient();
+  const [resettingAutoClose, setResettingAutoClose] = useState(false);
+
+  const resetAutoDayEnd = async () => {
+    if (!restaurantId) return;
+    if (!confirm("Reset the automatic day-end?\n\nThis clears today's early close so the system will close the day automatically at 11:59 PM.")) return;
+    setResettingAutoClose(true);
+    try {
+      const { data, error } = await supabase.rpc("reset_auto_day_end", { _restaurant_id: restaurantId });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.error) throw new Error(res.error);
+      toast.success(
+        res?.deleted_reports > 0
+          ? "Auto day-end reset — tonight's 11:59 PM close will run."
+          : "Nothing to reset — automatic close is already scheduled for tonight."
+      );
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reset auto day-end");
+    } finally {
+      setResettingAutoClose(false);
+    }
+  };
 
   // Real-time: refresh orders on any insert/update/delete
   useEffect(() => {
@@ -533,14 +558,28 @@ const OrderHistory = () => {
             <h2 className="text-3xl font-bold">Order History</h2>
             <p className="text-muted-foreground">Manage and track all orders. The day closes automatically at 11:59 PM.</p>
           </div>
-          <Button
-            onClick={previewEndDay}
-            disabled={loadingPreview || generatingReport}
-            className="gap-2 sm:shrink-0"
-          >
-            <Receipt className="h-4 w-4" />
-            {loadingPreview ? "Checking…" : "End Day Manually"}
-          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:shrink-0">
+            {isManager && (
+              <Button
+                onClick={resetAutoDayEnd}
+                disabled={resettingAutoClose || generatingReport}
+                variant="outline"
+                className="gap-2"
+                title="Clears an early close so the automatic 11:59 PM close will run tonight"
+              >
+                <RotateCcw className="h-4 w-4" />
+                {resettingAutoClose ? "Resetting…" : "Reset Auto Day-End"}
+              </Button>
+            )}
+            <Button
+              onClick={previewEndDay}
+              disabled={loadingPreview || generatingReport}
+              className="gap-2"
+            >
+              <Receipt className="h-4 w-4" />
+              {loadingPreview ? "Checking…" : "End Day Manually"}
+            </Button>
+          </div>
         </div>
 
         {/* Summary stat strip */}
