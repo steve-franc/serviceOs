@@ -638,8 +638,18 @@ const OrderHistory = () => {
           </Card>}
 
         {!loading && (recentOrders.length > 0 || archivedOrders.length > 0 || dailyReports.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
-            {/* Tag + Payment Filters */}
+            {/* Search + Tag + Payment Filters */}
             <div className="flex flex-col gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={orderSearch}
+                  onChange={(e) => setOrderSearch(e.target.value.slice(0, 50))}
+                  placeholder="Search by order number or customer…"
+                  className="pl-9"
+                  maxLength={50}
+                />
+              </div>
               {menuTags.length > 0 && (() => {
                 const uniqueNames = [...new Set((menuTags as any[]).map(t => t.name))].sort();
                 return (
