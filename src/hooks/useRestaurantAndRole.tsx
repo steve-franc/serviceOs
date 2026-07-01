@@ -180,6 +180,23 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
               setRestaurantName(created.name);
             }
           }
+
+          // Clear onboarding metadata so it isn't retained indefinitely
+          if (onboardingMode) {
+            try {
+              await supabase.auth.updateUser({
+                data: {
+                  onboarding_mode: null,
+                  create_restaurant_name: null,
+                  join_restaurant_id: null,
+                  business_type: null,
+                  onboarding_completed: true,
+                },
+              });
+            } catch (e) {
+              console.warn("Failed to clear onboarding metadata", e);
+            }
+          }
         }
 
         if (cancelled) return;
