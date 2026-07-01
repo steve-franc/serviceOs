@@ -390,6 +390,9 @@ const Debtors = () => {
                           <Badge variant="secondary" className="text-base px-3 py-1">
                             {formatPrice(debtor.amount_owed, debtor.currency)}
                           </Badge>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openOrdersDialog(debtor)} title="View orders">
+                            <ReceiptIcon className="h-4 w-4" />
+                          </Button>
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleResolved(debtor)} title="Mark as unpaid">
                             <X className="h-4 w-4" />
                           </Button>
@@ -397,6 +400,7 @@ const Debtors = () => {
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
+
                       </div>
                     </CardContent>
                   </Card>
