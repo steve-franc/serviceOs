@@ -558,14 +558,28 @@ const OrderHistory = () => {
             <h2 className="text-3xl font-bold">Order History</h2>
             <p className="text-muted-foreground">Manage and track all orders. The day closes automatically at 11:59 PM.</p>
           </div>
-          <Button
-            onClick={previewEndDay}
-            disabled={loadingPreview || generatingReport}
-            className="gap-2 sm:shrink-0"
-          >
-            <Receipt className="h-4 w-4" />
-            {loadingPreview ? "Checking…" : "End Day Manually"}
-          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:shrink-0">
+            {isManager && (
+              <Button
+                onClick={resetAutoDayEnd}
+                disabled={resettingAutoClose || generatingReport}
+                variant="outline"
+                className="gap-2"
+                title="Clears an early close so the automatic 11:59 PM close will run tonight"
+              >
+                <RotateCcw className="h-4 w-4" />
+                {resettingAutoClose ? "Resetting…" : "Reset Auto Day-End"}
+              </Button>
+            )}
+            <Button
+              onClick={previewEndDay}
+              disabled={loadingPreview || generatingReport}
+              className="gap-2"
+            >
+              <Receipt className="h-4 w-4" />
+              {loadingPreview ? "Checking…" : "End Day Manually"}
+            </Button>
+          </div>
         </div>
 
         {/* Summary stat strip */}
