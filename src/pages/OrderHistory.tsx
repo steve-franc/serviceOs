@@ -64,11 +64,35 @@ interface DailyReport {
 const OrderHistory = () => {
   const navigate = useNavigate();
   const { restaurantId } = useRestaurantContext();
+  const { isManager } = useUserRole();
   const { data: ordersData, isLoading: loading } = useOrders();
   const invalidateOrders = useInvalidateOrders();
   const { data: expensesData = [] } = useExpenses();
   const { data: settingsData } = useRestaurantSettings();
   const queryClient = useQueryClient();
+  const [resettingAutoClose, setResettingAutoClose] = useState(false);
+
+  const resetAutoDayEnd = async () => {
+    if (!restaurantId) return;
+    if (!confirm("Reset the automatic day-end?\n\nThis clears today's early close so the system will close the day automatically at 11:59 PM.")) return;
+    setResettingAutoClose(true);
+    try {
+      const { data, error } = await supabase.rpc("reset_auto_day_end", { _restaurant_id: restaurantId });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.error) throw new Error(res.error);
+      toast.success(
+        res?.deleted_reports > 0
+          ? "Auto day-end reset — tonight's 11:59 PM close will run."
+          : "Nothing to reset — automatic close is already scheduled for tonight."
+      );
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reset auto day-end");
+    } finally {
+      setResettingAutoClose(false);
+    }
+  };
 
   // Real-time: refresh orders on any insert/update/delete
   useEffect(() => {
