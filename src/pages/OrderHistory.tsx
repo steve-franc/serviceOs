@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle } from "lucide-react";
+import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle, RotateCcw } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import { format, parseISO } from "date-fns";
 import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
