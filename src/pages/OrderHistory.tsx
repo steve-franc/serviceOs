@@ -150,6 +150,7 @@ const OrderHistory = () => {
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [orderItemsMap, setOrderItemsMap] = useState<Record<string, string[]>>({});
+  const [orderSearch, setOrderSearch] = useState("");
 
   // Build set of categories for the selected tag
   const taggedCategories = useMemo(() => {
