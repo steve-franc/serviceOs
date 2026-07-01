@@ -42,10 +42,44 @@ const Debtors = () => {
   const [showResolved, setShowResolved] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "unpaid" | "paid">("all");
+  const [ordersDialogOpen, setOrdersDialogOpen] = useState(false);
+  const [ordersDialogDebtor, setOrdersDialogDebtor] = useState<Debtor | null>(null);
+  const [ordersDialogLoading, setOrdersDialogLoading] = useState(false);
+  const [ordersDialogData, setOrdersDialogData] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (restaurantId) fetchDebtors();
-  }, [restaurantId]);
+  const openOrdersDialog = async (debtor: Debtor) => {
+    setOrdersDialogDebtor(debtor);
+    setOrdersDialogOpen(true);
+    setOrdersDialogLoading(true);
+    setOrdersDialogData([]);
+    try {
+      const orFilter = debtor.source_order_id
+        ? `id.eq.${debtor.source_order_id},paid_via_debtor_id.eq.${debtor.id}`
+        : `paid_via_debtor_id.eq.${debtor.id}`;
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_number, total, created_at, payment_status, customer_name, notes")
+        .or(orFilter)
+        .order("created_at", { ascending: false });
+      const ids = (orders || []).map((o: any) => o.id);
+      let itemsByOrder: Record<string, any[]> = {};
+      if (ids.length > 0) {
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("order_id, menu_item_name, quantity, price_at_time, subtotal")
+          .in("order_id", ids);
+        (items || []).forEach((it: any) => {
+          (itemsByOrder[it.order_id] ||= []).push(it);
+        });
+      }
+      setOrdersDialogData((orders || []).map((o: any) => ({ ...o, items: itemsByOrder[o.id] || [] })));
+    } catch {
+      toast.error("Failed to load orders");
+    } finally {
+      setOrdersDialogLoading(false);
+    }
+  };
+
 
   const fetchDebtors = async () => {
     if (!restaurantId) return;
