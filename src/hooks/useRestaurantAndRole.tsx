@@ -195,7 +195,7 @@ export function RestaurantRoleProvider({ children }: { children: ReactNode }) {
               });
             } catch (e) {
               console.warn("Failed to clear onboarding metadata", e);
-            
+            }
           }
         }
 
