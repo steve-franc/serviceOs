@@ -197,6 +197,13 @@ const OrderHistory = () => {
   // Filter orders by selected tag (via category) AND payment status
   const filterOrders = (orders: Order[]) => {
     let result = orders;
+    const q = orderSearch.trim().toLowerCase();
+    if (q) {
+      result = result.filter(o =>
+        (o.order_number || "").toLowerCase().includes(q) ||
+        (o.customer_name || "").toLowerCase().includes(q)
+      );
+    }
     if (paymentFilter !== "all") {
       result = result.filter(o => (o.payment_status || "paid") === paymentFilter);
     }
@@ -209,6 +216,7 @@ const OrderHistory = () => {
       });
     });
   };
+
 
   const filteredRecentOrders = useMemo(() => filterOrders(recentOrders), [recentOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
   const filteredArchivedOrders = useMemo(() => filterOrders(archivedOrders), [archivedOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
