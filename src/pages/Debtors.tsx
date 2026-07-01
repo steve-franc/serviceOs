@@ -461,9 +461,70 @@ const Debtors = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={ordersDialogOpen} onOpenChange={setOrdersDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Orders for {ordersDialogDebtor?.customer_name}
+              </DialogTitle>
+            </DialogHeader>
+            {ordersDialogLoading ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">Loading orders…</p>
+            ) : ordersDialogData.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">
+                No linked orders found for this debt.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {ordersDialogData.map((o) => (
+                  <div key={o.id} className="rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <Link to={`/receipt/${o.id}`} className="font-semibold hover:underline">
+                          Order #{o.order_number}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(o.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge variant={o.payment_status === "paid" ? "secondary" : "destructive"}>
+                        {formatPrice(Number(o.total), ordersDialogDebtor?.currency)}
+                      </Badge>
+                    </div>
+                    {o.items.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-sm">
+                        {o.items.map((it: any, i: number) => (
+                          <li key={i} className="flex justify-between text-muted-foreground">
+                            <span>{it.quantity}× {it.menu_item_name}</span>
+                            <span className="font-mono">{formatPrice(Number(it.subtotal), ordersDialogDebtor?.currency)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span className="font-mono">
+                    {formatPrice(
+                      ordersDialogData.reduce((s, o) => s + Number(o.total), 0),
+                      ordersDialogDebtor?.currency
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOrdersDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
 };
 
 export default Debtors;
+
