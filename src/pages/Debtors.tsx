@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Check, X, Users, AlertCircle, Pencil, Search } from "lucide-react";
+import { Plus, Check, X, Users, AlertCircle, Pencil, Search, Receipt as ReceiptIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { Separator } from "@/components/ui/separator";
@@ -41,10 +42,48 @@ const Debtors = () => {
   const [showResolved, setShowResolved] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "unpaid" | "paid">("all");
+  const [ordersDialogOpen, setOrdersDialogOpen] = useState(false);
+  const [ordersDialogDebtor, setOrdersDialogDebtor] = useState<Debtor | null>(null);
+  const [ordersDialogLoading, setOrdersDialogLoading] = useState(false);
+  const [ordersDialogData, setOrdersDialogData] = useState<any[]>([]);
+
+  const openOrdersDialog = async (debtor: Debtor) => {
+    setOrdersDialogDebtor(debtor);
+    setOrdersDialogOpen(true);
+    setOrdersDialogLoading(true);
+    setOrdersDialogData([]);
+    try {
+      const orFilter = debtor.source_order_id
+        ? `id.eq.${debtor.source_order_id},paid_via_debtor_id.eq.${debtor.id}`
+        : `paid_via_debtor_id.eq.${debtor.id}`;
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_number, total, created_at, payment_status, customer_name, notes")
+        .or(orFilter)
+        .order("created_at", { ascending: false });
+      const ids = (orders || []).map((o: any) => o.id);
+      let itemsByOrder: Record<string, any[]> = {};
+      if (ids.length > 0) {
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("order_id, menu_item_name, quantity, price_at_time, subtotal")
+          .in("order_id", ids);
+        (items || []).forEach((it: any) => {
+          (itemsByOrder[it.order_id] ||= []).push(it);
+        });
+      }
+      setOrdersDialogData((orders || []).map((o: any) => ({ ...o, items: itemsByOrder[o.id] || [] })));
+    } catch {
+      toast.error("Failed to load orders");
+    } finally {
+      setOrdersDialogLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (restaurantId) fetchDebtors();
   }, [restaurantId]);
+
 
   const fetchDebtors = async () => {
     if (!restaurantId) return;
@@ -303,6 +342,9 @@ const Debtors = () => {
                       <Badge variant="destructive" className="text-base px-3 py-1">
                         {formatPrice(debtor.amount_owed, debtor.currency)}
                       </Badge>
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openOrdersDialog(debtor)} title="View orders">
+                        <ReceiptIcon className="h-4 w-4" />
+                      </Button>
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openEdit(debtor)} title="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -313,6 +355,7 @@ const Debtors = () => {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
+
                   </div>
                 </CardContent>
               </Card>
@@ -347,6 +390,9 @@ const Debtors = () => {
                           <Badge variant="secondary" className="text-base px-3 py-1">
                             {formatPrice(debtor.amount_owed, debtor.currency)}
                           </Badge>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openOrdersDialog(debtor)} title="View orders">
+                            <ReceiptIcon className="h-4 w-4" />
+                          </Button>
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleResolved(debtor)} title="Mark as unpaid">
                             <X className="h-4 w-4" />
                           </Button>
@@ -354,6 +400,7 @@ const Debtors = () => {
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
+
                       </div>
                     </CardContent>
                   </Card>
@@ -414,9 +461,70 @@ const Debtors = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={ordersDialogOpen} onOpenChange={setOrdersDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Orders for {ordersDialogDebtor?.customer_name}
+              </DialogTitle>
+            </DialogHeader>
+            {ordersDialogLoading ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">Loading orders…</p>
+            ) : ordersDialogData.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">
+                No linked orders found for this debt.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {ordersDialogData.map((o) => (
+                  <div key={o.id} className="rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <Link to={`/receipt/${o.id}`} className="font-semibold hover:underline">
+                          Order #{o.order_number}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(o.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge variant={o.payment_status === "paid" ? "secondary" : "destructive"}>
+                        {formatPrice(Number(o.total), ordersDialogDebtor?.currency)}
+                      </Badge>
+                    </div>
+                    {o.items.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-sm">
+                        {o.items.map((it: any, i: number) => (
+                          <li key={i} className="flex justify-between text-muted-foreground">
+                            <span>{it.quantity}× {it.menu_item_name}</span>
+                            <span className="font-mono">{formatPrice(Number(it.subtotal), ordersDialogDebtor?.currency)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span className="font-mono">
+                    {formatPrice(
+                      ordersDialogData.reduce((s, o) => s + Number(o.total), 0),
+                      ordersDialogDebtor?.currency
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOrdersDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
 };
 
 export default Debtors;
+

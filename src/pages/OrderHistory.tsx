@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle, RotateCcw } from "lucide-react";
+import { Receipt, Calendar, TrendingUp, Edit, Trash2, Archive, Printer, Clock, DollarSign, CheckCircle, XCircle, Globe, Wallet, AlertTriangle, RotateCcw, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format, parseISO } from "date-fns";
 import { formatDateFull, dailyShareOfMonthly } from "@/lib/date-format";
@@ -150,6 +151,7 @@ const OrderHistory = () => {
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [orderItemsMap, setOrderItemsMap] = useState<Record<string, string[]>>({});
+  const [orderSearch, setOrderSearch] = useState("");
 
   // Build set of categories for the selected tag
   const taggedCategories = useMemo(() => {
@@ -196,6 +198,13 @@ const OrderHistory = () => {
   // Filter orders by selected tag (via category) AND payment status
   const filterOrders = (orders: Order[]) => {
     let result = orders;
+    const q = orderSearch.trim().toLowerCase();
+    if (q) {
+      result = result.filter(o =>
+        (o.order_number || "").toLowerCase().includes(q) ||
+        (o.customer_name || "").toLowerCase().includes(q)
+      );
+    }
     if (paymentFilter !== "all") {
       result = result.filter(o => (o.payment_status || "paid") === paymentFilter);
     }
@@ -209,8 +218,9 @@ const OrderHistory = () => {
     });
   };
 
-  const filteredRecentOrders = useMemo(() => filterOrders(recentOrders), [recentOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
-  const filteredArchivedOrders = useMemo(() => filterOrders(archivedOrders), [archivedOrders, selectedTag, paymentFilter, orderItemsMap, menuItemCategoryMap, taggedCategories]);
+
+  const filteredRecentOrders = useMemo(() => filterOrders(recentOrders), [recentOrders, selectedTag, paymentFilter, orderSearch, orderItemsMap, menuItemCategoryMap, taggedCategories]);
+  const filteredArchivedOrders = useMemo(() => filterOrders(archivedOrders), [archivedOrders, selectedTag, paymentFilter, orderSearch, orderItemsMap, menuItemCategoryMap, taggedCategories]);
 
   const [unpaidDialogOpen, setUnpaidDialogOpen] = useState(false);
   const [unpaidTarget, setUnpaidTarget] = useState<Order | null>(null);
@@ -628,8 +638,18 @@ const OrderHistory = () => {
           </Card>}
 
         {!loading && (recentOrders.length > 0 || archivedOrders.length > 0 || dailyReports.length > 0) && <Tabs defaultValue="recent" className="space-y-4">
-            {/* Tag + Payment Filters */}
+            {/* Search + Tag + Payment Filters */}
             <div className="flex flex-col gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={orderSearch}
+                  onChange={(e) => setOrderSearch(e.target.value.slice(0, 50))}
+                  placeholder="Search by order number or customer…"
+                  className="pl-9"
+                  maxLength={50}
+                />
+              </div>
               {menuTags.length > 0 && (() => {
                 const uniqueNames = [...new Set((menuTags as any[]).map(t => t.name))].sort();
                 return (
