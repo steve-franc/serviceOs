@@ -80,6 +80,10 @@ const Debtors = () => {
     }
   };
 
+  useEffect(() => {
+    if (restaurantId) fetchDebtors();
+  }, [restaurantId]);
+
 
   const fetchDebtors = async () => {
     if (!restaurantId) return;
