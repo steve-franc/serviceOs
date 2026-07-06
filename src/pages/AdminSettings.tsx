@@ -386,6 +386,11 @@ const AdminSettings = () => {
               </Card>
             )}
 
+            {panel === "alerts" && (
+              <AutoEndOfDaySettingsCard restaurantId={restaurantId} readOnly={readOnly} />
+            )}
+
+
             {panel === "branding" && restaurantId && (
               <>
                 <Card>
