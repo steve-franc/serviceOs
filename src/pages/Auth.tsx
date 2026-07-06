@@ -58,7 +58,8 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !showNewPassword) {
-      navigate("/order/create");
+      const next = new URLSearchParams(window.location.search).get("next");
+      navigate(next && next.startsWith("/") && !next.startsWith("//") ? next : "/order/create");
     }
   }, [user, navigate, showNewPassword]);
   // Read invite from ?join=<restaurantId> and resolve name
@@ -92,7 +93,8 @@ const Auth = () => {
       });
       if (error) throw error;
       toast.success("Signed in successfully!");
-      navigate("/order/create");
+      const next = new URLSearchParams(window.location.search).get("next");
+      navigate(next && next.startsWith("/") && !next.startsWith("//") ? next : "/order/create");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
     } finally {
