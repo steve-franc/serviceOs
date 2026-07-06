@@ -117,6 +117,12 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user) {
+    // Honor a same-origin ?next= redirect (e.g. OAuth consent flow) before the role-based default.
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      return <Navigate to={next} replace />;
+    }
     const dest = isSuperadmin ? "/superadmin" : isInvestor ? "/reports" : "/order/create";
     return <Navigate to={dest} replace />;
   }
