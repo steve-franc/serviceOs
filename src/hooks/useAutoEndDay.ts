@@ -54,6 +54,7 @@ export function useAutoEndDay() {
     };
 
     const tryEndDay = async (opts: { catchUp: boolean }) => {
+      if (disabled) return;
       try {
         const now = new Date();
         const cutoffBoundary = lastCutoff(now);
