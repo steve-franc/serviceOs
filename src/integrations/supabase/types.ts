@@ -716,6 +716,7 @@ export type Database = {
       restaurant_settings: {
         Row: {
           allow_public_orders: boolean
+          auto_end_of_day_enabled: boolean
           brand_accent: string | null
           brand_background: string | null
           brand_primary: string | null
@@ -724,8 +725,10 @@ export type Database = {
           fixed_daily_bills: number
           fixed_monthly_expenses: number
           id: string
+          last_manual_end_at: string | null
           logo_url: string | null
           monthly_bills: Json | null
+          next_scheduled_end_at: string | null
           notify_low_margin: boolean
           notify_low_stock: boolean
           notify_new_order: boolean
@@ -740,6 +743,7 @@ export type Database = {
         }
         Insert: {
           allow_public_orders?: boolean
+          auto_end_of_day_enabled?: boolean
           brand_accent?: string | null
           brand_background?: string | null
           brand_primary?: string | null
@@ -748,8 +752,10 @@ export type Database = {
           fixed_daily_bills?: number
           fixed_monthly_expenses?: number
           id?: string
+          last_manual_end_at?: string | null
           logo_url?: string | null
           monthly_bills?: Json | null
+          next_scheduled_end_at?: string | null
           notify_low_margin?: boolean
           notify_low_stock?: boolean
           notify_new_order?: boolean
@@ -764,6 +770,7 @@ export type Database = {
         }
         Update: {
           allow_public_orders?: boolean
+          auto_end_of_day_enabled?: boolean
           brand_accent?: string | null
           brand_background?: string | null
           brand_primary?: string | null
@@ -772,8 +779,10 @@ export type Database = {
           fixed_daily_bills?: number
           fixed_monthly_expenses?: number
           id?: string
+          last_manual_end_at?: string | null
           logo_url?: string | null
           monthly_bills?: Json | null
+          next_scheduled_end_at?: string | null
           notify_low_margin?: boolean
           notify_low_stock?: boolean
           notify_new_order?: boolean
