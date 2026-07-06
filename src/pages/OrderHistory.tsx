@@ -576,9 +576,10 @@ const OrderHistory = () => {
   return <>
       <div className="mx-auto space-y-6" style={{ maxWidth: '1100px' }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+          <div className="space-y-2">
             <h2 className="text-3xl font-bold">Order History</h2>
             <p className="text-muted-foreground">Manage and track all orders. The day closes automatically at 11:59 PM.</p>
+            <AutoEndOfDayBadge />
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:shrink-0">
             {isManager && (
