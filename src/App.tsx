@@ -14,6 +14,7 @@ import { PageSkeleton } from "./components/PageSkeleton";
 
 // Lazy-load all pages for faster initial load
 const Auth = lazy(() => import("./pages/Auth"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const MenuManagement = lazy(() => import("./pages/MenuManagement"));
@@ -140,6 +141,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
               <Route path="/auth" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
               <Route path="/order/:restaurantId" element={<PublicOrder />} />
               <Route path="/receipt/:id" element={<Receipt />} />
               {/* Persistent layout — sidebar + header are mounted ONCE and never remount on tab switch */}
