@@ -32,6 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useTabState } from "@/hooks/useTabState";
 import { applyBrandTheme, hexToHsl, hslToHex, hslString, parseHslString } from "@/lib/brand-theme";
 import { Paintbrush } from "lucide-react";
+import AutoEndOfDaySettingsCard from "@/components/AutoEndOfDaySettingsCard";
 
 type PanelId = "bills" | "alerts" | "branding" | "public" | "payment";
 
@@ -385,6 +386,11 @@ const AdminSettings = () => {
                 </CardContent>
               </Card>
             )}
+
+            {panel === "alerts" && (
+              <AutoEndOfDaySettingsCard restaurantId={restaurantId} readOnly={readOnly} />
+            )}
+
 
             {panel === "branding" && restaurantId && (
               <>

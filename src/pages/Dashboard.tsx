@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, ShoppingCart, CalendarClock, Users, ArrowUpRight } from "lucide-react";
 import { formatPrice as formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
+import { AutoEndOfDayBadge } from "@/components/AutoEndOfDayBadge";
 
 function StatCard({
   label, value, change, changeKind, Icon, accent,
@@ -132,6 +133,9 @@ const Overview = () => {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <AutoEndOfDayBadge />
+      </div>
       {/* Stat Cards */}
       <div className="grid grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard

@@ -23,6 +23,7 @@ import { stopAlarm } from "@/components/NotificationSound";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
 import { sumPaidRevenue, sumUnpaidRevenue } from "@/lib/revenue";
 import UnpaidOrderDialog from "@/components/UnpaidOrderDialog";
+import { AutoEndOfDayBadge } from "@/components/AutoEndOfDayBadge";
 
 interface DailyReportInfo {
   id: string;
@@ -393,6 +394,17 @@ const OrderHistory = () => {
       });
       if (reportError) throw reportError;
 
+      // Silent auto-restart: clear any early-close block for tonight's cron,
+      // record the manual close, and never surface a "paused" state to the user.
+      if (restaurantId) {
+        await supabase.rpc("reset_auto_day_end", { _restaurant_id: restaurantId });
+        await supabase
+          .from("restaurant_settings")
+          .update({ auto_end_of_day_enabled: true, last_manual_end_at: new Date().toISOString() })
+          .eq("restaurant_id", restaurantId);
+        queryClient.invalidateQueries({ queryKey: ["restaurant-settings", restaurantId] });
+      }
+
       setDailyReport({
         total_orders: endDayPreview.paidCount,
         total_revenue: endDayPreview.paidRevenue,
@@ -402,7 +414,7 @@ const OrderHistory = () => {
       setShowEndDayConfirm(false);
       setEndDayPreview(null);
       setShowReport(true);
-      toast.success("Daily report generated successfully");
+      toast.success("Books closed. Auto end-of-day will resume tomorrow at 11:59 PM");
       invalidateOrders();
     } catch (error: any) {
       toast.error(error.message || "Failed to generate report");
@@ -564,9 +576,10 @@ const OrderHistory = () => {
   return <>
       <div className="mx-auto space-y-6" style={{ maxWidth: '1100px' }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+          <div className="space-y-2">
             <h2 className="text-3xl font-bold">Order History</h2>
             <p className="text-muted-foreground">Manage and track all orders. The day closes automatically at 11:59 PM.</p>
+            <AutoEndOfDayBadge />
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:shrink-0">
             {isManager && (
