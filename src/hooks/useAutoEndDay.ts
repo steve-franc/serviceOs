@@ -28,6 +28,17 @@ export function useAutoEndDay() {
   useEffect(() => {
     if (loading || !restaurantId || isInvestor) return;
 
+    let disabled = false;
+    // If the manager toggled auto end-of-day off, skip the poller entirely.
+    (async () => {
+      const { data } = await supabase
+        .from("restaurant_settings")
+        .select("auto_end_of_day_enabled")
+        .eq("restaurant_id", restaurantId)
+        .maybeSingle();
+      disabled = (data as any)?.auto_end_of_day_enabled === false;
+    })();
+
     let intervalId: number | undefined;
     let cancelled = false;
 
