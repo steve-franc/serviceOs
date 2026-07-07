@@ -388,6 +388,47 @@ export type Database = {
           },
         ]
       }
+      manual_close_log: {
+        Row: {
+          auto_restart_attempted: boolean
+          auto_restart_success: boolean | null
+          closed_at: string
+          created_at: string
+          error_message: string | null
+          id: string
+          restaurant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          auto_restart_attempted?: boolean
+          auto_restart_success?: boolean | null
+          closed_at?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          restaurant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          auto_restart_attempted?: boolean
+          auto_restart_success?: boolean | null
+          closed_at?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          restaurant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_close_log_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           advance_booking_days: number
