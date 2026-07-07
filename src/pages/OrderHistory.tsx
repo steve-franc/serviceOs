@@ -394,14 +394,65 @@ const OrderHistory = () => {
       });
       if (reportError) throw reportError;
 
-      // Silent auto-restart: clear any early-close block for tonight's cron,
-      // record the manual close, and never surface a "paused" state to the user.
+      // CRITICAL: restart the auto-end-of-day listener with explicit error
+      // handling so a silent failure can never leave a restaurant stuck
+      // without automatic nightly closes.
+      let rpcSuccess = false;
+      let rpcErrorMsg: string | null = null;
       if (restaurantId) {
-        await supabase.rpc("reset_auto_day_end", { _restaurant_id: restaurantId });
-        await supabase
-          .from("restaurant_settings")
-          .update({ auto_end_of_day_enabled: true, last_manual_end_at: new Date().toISOString() })
-          .eq("restaurant_id", restaurantId);
+        // eslint-disable-next-line no-console
+        console.log("🔄 Resetting auto-end-of-day listener for", restaurantId);
+        try {
+          const rpcResult = await supabase.rpc("reset_auto_day_end", { _restaurant_id: restaurantId });
+          const rpcData: any = rpcResult.data;
+          if (rpcResult.error) {
+            rpcErrorMsg = rpcResult.error.message;
+            console.error("❌ RPC reset_auto_day_end failed:", rpcResult.error);
+            toast.error(`⚠️ Failed to restart auto close: ${rpcResult.error.message}`);
+          } else if (rpcData && typeof rpcData === "object" && rpcData.error) {
+            rpcErrorMsg = String(rpcData.error);
+            console.error("❌ RPC reset_auto_day_end returned error:", rpcData.error);
+            toast.error(`⚠️ Failed to restart auto close: ${rpcData.error}`);
+          } else {
+            rpcSuccess = true;
+            console.log("✅ RPC reset_auto_day_end succeeded", rpcData);
+          }
+        } catch (rpcErr: any) {
+          rpcErrorMsg = rpcErr?.message || String(rpcErr);
+          console.error("❌ RPC call threw error:", rpcErr);
+          toast.error(`⚠️ RPC failed: ${rpcErrorMsg}`);
+        }
+
+        // Always re-enable + timestamp the manual close, even if RPC failed.
+        try {
+          const settingsResult = await supabase
+            .from("restaurant_settings")
+            .update({ auto_end_of_day_enabled: true, last_manual_end_at: new Date().toISOString() })
+            .eq("restaurant_id", restaurantId);
+          if (settingsResult.error) {
+            console.error("❌ Settings update failed:", settingsResult.error);
+            toast.error(`⚠️ Settings update failed: ${settingsResult.error.message}`);
+          } else {
+            console.log("✅ Auto-end-of-day re-enabled");
+          }
+        } catch (settingsErr: any) {
+          console.error("❌ Settings update threw error:", settingsErr);
+        }
+
+        // Best-effort audit log; ignore any error.
+        try {
+          const { data: { user: u } } = await supabase.auth.getUser();
+          await supabase.from("manual_close_log").insert({
+            restaurant_id: restaurantId,
+            user_id: u?.id ?? null,
+            auto_restart_attempted: true,
+            auto_restart_success: rpcSuccess,
+            error_message: rpcErrorMsg,
+          });
+        } catch (logErr) {
+          console.error("manual_close_log insert failed:", logErr);
+        }
+
         queryClient.invalidateQueries({ queryKey: ["restaurant-settings", restaurantId] });
       }
 
@@ -414,7 +465,11 @@ const OrderHistory = () => {
       setShowEndDayConfirm(false);
       setEndDayPreview(null);
       setShowReport(true);
-      toast.success("Books closed. Auto end-of-day will resume tomorrow at 11:59 PM");
+      if (rpcSuccess) {
+        toast.success("✅ Books closed. Auto end-of-day will resume tomorrow at 11:59 PM");
+      } else {
+        toast.warning("⚠️ Books closed, but auto-restart may have failed. Contact support if tomorrow's close doesn't happen.");
+      }
       invalidateOrders();
     } catch (error: any) {
       toast.error(error.message || "Failed to generate report");
