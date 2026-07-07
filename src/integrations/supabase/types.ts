@@ -1316,6 +1316,10 @@ export type Database = {
         Args: { _restaurant_id: string }
         Returns: Json
       }
+      close_missing_days_for_restaurant: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
       create_public_order:
         | {
             Args: {
