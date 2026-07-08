@@ -1395,6 +1395,37 @@ export type Database = {
         Args: { _restaurant_id: string }
         Returns: string
       }
+      get_orders_for_report: {
+        Args: { _report_id: string }
+        Returns: {
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_location: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          discount_amount: number
+          edited_at: string | null
+          id: string
+          is_public_order: boolean
+          notes: string | null
+          order_number: string
+          paid_at: string | null
+          paid_via_debtor_id: string | null
+          payment_method: string
+          payment_status: string
+          restaurant_id: string | null
+          staff_id: string
+          status: string
+          total: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_public_receipt: { Args: { _order_id: string }; Returns: Json }
       get_public_restaurant_info: {
         Args: { _restaurant_id: string }
