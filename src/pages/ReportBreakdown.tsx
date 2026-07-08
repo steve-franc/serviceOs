@@ -85,7 +85,7 @@ const ReportBreakdown = () => {
         .single();
       if (reportError || !report) throw new Error("Report not found");
 
-      setReportDate(report.created_at);
+      setReportDate(report.report_date || report.created_at);
       setTotalOrders(report.total_orders);
       setTotalRevenue(Number(report.total_revenue));
 
