@@ -1320,6 +1320,15 @@ export type Database = {
         Args: { _restaurant_id: string }
         Returns: Json
       }
+      correct_daily_report_dates: {
+        Args: never
+        Returns: {
+          new_report_date: string
+          old_report_date: string
+          order_count: number
+          report_id: string
+        }[]
+      }
       create_public_order:
         | {
             Args: {
