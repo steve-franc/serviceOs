@@ -89,35 +89,56 @@ const ReportBreakdown = () => {
       setTotalOrders(report.total_orders);
       setTotalRevenue(Number(report.total_revenue));
 
-      const { data: allReports } = await supabase
-        .from("daily_reports")
-        .select("id, created_at")
+      // Business-day window derived from report_date + restaurant timezone.
+      // Using report_date (not created_at deltas between reports) so force-closed
+      // reports — which can share nearly-identical created_at values — still
+      // resolve to the correct set of orders/expenses/notes.
+      const { data: rsRow } = await supabase
+        .from("restaurant_settings")
+        .select("timezone, fixed_monthly_expenses")
         .eq("restaurant_id", report.restaurant_id)
-        .order("created_at", { ascending: false });
+        .maybeSingle();
+      const tz = (rsRow as any)?.timezone || "Europe/Istanbul";
 
-      const reportIndex = allReports?.findIndex(r => r.id === id) ?? -1;
-      const prevReport = allReports?.[reportIndex + 1];
-      const prevCutoff = prevReport ? new Date(prevReport.created_at) : new Date(0);
-      const reportTimestamp = new Date(report.created_at);
+      // Compute UTC bounds for the report's local business day.
+      const tzDayBoundsUtc = (dateStr: string, timeZone: string) => {
+        // Anchor: 12:00Z of the target civil date, then correct by the tz offset at that instant.
+        const anchor = new Date(`${dateStr}T12:00:00Z`);
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone,
+          hour12: false,
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit",
+        }).formatToParts(anchor);
+        const map: Record<string, string> = {};
+        parts.forEach(p => { if (p.type !== "literal") map[p.type] = p.value; });
+        const asUtc = Date.UTC(+map.year, +map.month - 1, +map.day, +map.hour, +map.minute, +map.second);
+        const offsetMs = asUtc - anchor.getTime(); // tz - UTC at anchor
+        const startUtcMs = Date.UTC(
+          +dateStr.slice(0, 4),
+          +dateStr.slice(5, 7) - 1,
+          +dateStr.slice(8, 10)
+        ) - offsetMs;
+        return {
+          start: new Date(startUtcMs).toISOString(),
+          end: new Date(startUtcMs + 24 * 60 * 60 * 1000).toISOString(),
+        };
+      };
+      const { start: dayStart, end: dayEnd } = tzDayBoundsUtc(report.report_date, tz);
 
       // Fetch orders, expenses, tags, menu items, settings, workday notes in parallel
       const [ordersResult, expensesResult, tagsResult, menuResult, settingsResult, notesResult] = await Promise.all([
-        // Orders that count for this report = paid orders whose paid_at falls in window
-        // OR unpaid/other orders created in window. This way late-paid orders surface here.
-        supabase.from("orders").select("*").eq("restaurant_id", report.restaurant_id)
-          .or(
-            `and(payment_status.eq.paid,paid_at.gte.${prevCutoff.toISOString()},paid_at.lt.${reportTimestamp.toISOString()}),` +
-            `and(payment_status.neq.paid,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()})`
-          )
-          .order("created_at", { ascending: false }),
+        // Server-side RPC returns orders bucketed by the report's business day
+        // (paid_at for paid orders, created_at for unpaid) in the restaurant tz.
+        supabase.rpc("get_orders_for_report", { _report_id: id }),
         supabase.from("daily_expenses").select("*").eq("restaurant_id", report.restaurant_id)
-          .or(`and(applies_to_report_id.is.null,created_at.gte.${prevCutoff.toISOString()},created_at.lt.${reportTimestamp.toISOString()}),applies_to_report_id.eq.${id}`)
+          .or(`and(applies_to_report_id.is.null,created_at.gte.${dayStart},created_at.lt.${dayEnd}),applies_to_report_id.eq.${id}`)
           .order("created_at", { ascending: false }),
         supabase.from("menu_tags").select("*").eq("restaurant_id", report.restaurant_id),
         supabase.from("menu_items").select("name, category").eq("restaurant_id", report.restaurant_id),
-        supabase.from("restaurant_settings").select("fixed_monthly_expenses").eq("restaurant_id", report.restaurant_id).maybeSingle(),
+        Promise.resolve({ data: rsRow }),
         supabase.from("workday_notes").select("id, body, staff_id, created_at").eq("restaurant_id", report.restaurant_id)
-          .gte("created_at", prevCutoff.toISOString()).lt("created_at", reportTimestamp.toISOString())
+          .gte("created_at", dayStart).lt("created_at", dayEnd)
           .order("created_at", { ascending: true }),
       ]);
 
