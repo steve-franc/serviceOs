@@ -421,15 +421,17 @@ const Admin = () => {
 
         {/* Staff Management — state-based tab switcher to avoid remounts */}
         <div className="space-y-4">
-          <div className="inline-flex p-[3px] gap-[3px] bg-muted rounded-lg border border-border flex-wrap">
+          <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto overflow-y-hidden scrollbar-hide py-2">
             {staffTabs.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setStaffTab(t.id)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150 min-h-[36px] ${
-                  staffTab === t.id ? "bg-background text-foreground shadow-sm" : "bg-transparent text-muted-foreground hover:text-foreground"
-                }`}
+                className={`inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-4 py-2 text-[13px] font-medium ring-offset-background transition-all min-h-9 select-none flex-shrink-0 ${
+                  staffTab === t.id
+                    ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground border-transparent shadow-card"
+                    : "text-muted-foreground hover:border-primary/60 hover:text-primary hover:bg-primary/5"
+                } max-[420px]:px-3 max-[420px]:py-1.5 max-[420px]:text-[11px] max-[420px]:min-h-8`}
               >
                 {t.label}
               </button>
