@@ -55,6 +55,78 @@ export type Database = {
           },
         ]
       }
+      bills: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          edited_at: string | null
+          edited_by: string | null
+          id: string
+          marked_paid_at: string | null
+          marked_paid_by: string | null
+          original_amount: number | null
+          payment_status: string
+          restaurant_id: string
+          supplier_id: string | null
+          supplier_name: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
+          id?: string
+          marked_paid_at?: string | null
+          marked_paid_by?: string | null
+          original_amount?: number | null
+          payment_status?: string
+          restaurant_id: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
+          id?: string
+          marked_paid_at?: string | null
+          marked_paid_by?: string | null
+          original_amount?: number | null
+          payment_status?: string
+          restaurant_id?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcast_views: {
         Row: {
           broadcast_id: string
@@ -904,7 +976,10 @@ export type Database = {
           id: string
           inventory_item_id: string
           invoice_image_url: string | null
+          marked_paid_by: string | null
           notes: string | null
+          paid_at: string | null
+          payment_status: string
           purchase_date: string
           quantity_purchased: number
           restaurant_id: string
@@ -921,7 +996,10 @@ export type Database = {
           id?: string
           inventory_item_id: string
           invoice_image_url?: string | null
+          marked_paid_by?: string | null
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string
           purchase_date?: string
           quantity_purchased: number
           restaurant_id: string
@@ -938,7 +1016,10 @@ export type Database = {
           id?: string
           inventory_item_id?: string
           invoice_image_url?: string | null
+          marked_paid_by?: string | null
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string
           purchase_date?: string
           quantity_purchased?: number
           restaurant_id?: string

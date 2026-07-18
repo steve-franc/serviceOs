@@ -14,10 +14,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { formatPrice, formatPriceCompact } from "@/lib/currency";
-import { Plus, TrendingUp, TrendingDown, Minus, Package, Truck, Receipt, AlertTriangle, BarChart3, Trash2, ImageIcon, ScanLine } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Minus, Package, Truck, Receipt, AlertTriangle, BarChart3, Trash2, ImageIcon, ScanLine, CheckCircle2, Clock, FileText } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ReceiptScanner, type ScannedReceipt } from "@/components/ReceiptScanner";
+import { BillsSection } from "@/components/BillsSection";
 
 interface Supplier {
   id: string;
@@ -49,6 +50,7 @@ interface RestockEntry {
   invoice_image_url: string | null;
   notes: string | null;
   created_at: string;
+  payment_status?: "paid" | "unpaid";
 }
 
 const TrendArrow = ({ pct }: { pct: number | null }) => {
@@ -94,6 +96,7 @@ const Restock = () => {
     purchase_date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     invoice_file: null as File | null,
+    payment_status: "paid" as "paid" | "unpaid",
   });
 
   const [supplierForm, setSupplierForm] = useState({
@@ -153,6 +156,7 @@ const Restock = () => {
       purchase_date: format(new Date(), "yyyy-MM-dd"),
       notes: "",
       invoice_file: null,
+      payment_status: "paid",
     });
     setRestockOpen(true);
   };
@@ -192,7 +196,10 @@ const Restock = () => {
         invoice_image_url: invoice_url,
         notes: form.notes || null,
         created_by: userData.user?.id,
-      });
+        payment_status: form.payment_status,
+        paid_at: form.payment_status === "paid" ? new Date().toISOString() : null,
+        marked_paid_by: form.payment_status === "paid" ? userData.user?.id : null,
+      } as any);
       if (error) throw error;
       toast.success("Restock saved — expense logged & stock updated");
       setRestockOpen(false);
@@ -222,6 +229,23 @@ const Restock = () => {
     setSupplierForm({ supplier_name: "", contact_person: "", phone_number: "", email: "", whatsapp_number: "", address: "", notes: "" });
     setSupplierOpen(false);
     if (restockOpen) setForm((p) => ({ ...p, supplier_id: data.id }));
+  };
+
+  const toggleEntryPaid = async (e: RestockEntry) => {
+    const next = e.payment_status === "unpaid" ? "paid" : "unpaid";
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    const { error } = await supabase
+      .from("restock_entries")
+      .update({
+        payment_status: next,
+        paid_at: next === "paid" ? new Date().toISOString() : null,
+        marked_paid_by: next === "paid" ? uid : null,
+      } as any)
+      .eq("id", e.id);
+    if (error) return toast.error(error.message);
+    toast.success(next === "paid" ? "Marked paid" : "Marked unpaid");
+    await load();
   };
 
   const deleteEntry = async (id: string) => {
@@ -470,6 +494,7 @@ const Restock = () => {
           <TabsTrigger value="items"><Package className="h-4 w-4 mr-2" />Items</TabsTrigger>
           <TabsTrigger value="suppliers"><Truck className="h-4 w-4 mr-2" />Suppliers</TabsTrigger>
           <TabsTrigger value="history"><Receipt className="h-4 w-4 mr-2" />History</TabsTrigger>
+          <TabsTrigger value="bills"><FileText className="h-4 w-4 mr-2" />Bills</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW */}
@@ -683,13 +708,14 @@ const Restock = () => {
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead className="text-right">Unit price</TableHead>
                       <TableHead className="text-right">Total</TableHead>
+                      <TableHead>Payment</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>}
+                    {loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>}
                     {!loading && entries.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No restocks logged</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No restocks logged</TableCell></TableRow>
                     )}
                     {entries.map((e) => (
                       <TableRow key={e.id}>
@@ -699,6 +725,15 @@ const Restock = () => {
                         <TableCell className="text-right">{e.quantity_purchased} {e.unit_type}</TableCell>
                         <TableCell className="text-right font-mono">{formatPrice(Number(e.unit_price))}</TableCell>
                         <TableCell className="text-right font-mono font-semibold">{formatPrice(Number(e.total_cost))}</TableCell>
+                        <TableCell>
+                          <button type="button" onClick={() => canEdit && toggleEntryPaid(e)} disabled={!canEdit} className="focus:outline-none">
+                            {e.payment_status === "unpaid" ? (
+                              <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1"><Clock className="h-3 w-3" />Unpaid</Badge>
+                            ) : (
+                              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 gap-1"><CheckCircle2 className="h-3 w-3" />Paid</Badge>
+                            )}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             {e.invoice_image_url && (
@@ -740,6 +775,10 @@ const Restock = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="bills">
+          <BillsSection suppliers={suppliers} />
         </TabsContent>
       </Tabs>
 
@@ -802,6 +841,17 @@ const Restock = () => {
             <div>
               <Label>Purchase date</Label>
               <Input type="date" value={form.purchase_date} onChange={(e) => setForm((p) => ({ ...p, purchase_date: e.target.value }))} />
+            </div>
+
+            <div>
+              <Label>Payment status</Label>
+              <Select value={form.payment_status} onValueChange={(v: "paid" | "unpaid") => setForm((p) => ({ ...p, payment_status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">✓ Paid</SelectItem>
+                  <SelectItem value="unpaid">⏳ Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
