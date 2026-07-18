@@ -231,6 +231,23 @@ const Restock = () => {
     if (restockOpen) setForm((p) => ({ ...p, supplier_id: data.id }));
   };
 
+  const toggleEntryPaid = async (e: RestockEntry) => {
+    const next = e.payment_status === "unpaid" ? "paid" : "unpaid";
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    const { error } = await supabase
+      .from("restock_entries")
+      .update({
+        payment_status: next,
+        paid_at: next === "paid" ? new Date().toISOString() : null,
+        marked_paid_by: next === "paid" ? uid : null,
+      } as any)
+      .eq("id", e.id);
+    if (error) return toast.error(error.message);
+    toast.success(next === "paid" ? "Marked paid" : "Marked unpaid");
+    await load();
+  };
+
   const deleteEntry = async (id: string) => {
     if (!confirm("Delete this restock entry? It will reverse the inventory addition and remove the expense.")) return;
     const { error } = await supabase.from("restock_entries").delete().eq("id", id);
