@@ -766,6 +766,10 @@ const Restock = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="bills">
+          <BillsSection suppliers={suppliers} />
+        </TabsContent>
       </Tabs>
 
       {/* RESTOCK DIALOG */}
