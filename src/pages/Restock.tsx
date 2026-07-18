@@ -844,6 +844,17 @@ const Restock = () => {
             </div>
 
             <div>
+              <Label>Payment status</Label>
+              <Select value={form.payment_status} onValueChange={(v: "paid" | "unpaid") => setForm((p) => ({ ...p, payment_status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">✓ Paid</SelectItem>
+                  <SelectItem value="unpaid">⏳ Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label>Invoice image (optional)</Label>
               <Input type="file" accept="image/*" onChange={(e) => setForm((p) => ({ ...p, invoice_file: e.target.files?.[0] || null }))} />
             </div>
