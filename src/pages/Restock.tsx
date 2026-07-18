@@ -156,6 +156,7 @@ const Restock = () => {
       purchase_date: format(new Date(), "yyyy-MM-dd"),
       notes: "",
       invoice_file: null,
+      payment_status: "paid",
     });
     setRestockOpen(true);
   };
