@@ -708,6 +708,7 @@ const Restock = () => {
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead className="text-right">Unit price</TableHead>
                       <TableHead className="text-right">Total</TableHead>
+                      <TableHead>Payment</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
