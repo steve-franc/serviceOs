@@ -196,7 +196,10 @@ const Restock = () => {
         invoice_image_url: invoice_url,
         notes: form.notes || null,
         created_by: userData.user?.id,
-      });
+        payment_status: form.payment_status,
+        paid_at: form.payment_status === "paid" ? new Date().toISOString() : null,
+        marked_paid_by: form.payment_status === "paid" ? userData.user?.id : null,
+      } as any);
       if (error) throw error;
       toast.success("Restock saved — expense logged & stock updated");
       setRestockOpen(false);
