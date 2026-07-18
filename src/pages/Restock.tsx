@@ -96,6 +96,7 @@ const Restock = () => {
     purchase_date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     invoice_file: null as File | null,
+    payment_status: "paid" as "paid" | "unpaid",
   });
 
   const [supplierForm, setSupplierForm] = useState({
