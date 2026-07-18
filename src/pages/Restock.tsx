@@ -50,6 +50,7 @@ interface RestockEntry {
   invoice_image_url: string | null;
   notes: string | null;
   created_at: string;
+  payment_status?: "paid" | "unpaid";
 }
 
 const TrendArrow = ({ pct }: { pct: number | null }) => {
