@@ -494,6 +494,7 @@ const Restock = () => {
           <TabsTrigger value="items"><Package className="h-4 w-4 mr-2" />Items</TabsTrigger>
           <TabsTrigger value="suppliers"><Truck className="h-4 w-4 mr-2" />Suppliers</TabsTrigger>
           <TabsTrigger value="history"><Receipt className="h-4 w-4 mr-2" />History</TabsTrigger>
+          <TabsTrigger value="bills"><FileText className="h-4 w-4 mr-2" />Bills</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW */}
