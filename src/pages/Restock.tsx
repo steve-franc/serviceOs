@@ -713,9 +713,9 @@ const Restock = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>}
+                    {loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>}
                     {!loading && entries.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No restocks logged</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No restocks logged</TableCell></TableRow>
                     )}
                     {entries.map((e) => (
                       <TableRow key={e.id}>
@@ -725,6 +725,15 @@ const Restock = () => {
                         <TableCell className="text-right">{e.quantity_purchased} {e.unit_type}</TableCell>
                         <TableCell className="text-right font-mono">{formatPrice(Number(e.unit_price))}</TableCell>
                         <TableCell className="text-right font-mono font-semibold">{formatPrice(Number(e.total_cost))}</TableCell>
+                        <TableCell>
+                          <button type="button" onClick={() => canEdit && toggleEntryPaid(e)} disabled={!canEdit} className="focus:outline-none">
+                            {e.payment_status === "unpaid" ? (
+                              <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1"><Clock className="h-3 w-3" />Unpaid</Badge>
+                            ) : (
+                              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 gap-1"><CheckCircle2 className="h-3 w-3" />Paid</Badge>
+                            )}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             {e.invoice_image_url && (
