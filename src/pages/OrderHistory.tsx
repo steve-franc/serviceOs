@@ -199,12 +199,29 @@ const OrderHistory = () => {
   // Filter orders by selected tag (via category) AND payment status
   const filterOrders = (orders: Order[]) => {
     let result = orders;
-    const q = orderSearch.trim().toLowerCase();
+    const raw = orderSearch.trim();
+    const q = raw.toLowerCase();
     if (q) {
-      result = result.filter(o =>
-        (o.order_number || "").toLowerCase().includes(q) ||
-        (o.customer_name || "").toLowerCase().includes(q)
-      );
+      // Relevance scoring — only the single best match is shown.
+      const scored = result
+        .map((o) => {
+          const num = (o.order_number || "").toString();
+          const numLower = num.toLowerCase();
+          const name = (o.customer_name || "").toLowerCase();
+          const phone = ((o as any).customer_phone || "").toString();
+          let score = 0;
+          if (numLower === q) score = 1000;
+          else if (name && name === q) score = 900;
+          else if (numLower.startsWith(q)) score = 500;
+          else if (name.startsWith(q)) score = 400;
+          else if (numLower.includes(q)) score = 300;
+          else if (name.includes(q)) score = 200;
+          else if (phone.includes(raw)) score = 150;
+          return { order: o, score };
+        })
+        .filter((s) => s.score > 0)
+        .sort((a, b) => b.score - a.score);
+      result = scored.length ? [scored[0].order] : [];
     }
     if (paymentFilter !== "all") {
       result = result.filter(o => (o.payment_status || "paid") === paymentFilter);
