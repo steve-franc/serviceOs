@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
+import { useRestaurantSettings } from "@/hooks/useQueries";
+import { parsePaymentMethods, getMethodNames } from "@/lib/payment-methods";
 import { useUserRole } from "@/hooks/useRestaurantAndRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,18 +57,6 @@ interface RestockEntry {
   payment_reference?: string | null;
 }
 
-const PAYMENT_METHODS = [
-  { value: "cash", label: "💵 Cash" },
-  { value: "bank_transfer", label: "🏦 Bank Transfer" },
-  { value: "check", label: "📋 Check" },
-  { value: "credit", label: "📊 Credit" },
-  { value: "mobile_money", label: "📱 Mobile Money" },
-  { value: "other", label: "⋯ Other" },
-];
-
-const getPaymentMethodLabel = (method?: string | null) =>
-  PAYMENT_METHODS.find((m) => m.value === method)?.label || method || "";
-
 /** Shows a price change as both an absolute amount and a percentage. */
 const PriceChange = ({ oldPrice, newPrice }: { oldPrice: number | null; newPrice: number }) => {
   if (oldPrice === null || !isFinite(oldPrice) || oldPrice <= 0 || oldPrice === newPrice)
@@ -119,6 +109,8 @@ const TrendArrow = ({ pct }: { pct: number | null }) => {
 
 const Restock = () => {
   const { restaurantId } = useRestaurantContext();
+  const { data: restaurantSettings } = useRestaurantSettings();
+  const paymentMethods: string[] = getMethodNames(parsePaymentMethods((restaurantSettings as any)?.payment_methods));
   const { isManager, isOps } = useUserRole();
   const canEdit = isManager || isOps;
 
@@ -787,7 +779,7 @@ const Restock = () => {
                             )}
                           </button>
                           {e.payment_method && (
-                            <div className="mt-1 text-[11px] text-muted-foreground whitespace-nowrap">{getPaymentMethodLabel(e.payment_method)}</div>
+                            <div className="mt-1 text-[11px] text-muted-foreground whitespace-nowrap capitalize">{e.payment_method}</div>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -917,7 +909,7 @@ const Restock = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Not paid yet</SelectItem>
-                    {PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    {paymentMethods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
