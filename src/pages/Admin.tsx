@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkdayNotes } from "@/components/WorkdayNotes";
+import { StaffSalaries } from "@/components/StaffSalaries";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -440,6 +441,7 @@ const Admin = () => {
 
           {staffTab === "staff" && (
             <div className="space-y-4">
+              <StaffSalaries restaurantId={restaurantId} staff={staff} readOnly={readOnly} />
               {!readOnly && restaurantId && (
                 <Card>
                   <CardHeader>
