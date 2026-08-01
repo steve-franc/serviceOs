@@ -51,7 +51,54 @@ interface RestockEntry {
   notes: string | null;
   created_at: string;
   payment_status?: "paid" | "unpaid";
+  payment_method?: string | null;
+  payment_reference?: string | null;
 }
+
+const PAYMENT_METHODS = [
+  { value: "cash", label: "💵 Cash" },
+  { value: "bank_transfer", label: "🏦 Bank Transfer" },
+  { value: "check", label: "📋 Check" },
+  { value: "credit", label: "📊 Credit" },
+  { value: "mobile_money", label: "📱 Mobile Money" },
+  { value: "other", label: "⋯ Other" },
+];
+
+const getPaymentMethodLabel = (method?: string | null) =>
+  PAYMENT_METHODS.find((m) => m.value === method)?.label || method || "";
+
+/** Shows a price change as both an absolute amount and a percentage. */
+const PriceChange = ({ oldPrice, newPrice }: { oldPrice: number | null; newPrice: number }) => {
+  if (oldPrice === null || !isFinite(oldPrice) || oldPrice <= 0 || oldPrice === newPrice)
+    return (
+      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+        <Minus className="h-3 w-3" /> —
+      </span>
+    );
+  const change = newPrice - oldPrice;
+  const pct = (change / oldPrice) * 100;
+  const up = change > 0;
+  return (
+    <span className="inline-flex items-center gap-2 text-xs">
+      <span className="font-mono text-muted-foreground line-through">{formatPrice(oldPrice)}</span>
+      <span className="text-muted-foreground">→</span>
+      <span className="font-mono font-semibold">{formatPrice(newPrice)}</span>
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
+          up ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600"
+        }`}
+      >
+        {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+        {up ? "+" : "-"}
+        {formatPrice(Math.abs(change))}
+      </span>
+      <span className="text-muted-foreground">
+        ({up ? "+" : "-"}
+        {Math.abs(pct).toFixed(1)}%)
+      </span>
+    </span>
+  );
+};
 
 const TrendArrow = ({ pct }: { pct: number | null }) => {
   if (pct === null || pct === 0)
@@ -97,6 +144,8 @@ const Restock = () => {
     notes: "",
     invoice_file: null as File | null,
     payment_status: "paid" as "paid" | "unpaid",
+    payment_method: "",
+    payment_reference: "",
   });
 
   const [supplierForm, setSupplierForm] = useState({
@@ -157,6 +206,8 @@ const Restock = () => {
       notes: "",
       invoice_file: null,
       payment_status: "paid",
+      payment_method: "",
+      payment_reference: "",
     });
     setRestockOpen(true);
   };
@@ -199,6 +250,8 @@ const Restock = () => {
         payment_status: form.payment_status,
         paid_at: form.payment_status === "paid" ? new Date().toISOString() : null,
         marked_paid_by: form.payment_status === "paid" ? userData.user?.id : null,
+        payment_method: form.payment_method || null,
+        payment_reference: form.payment_reference || null,
       } as any);
       if (error) throw error;
       toast.success("Restock saved — expense logged & stock updated");
@@ -733,6 +786,9 @@ const Restock = () => {
                               <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 gap-1"><CheckCircle2 className="h-3 w-3" />Paid</Badge>
                             )}
                           </button>
+                          {e.payment_method && (
+                            <div className="mt-1 text-[11px] text-muted-foreground whitespace-nowrap">{getPaymentMethodLabel(e.payment_method)}</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -854,6 +910,23 @@ const Restock = () => {
               </Select>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Payment method</Label>
+                <Select value={form.payment_method || "none"} onValueChange={(v) => setForm((p) => ({ ...p, payment_method: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not paid yet</SelectItem>
+                    {PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Reference (optional)</Label>
+                <Input value={form.payment_reference} onChange={(e) => setForm((p) => ({ ...p, payment_reference: e.target.value }))} />
+              </div>
+            </div>
+
             <div>
               <Label>Invoice image (optional)</Label>
               <Input type="file" accept="image/*" onChange={(e) => setForm((p) => ({ ...p, invoice_file: e.target.files?.[0] || null }))} />
@@ -965,7 +1038,6 @@ const Restock = () => {
                 <div className="space-y-1">
                   {detailStat.entries.slice().reverse().slice(0, 10).map((e, idx, arr) => {
                     const prev = arr[idx + 1];
-                    const pct = prev && Number(prev.unit_price) > 0 ? ((Number(e.unit_price) - Number(prev.unit_price)) / Number(prev.unit_price)) * 100 : null;
                     return (
                       <div key={e.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
                         <div>
@@ -974,8 +1046,7 @@ const Restock = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <Badge variant="outline">{e.quantity_purchased} {e.unit_type}</Badge>
-                          <span className="font-mono font-semibold">{formatPrice(Number(e.unit_price))}</span>
-                          <TrendArrow pct={pct} />
+                          <PriceChange oldPrice={prev ? Number(prev.unit_price) : null} newPrice={Number(e.unit_price)} />
                         </div>
                       </div>
                     );

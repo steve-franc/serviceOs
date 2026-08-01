@@ -979,6 +979,8 @@ export type Database = {
           marked_paid_by: string | null
           notes: string | null
           paid_at: string | null
+          payment_method: string | null
+          payment_reference: string | null
           payment_status: string
           purchase_date: string
           quantity_purchased: number
@@ -999,6 +1001,8 @@ export type Database = {
           marked_paid_by?: string | null
           notes?: string | null
           paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
           payment_status?: string
           purchase_date?: string
           quantity_purchased: number
@@ -1019,6 +1023,8 @@ export type Database = {
           marked_paid_by?: string | null
           notes?: string | null
           paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
           payment_status?: string
           purchase_date?: string
           quantity_purchased?: number
@@ -1124,6 +1130,56 @@ export type Database = {
           },
           {
             foreignKeyName: "service_bookings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_salaries: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          paid_by: string | null
+          paid_date: string | null
+          payment_frequency: string
+          payment_status: string
+          restaurant_id: string
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          paid_by?: string | null
+          paid_date?: string | null
+          payment_frequency?: string
+          payment_status?: string
+          restaurant_id: string
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          paid_by?: string | null
+          paid_date?: string | null
+          payment_frequency?: string
+          payment_status?: string
+          restaurant_id?: string
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_salaries_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
