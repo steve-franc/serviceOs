@@ -1,0 +1,1 @@
+ALTER TABLE public.restock_entries DROP CONSTRAINT IF EXISTS restock_entries_payment_method_check;
