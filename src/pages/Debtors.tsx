@@ -186,9 +186,10 @@ const Debtors = () => {
       }
     }
 
-    // On resolve, always record a synthetic "Debt Settlement" order dated today
-    // so the paid amount lands in the current day's pool.
-    if (newResolved) {
+    // Only record a synthetic "Debt Settlement" order when there is NO source
+    // order — otherwise flipping the source order above already books the money
+    // into today's pool and we'd end up with two entries for one settlement.
+    if (newResolved && !debtor.source_order_id) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && restaurantId) {
@@ -212,6 +213,7 @@ const Debtors = () => {
         // best-effort; don't block the resolve action
       }
     }
+
 
     toast.success(
       newResolved
