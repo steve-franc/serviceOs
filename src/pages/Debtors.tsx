@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Check, X, Users, AlertCircle, Pencil, Search, Receipt as ReceiptIcon } from "lucide-react";
+import { Plus, Check, X, Users, AlertCircle, Pencil, Search, Receipt as ReceiptIcon, ChevronRight, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/lib/currency";
 import { useRestaurantContext } from "@/hooks/useRestaurantContext";
@@ -46,6 +46,38 @@ const Debtors = () => {
   const [ordersDialogDebtor, setOrdersDialogDebtor] = useState<Debtor | null>(null);
   const [ordersDialogLoading, setOrdersDialogLoading] = useState(false);
   const [ordersDialogData, setOrdersDialogData] = useState<any[]>([]);
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedLoading, setExpandedLoading] = useState(false);
+  const [ordersByDebtor, setOrdersByDebtor] = useState<Record<string, any[]>>({});
+
+  const fetchDebtorOrders = async (debtor: Debtor) => {
+    const orFilter = debtor.source_order_id
+      ? `id.eq.${debtor.source_order_id},paid_via_debtor_id.eq.${debtor.id}`
+      : `paid_via_debtor_id.eq.${debtor.id}`;
+    const { data } = await supabase
+      .from("orders")
+      .select("id, order_number, total, created_at, payment_status")
+      .or(orFilter)
+      .order("created_at", { ascending: false });
+    return data || [];
+  };
+
+  const toggleExpand = async (debtor: Debtor) => {
+    if (expandedId === debtor.id) { setExpandedId(null); return; }
+    setExpandedId(debtor.id);
+    if (!ordersByDebtor[debtor.id]) {
+      setExpandedLoading(true);
+      try {
+        const orders = await fetchDebtorOrders(debtor);
+        setOrdersByDebtor(prev => ({ ...prev, [debtor.id]: orders }));
+      } catch {
+        toast.error("Failed to load orders");
+      } finally {
+        setExpandedLoading(false);
+      }
+    }
+  };
 
   const openOrdersDialog = async (debtor: Debtor) => {
     setOrdersDialogDebtor(debtor);
@@ -359,6 +391,47 @@ const Debtors = () => {
                     </div>
 
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(debtor)}
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    {expandedId === debtor.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    {ordersByDebtor[debtor.id]
+                      ? `${ordersByDebtor[debtor.id].length} order(s)`
+                      : "View orders"}
+                  </button>
+
+                  {expandedId === debtor.id && (
+                    <div className="mt-3 rounded-lg border border-border p-3 space-y-2">
+                      {expandedLoading && !ordersByDebtor[debtor.id] ? (
+                        <p className="text-sm text-muted-foreground">Loading orders...</p>
+                      ) : (ordersByDebtor[debtor.id]?.length ?? 0) === 0 ? (
+                        <p className="text-sm text-muted-foreground">No linked orders for this debt.</p>
+                      ) : (
+                        <>
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Orders ({ordersByDebtor[debtor.id].length})
+                          </p>
+                          {ordersByDebtor[debtor.id].map((o: any) => (
+                            <div key={o.id} className="flex items-center justify-between gap-3 text-sm">
+                              <Link to={`/receipt/${o.id}`} className="font-mono hover:underline">
+                                #{o.order_number || o.id.slice(0, 4).toUpperCase()}
+                              </Link>
+                              <span className="text-muted-foreground">
+                                {new Date(o.created_at).toLocaleDateString()}
+                              </span>
+                              <span className="font-mono font-semibold">{formatPrice(Number(o.total || 0), debtor.currency)}</span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      <Button size="sm" className="w-full mt-2" onClick={() => toggleResolved(debtor)}>
+                        <Check className="h-4 w-4 mr-1.5" /> Settle Debt
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
