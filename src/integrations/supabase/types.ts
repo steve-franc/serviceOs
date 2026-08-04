@@ -764,6 +764,66 @@ export type Database = {
           },
         ]
       }
+      payroll_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          expense_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          paid_by: string | null
+          payment_status: string
+          restaurant_id: string
+          salary_amount: number
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date?: string
+          expense_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_status?: string
+          restaurant_id: string
+          salary_amount: number
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          expense_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_status?: string
+          restaurant_id?: string
+          salary_amount?: number
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_entries_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "daily_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_entries_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           id: boolean
