@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { WorkdayNotes } from "@/components/WorkdayNotes";
 import { StaffSalaries } from "@/components/StaffSalaries";
 import { PayrollSection } from "@/components/PayrollSection";
+import { BillsSection } from "@/components/BillsSection";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +59,7 @@ interface DailyReport {
   currency?: string;
 }
 
-type StaffTabId = "staff" | "payroll" | "tags" | "orders" | "reports";
+type StaffTabId = "staff" | "payroll" | "bills" | "tags" | "orders" | "reports";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -308,6 +309,7 @@ const Admin = () => {
   const staffTabs: { id: StaffTabId; label: string }[] = [
     { id: "staff", label: "Staff Management" },
     { id: "payroll", label: "Payroll" },
+    { id: "bills", label: "Bills" },
     { id: "tags", label: "Menu Tags" },
     { id: "orders", label: "All Orders" },
     { id: "reports", label: "Daily Reports" },
@@ -444,6 +446,8 @@ const Admin = () => {
           {staffTab === "payroll" && (
             <PayrollSection restaurantId={restaurantId} staff={staff} readOnly={readOnly} />
           )}
+
+          {staffTab === "bills" && <BillsSection />}
 
           {staffTab === "staff" && (
             <div className="space-y-4">

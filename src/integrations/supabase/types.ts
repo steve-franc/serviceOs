@@ -63,10 +63,14 @@ export type Database = {
           due_date: string | null
           edited_at: string | null
           edited_by: string | null
+          file_name: string | null
+          file_url: string | null
           id: string
           marked_paid_at: string | null
           marked_paid_by: string | null
+          notes: string | null
           original_amount: number | null
+          payment_method: string | null
           payment_status: string
           restaurant_id: string
           supplier_id: string | null
@@ -81,10 +85,14 @@ export type Database = {
           due_date?: string | null
           edited_at?: string | null
           edited_by?: string | null
+          file_name?: string | null
+          file_url?: string | null
           id?: string
           marked_paid_at?: string | null
           marked_paid_by?: string | null
+          notes?: string | null
           original_amount?: number | null
+          payment_method?: string | null
           payment_status?: string
           restaurant_id: string
           supplier_id?: string | null
@@ -99,10 +107,14 @@ export type Database = {
           due_date?: string | null
           edited_at?: string | null
           edited_by?: string | null
+          file_name?: string | null
+          file_url?: string | null
           id?: string
           marked_paid_at?: string | null
           marked_paid_by?: string | null
+          notes?: string | null
           original_amount?: number | null
+          payment_method?: string | null
           payment_status?: string
           restaurant_id?: string
           supplier_id?: string | null
